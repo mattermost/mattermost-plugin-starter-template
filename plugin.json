@@ -1,0 +1,36 @@
+{
+    "id": "com.mattermost.sample-plugin",
+    "name": "Sample Plugin",
+    "description": "This plugin serves as a reference guide for best practices and build scripts when writing Mattermost plugins.",
+    "version": "0.0.1",
+    "server": {
+        "executables": {
+            "linux-amd64": "server/dist/plugin-linux-amd64",
+            "darwin-amd64": "server/dist/plugin-darwin-amd64",
+            "windows-amd64": "server/dist/plugin-windows-amd64.exe"
+        },
+        "executable": ""
+    },
+    "webapp": {
+        "bundle_path": "webapp/dist/main.js"
+    },
+    "settings_schema": {
+        "header": "",
+        "footer": "",
+        "settings": [{
+            "key": "ChannelName",
+            "display_name": "Channel Name",
+            "type": "text",
+            "help_text": "The channel to use as part of the sample plugin, created for each team automatically if it does not exist.",
+            "placeholder": "sample_plugin",
+            "default": "sample_plugin"
+        }, {
+            "key": "Username",
+            "display_name": "Username",
+            "type": "text",
+            "help_text": "The user to use as part of the sample plugin, created automatically if it does not exist.",
+            "placeholder": "sample_plugin",
+            "default": "sample_plugin"
+        }]
+    }
+}
