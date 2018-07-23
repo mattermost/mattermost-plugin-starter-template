@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-const {formatText, messageHtmlToComponent} = window['post-utils'];
+const {formatText, messageHtmlToComponent} = window.PostUtils;
 
 export default class PostType extends React.PureComponent {
     static propTypes = {
