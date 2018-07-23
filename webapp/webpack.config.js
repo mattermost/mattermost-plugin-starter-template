@@ -30,9 +30,9 @@ module.exports = {
         ],
     },
     externals: {
-        react: 'react',
-        redux: 'redux',
-        'react-redux': 'reactRedux',
+        react: 'React',
+        redux: 'Redux',
+        'react-redux': 'ReactRedux',
     },
     output: {
         path: path.join(__dirname, '/dist'),
