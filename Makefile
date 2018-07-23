@@ -40,11 +40,17 @@ ifneq ($(HAS_SERVER),)
 	cd server && env GOOS=windows GOARCH=amd64 $(GO) build -o dist/plugin-windows-amd64.exe;
 endif
 
+# webapp/.npminstall ensures NPM dependencies are installed without having to run this all the time
+webapp/.npminstall:
+ifneq ($(HAS_WEBAPP),)
+	cd webapp && npm install
+	touch $@
+endif
+
 # webapp builds the webapp, if it exists
 .PHONY: webapp
-webapp:
+webapp: webapp/.npminstall
 ifneq ($(HAS_WEBAPP),)
-	cd webapp && npm install;
 	cd webapp && npm run fix;
 	cd webapp && npm run build;
 endif
@@ -100,6 +106,7 @@ endif
 clean:
 	rm -fr dist/
 	rm -fr server/dist
+	rm -fr webapp/.npminstall
 	rm -fr webapp/dist
 	rm -fr webapp/node_modules
 	rm -fr build/bin/
