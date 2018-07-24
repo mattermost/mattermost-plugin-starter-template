@@ -1,8 +1,6 @@
 # Sample Plugin
 
-This plugin serves as a reference guide for best practices, build scripts and samples when writing Mattermost plugins. It also doubles as a testbed for verifying plugin functionality during release testing. See [server/README.md](server/README.md) and [webapp/README.md](webapp/README.md) for more details.
-
-The example implementations are primarily meant as illustrations to assist with developing your plugin. Feel free to base your own plugin off this repository, removing or modifying components as needed.
+This plugin serves as a starting point for writing a Mattermost plugin. Feel free to base your own plugin off this repository.
 
 ## Getting Started
 Shallow clone the repository to a directory matching your plugin name:
@@ -47,8 +45,3 @@ In production, deploy and upload your plugin via the [System Console](https://ab
 ### How do I make a server-only or web app-only plugin?
 
 Simply delete the `server` or `webapp` folders and remove the corresponding sections from `plugin.json`. The build scripts will skip the missing portions automatically.
-
-### How do I remove unwanted hooks from the server?
-
-Simply delete the corresponding implementations (or files). The Mattermost server automatically
-identifies which hooks have been implemented when the plugin is started.
