@@ -16,7 +16,8 @@ const PluginIdGoFileTemplate = `package main
 const PluginId = "%s"
 `
 
-const PluginIdJsFileTemplate = `export default '%s';`
+const PluginIdJsFileTemplate = `export default '%s';
+`
 
 func main() {
 	if len(os.Args) <= 1 {
