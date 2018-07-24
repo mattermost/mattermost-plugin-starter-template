@@ -6,19 +6,6 @@ import (
 
 type Plugin struct {
 	plugin.MattermostPlugin
-
-	// The user to use as part of the sample plugin, created automatically if it does not exist.
-	Username string
-
-	// The channel to use as part of the sample plugin, created for each team automatically if it does not exist.
-	ChannelName string
-
-	// disabled tracks whether or not the plugin has been disabled after activation. It always starts enabled.
-	disabled bool
-
-	// sampleUserId is the id of the user specified above.
-	sampleUserId string
-
-	// sampleChannelIds maps team ids to the channels created for each using the channel name above.
-	sampleChannelIds map[string]string
 }
+
+// See https://developers.mattermost.com/extend/plugins/server/reference/
