@@ -69,7 +69,7 @@ ifneq ($(HAS_WEBAPP),)
 	mkdir -p dist/$(PLUGIN_ID)/webapp/dist;
 	cp -r webapp/dist/* dist/$(PLUGIN_ID)/webapp/dist/;
 endif
-	cd dist/$(PLUGIN_ID) && tar -zcvf ../$(PLUGIN_ID).tar.gz *
+	cd dist && tar -cvzf $(PLUGIN_ID).tar.gz $(PLUGIN_ID)
 
 	@echo plugin built at: dist/$(PLUGIN_ID).tar.gz
 
@@ -95,8 +95,8 @@ ifneq ($(and $(MM_SERVICESETTINGS_SITEURL),$(MM_ADMIN_USERNAME),$(MM_ADMIN_PASSW
 	    http --print b POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins/$(PLUGIN_ID)/enable
 else ifneq ($(wildcard ../mattermost-server/.*),)
 	@echo "Installing plugin via filesystem. Server restart and manual plugin enabling required"
-	mkdir -p ../mattermost-server/plugins/$(PLUGIN_ID)
-	tar -C ../mattermost-server/plugins/$(PLUGIN_ID) -zxvf dist/$(PLUGIN_ID).tar.gz
+	mkdir -p ../mattermost-server/plugins
+	tar -C ../mattermost-server/plugins -zxvf dist/$(PLUGIN_ID).tar.gz
 else
 	@echo "No supported deployment method available. Install plugin manually."
 endif
