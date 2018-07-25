@@ -104,7 +104,7 @@ endif
 .PHONY: test
 test:
 ifneq ($(HAS_SERVER),)
-	cd server && $(GO) test ./...
+	cd server && $(GO) test -v -coverprofile=coverage.txt ./...
 endif
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && npm run fix;
