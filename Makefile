@@ -119,8 +119,12 @@ endif
 .PHONY: clean
 clean:
 	rm -fr dist/
+ifneq ($(HAS_SERVER),)
 	rm -fr server/dist
+endif
+ifneq ($(HAS_WEBAPP),)
 	rm -fr webapp/.npminstall
 	rm -fr webapp/dist
 	rm -fr webapp/node_modules
+endif
 	rm -fr build/bin/
