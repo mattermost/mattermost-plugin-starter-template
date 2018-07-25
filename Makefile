@@ -31,9 +31,13 @@ all: test dist
 apply:
 	./build/bin/manifest apply
 
+# vendor ensures the server dependencies are installed
+vendor:
+	# Nothing required for vgo-based projects.
+
 # server builds the server, if it exists, including support for multiple architectures
 .PHONY: server
-server: 
+server: vendor
 ifneq ($(HAS_SERVER),)
 	mkdir -p server/dist;
 	cd server && env GOOS=linux GOARCH=amd64 $(GO) build -o dist/plugin-linux-amd64;
