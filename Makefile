@@ -22,8 +22,8 @@ HAS_SERVER=$(shell build/bin/manifest has_server)
 # Determine if a webapp is defined in plugin.json
 HAS_WEBAPP=$(shell build/bin/manifest has_webapp)
 
-# all, the default target, builds and bundle the plugin.
-all: dist
+# all, the default target, tests, builds and bundles the plugin.
+all: test dist
 
 # apply propagates the plugin id into the server/ and webapp/ folders as required.
 .PHONY: apply
@@ -51,7 +51,6 @@ endif
 .PHONY: webapp
 webapp: webapp/.npminstall
 ifneq ($(HAS_WEBAPP),)
-	cd webapp && npm run fix;
 	cd webapp && npm run build;
 endif
 
@@ -99,6 +98,16 @@ else ifneq ($(wildcard ../mattermost-server/.*),)
 	tar -C ../mattermost-server/plugins -zxvf dist/$(PLUGIN_ID).tar.gz
 else
 	@echo "No supported deployment method available. Install plugin manually."
+endif
+
+# test runs any lints and unit tests defined for the server and webapp, if they exist
+.PHONY: test
+test:
+ifneq ($(HAS_SERVER),)
+	cd server && $(GO) test ./...
+endif
+ifneq ($(HAS_WEBAPP),)
+	cd webapp && npm run fix;
 endif
 
 # clean removes all build artifacts
