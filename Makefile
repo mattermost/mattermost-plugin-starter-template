@@ -1,4 +1,5 @@
 GO=$(shell go env GOPATH)/bin/vgo
+MANIFEST_FILE=plugin.json
 
 # Check that vgo is installed. This won't be necessary once Go 1.11 is released, but it will still
 # be necessary to assert the Go version.
@@ -13,13 +14,13 @@ $(shell cd build/manifest && $(GO) build -o ../bin/manifest)
 # Extract the plugin id from the manifest.
 PLUGIN_ID=$(shell build/bin/manifest plugin_id)
 ifeq ($(PLUGIN_ID),)
-    $(error Cannot parse id from plugin.json)
+    $(error Cannot parse id from $(MANIFEST_FILE))
 endif
 
-# Determine if a server is defined in plugin.json
+# Determine if a server is defined in the manifest
 HAS_SERVER=$(shell build/bin/manifest has_server)
 
-# Determine if a webapp is defined in plugin.json
+# Determine if a webapp is defined in the manifest
 HAS_WEBAPP=$(shell build/bin/manifest has_webapp)
 
 # all, the default target, tests, builds and bundles the plugin.
@@ -59,7 +60,7 @@ endif
 bundle:
 	rm -rf dist/
 	mkdir -p dist/$(PLUGIN_ID)
-	cp plugin.json dist/$(PLUGIN_ID)/
+	cp $(MANIFEST_FILE) dist/$(PLUGIN_ID)/
 ifneq ($(HAS_SERVER),)
 	mkdir -p dist/$(PLUGIN_ID)/server/dist;
 	cp -r server/dist/* dist/$(PLUGIN_ID)/server/dist/;
