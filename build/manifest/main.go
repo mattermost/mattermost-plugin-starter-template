@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"regexp"
 
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/pkg/errors"
@@ -91,18 +90,6 @@ func applyManifest(manifest *model.Manifest) error {
 			0644,
 		); err != nil {
 			return errors.Wrap(err, "failed to write server/plugin_id.go")
-		}
-
-		goMod, err := ioutil.ReadFile("server/go.mod")
-		if err != nil {
-			return errors.Wrap(err, "failed to read server/go.mod")
-		}
-
-		moduleRe := regexp.MustCompile("module .+")
-		goMod = moduleRe.ReplaceAll(goMod, []byte(fmt.Sprintf("module %s", manifest.Id)))
-
-		if err := ioutil.WriteFile("server/go.mod", goMod, 0644); err != nil {
-			return errors.Wrap(err, "failed to write server/go.mod")
 		}
 	}
 

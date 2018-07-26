@@ -1,12 +1,5 @@
-GO=$(shell go env GOPATH)/bin/vgo
+GO=go
 MANIFEST_FILE=plugin.json
-
-# Check that vgo is installed. This won't be necessary once Go 1.11 is released, but it will still
-# be necessary to assert the Go version.
-ifeq ($(GO),)
-    echo go get -u github.com/golang/vgo; \
-    go get -u github.com/golang/vgo;
-endif
 
 # Ensure that the build tools are compiled. Go's caching makes this quick.
 $(shell cd build/manifest && $(GO) build -o ../bin/manifest)
@@ -32,12 +25,15 @@ apply:
 	./build/bin/manifest apply
 
 # vendor ensures the server dependencies are installed
-vendor:
-	# Nothing required for vgo-based projects.
+server/.depensure:
+ifneq ($(HAS_SERVER),)
+	cd server && dep ensure
+	touch $@
+endif
 
 # server builds the server, if it exists, including support for multiple architectures
 .PHONY: server
-server: vendor
+server: server/.depensure
 ifneq ($(HAS_SERVER),)
 	mkdir -p server/dist;
 	cd server && env GOOS=linux GOARCH=amd64 $(GO) build -o dist/plugin-linux-amd64;
@@ -121,6 +117,7 @@ clean:
 	rm -fr dist/
 ifneq ($(HAS_SERVER),)
 	rm -fr server/dist
+	rm -fr server/.depensure
 endif
 ifneq ($(HAS_WEBAPP),)
 	rm -fr webapp/.npminstall
