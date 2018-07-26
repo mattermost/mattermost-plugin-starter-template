@@ -107,7 +107,7 @@ endif
 
 # test runs any lints and unit tests defined for the server and webapp, if they exist
 .PHONY: test
-test:
+test: webapp/.npminstall
 ifneq ($(HAS_SERVER),)
 	cd server && $(GO) test -v -coverprofile=coverage.txt ./...
 endif
