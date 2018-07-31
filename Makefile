@@ -1,4 +1,4 @@
-GO ?= $(shell command -v go 2> /dev/null)
+GO ?= env CGO_ENABLED=0 $(shell command -v go 2> /dev/null)
 DEP ?= $(shell command -v dep 2> /dev/null)
 NPM ?= $(shell command -v npm 2> /dev/null)
 MANIFEST_FILE ?= plugin.json
@@ -73,7 +73,7 @@ dist: apply \
 # deploy installs the plugin to a (development) server, using the API if appropriate environment
 # variables are defined, or copying the files directly to a sibling mattermost-server directory
 .PHONY: deploy
-deploy:
+deploy: dist
 ifneq ($(and $(MM_SERVICESETTINGS_SITEURL),$(MM_ADMIN_USERNAME),$(MM_ADMIN_PASSWORD)),)
 	@echo "Installing plugin via API"
 	http --print b --check-status $(MM_SERVICESETTINGS_SITEURL)/api/v4/users/me || ( \
