@@ -1,4 +1,4 @@
-GO ?= env CGO_ENABLED=0 $(shell command -v go 2> /dev/null)
+GO ?= $(shell command -v go 2> /dev/null)
 DEP ?= $(shell command -v dep 2> /dev/null)
 NPM ?= $(shell command -v npm 2> /dev/null)
 MANIFEST_FILE ?= plugin.json
