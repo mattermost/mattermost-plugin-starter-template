@@ -30,7 +30,7 @@ dist/com.example.my-plugin.tar.gz
 
 There is a build target to automate deploying and enabling the plugin to your server, but it requires configuration and [http](https://httpie.org/) to be installed:
 ```
-export MM_SERVICESETTINGS_SITEURL=http://localhost:8065/
+export MM_SERVICESETTINGS_SITEURL=http://localhost:8065
 export MM_ADMIN_USERNAME=admin
 export MM_ADMIN_PASSWORD=password
 make deploy
