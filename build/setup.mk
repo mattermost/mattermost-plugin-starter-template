@@ -8,7 +8,7 @@ endif
 $(shell cd build/manifest && $(GO) build -o ../bin/manifest)
 
 # Extract the plugin id from the manifest.
-PLUGIN_ID ?= $(shell build/bin/manifest plugin_id)
+PLUGIN_ID ?= $(shell build/bin/manifest id)
 ifeq ($(PLUGIN_ID),)
     $(error "Cannot parse id from $(MANIFEST_FILE)")
 endif
