@@ -1,4 +1,2 @@
-export default {
-    id: 'com.mattermost.sample-plugin',
-    version: '0.0.1',
-};
+export const id = 'com.mattermost.sample-plugin';
+export const version = '0.0.1';

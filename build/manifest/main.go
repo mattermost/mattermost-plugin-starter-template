@@ -21,10 +21,8 @@ var manifest = struct {
 }
 `
 
-const pluginIdJsFileTemplate = `export default {
-    id: '%s',
-    version: '%s',
-};
+const pluginIdJsFileTemplate = `export const id = '%s';
+export const version = '%s';
 `
 
 func main() {
