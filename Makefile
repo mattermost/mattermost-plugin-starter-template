@@ -4,10 +4,11 @@ NPM ?= $(shell command -v npm 2> /dev/null)
 HTTP ?= $(shell command -v http 2> /dev/null)
 CURL ?= $(shell command -v curl 2> /dev/null)
 MANIFEST_FILE ?= plugin.json
-BUNDLE_NAME = $(PLUGIN_ID)_$(PLUGIN_VERSION).tar.gz
 
-# Verify environment, and define PLUGIN_ID, HAS_SERVER and HAS_WEBAPP as needed.
+# Verify environment, and define PLUGIN_ID, PLUGIN_VERSION, HAS_SERVER and HAS_WEBAPP as needed.
 include build/setup.mk
+
+BUNDLE_NAME ?= $(PLUGIN_ID)-$(PLUGIN_VERSION).tar.gz
 
 # all, the default target, tests, builds and bundles the plugin.
 all: test dist

@@ -1,4 +1,4 @@
-import Manifest from './manifest';
+import {id as pluginId} from './manifest';
 
 export default class Plugin {
     // eslint-disable-next-line no-unused-vars
@@ -7,4 +7,4 @@ export default class Plugin {
     }
 }
 
-window.registerPlugin(Manifest.PluginId, new Plugin());
+window.registerPlugin(pluginId, new Plugin());

@@ -1,4 +1,9 @@
 package main
 
-const PluginId = "com.mattermost.sample-plugin"
-const PluginVersion = "0.0.1"
+var manifest = struct {
+	Id      string
+	Version string
+}{
+	Id:      "com.mattermost.sample-plugin",
+	Version: "0.0.1",
+}
