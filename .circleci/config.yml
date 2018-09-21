@@ -1,25 +1,22 @@
 version: 2.1
-jobs:
-  lint:
+executors:
+  default:
     docker:
       - image: circleci/golang:1.12-node
 
-    working_directory: /go/src/github.com/mattermost/mattermost-plugin-sample
+jobs:
+  lint:
+    executor:
+      name: default
     steps:
       - checkout
-
-      - run: curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
       - run: make check-style
 
   test:
-    docker:
-      - image: circleci/golang:1.12-node
-
-    working_directory: /go/src/github.com/mattermost/mattermost-plugin-sample
+    executor:
+      name: default
     steps:
       - checkout
-
-      - run: curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
       - run: make test
 
 workflows:
