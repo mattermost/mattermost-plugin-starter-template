@@ -22,10 +22,6 @@ type configuration struct {
 // Clone shallow copies the configuration. Your implementation may require a deep copy if
 // your configuration has reference types.
 func (c *configuration) Clone() *configuration {
-	if c == nil {
-		return &configuration{}
-	}
-
 	var clone = *c
 	return &clone
 }
