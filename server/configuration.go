@@ -6,8 +6,7 @@ import (
 
 // configuration captures the plugin's external configuration as exposed in the Mattermost server
 // configuration, as well as values computed from the configuration. Any public fields will be
-// deserialized from the Mattermost server configuration in OnConfigurationChange, while any
-// private fields will be ignored.
+// deserialized from the Mattermost server configuration in OnConfigurationChange.
 //
 // As plugins are inherently concurrent (hooks being called asynchronously), and the plugin
 // configuration can change at any time, access to the configuration must be synchronized. The
@@ -45,9 +44,18 @@ func (p *Plugin) getConfiguration() *configuration {
 // Do not call setConfiguration while holding the configurationLock, as sync.Mutex is not
 // reentrant. In particular, avoid using the plugin API entirely, as this may in turn trigger a
 // hook back into the plugin. If that hook attempts to acquire this lock, a deadlock may occur.
+//
+// This method panics if setConfiguration is called with the existing configuration. This almost
+// certainly means that the configuration was modified without being cloned and may result in
+// an unsafe access.
 func (p *Plugin) setConfiguration(configuration *configuration) {
 	p.configurationLock.Lock()
 	defer p.configurationLock.Unlock()
+
+	if configuration != nil && p.configuration == configuration {
+		panic("setConfiguration called with the existing configuration")
+	}
+
 	p.configuration = configuration
 }
 
