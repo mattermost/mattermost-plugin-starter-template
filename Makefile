@@ -97,7 +97,7 @@ else ifneq ($(and $(MM_SERVICESETTINGS_SITEURL),$(MM_ADMIN_USERNAME),$(MM_ADMIN_
 else ifneq ($(wildcard ../mattermost-server/.*),)
 	@echo "Installing plugin via filesystem. Server restart and manual plugin enabling required"
 	mkdir -p ../mattermost-server/plugins
-	tar -C ../mattermost-server/plugins -zxvf dist/$(PLUGIN_ID).tar.gz
+	tar -C ../mattermost-server/plugins -zxvf dist/$(BUNDLE_NAME)
 else
 	@echo "No supported deployment method available. Install plugin manually."
 endif
@@ -106,7 +106,7 @@ endif
 .PHONY: test
 test: server/.depensure webapp/.npminstall
 ifneq ($(HAS_SERVER),)
-	cd server && $(GO) test -v -coverprofile=coverage.txt ./...
+	cd server && $(GO) test -race -v -coverprofile=coverage.txt ./...
 endif
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run fix;
