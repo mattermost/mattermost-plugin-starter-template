@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"net/http"
 	"sync"
 
 	"github.com/mattermost/mattermost-server/plugin"
@@ -15,6 +17,10 @@ type Plugin struct {
 	// configuration is the active plugin configuration. Consult getConfiguration and
 	// setConfiguration for usage.
 	configuration *configuration
+}
+
+func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Hello, world!")
 }
 
 // See https://developers.mattermost.com/extend/plugins/server/reference/
