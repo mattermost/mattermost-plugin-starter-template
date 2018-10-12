@@ -19,16 +19,17 @@ apply:
 	./build/bin/manifest apply
 
 .PHONY: check-style
-check-style: webapp/.npminstall gofmt
+check-style: webapp/.npminstall gofmt govet
 	@echo Checking for style guide compliance
 
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && npm run lint
 endif
 
+.PHONY: gofmt
 gofmt:
 ifneq ($(HAS_SERVER),)
-	@echo Running gomft
+	@echo Running gofmt
 	@for package in $$(go list ./server/...); do \
 		echo "Checking "$$package; \
 		files=$$(go list -f '{{range .GoFiles}}{{$$.Dir}}/{{.}} {{end}}' $$package); \
@@ -42,6 +43,14 @@ ifneq ($(HAS_SERVER),)
 		fi; \
 	done
 	@echo Gofmt success
+endif
+
+.PHONY: govet
+govet:
+ifneq ($(HAS_SERVER),)
+	@echo Running govet
+	@$(GO) vet $$(go list ./server/...) || exit 1
+	@echo Govet success
 endif
 
 # server/.depensure ensures the server dependencies are installed
