@@ -28,7 +28,7 @@ endif
 
 gofmt:
 ifneq ($(HAS_SERVER),)
-	@echo Running GOFMT
+	@echo Running gomft
 	@for package in $$(go list ./server/...); do \
 		echo "Checking "$$package; \
 		files=$$(go list -f '{{range .GoFiles}}{{$$.Dir}}/{{.}} {{end}}' $$package); \
@@ -36,12 +36,12 @@ ifneq ($(HAS_SERVER),)
 			gofmt_output=$$(gofmt -d -s $$files 2>&1); \
 			if [ "$$gofmt_output" ]; then \
 				echo "$$gofmt_output"; \
-				echo "gofmt failure"; \
+				echo "Gofmt failure"; \
 				exit 1; \
 			fi; \
 		fi; \
 	done
-	@echo "gofmt success";
+	@echo Gofmt success
 endif
 
 # server/.depensure ensures the server dependencies are installed
