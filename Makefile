@@ -19,7 +19,7 @@ apply:
 	./build/bin/manifest apply
 
 .PHONY: check-style
-check-style: webapp/.npminstall gofmt govet
+check-style: server/.depensure webapp/.npminstall gofmt govet
 	@echo Checking for style guide compliance
 
 ifneq ($(HAS_WEBAPP),)
