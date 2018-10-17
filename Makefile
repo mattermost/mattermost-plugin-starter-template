@@ -11,12 +11,47 @@ include build/setup.mk
 BUNDLE_NAME ?= $(PLUGIN_ID)-$(PLUGIN_VERSION).tar.gz
 
 # all, the default target, tests, builds and bundles the plugin.
-all: test dist
+all: check-style test dist
 
 # apply propagates the plugin id into the server/ and webapp/ folders as required.
 .PHONY: apply
 apply:
 	./build/bin/manifest apply
+
+.PHONY: check-style
+check-style: server/.depensure webapp/.npminstall gofmt govet
+	@echo Checking for style guide compliance
+
+ifneq ($(HAS_WEBAPP),)
+	cd webapp && npm run lint
+endif
+
+.PHONY: gofmt
+gofmt:
+ifneq ($(HAS_SERVER),)
+	@echo Running gofmt
+	@for package in $$(go list ./server/...); do \
+		echo "Checking "$$package; \
+		files=$$(go list -f '{{range .GoFiles}}{{$$.Dir}}/{{.}} {{end}}' $$package); \
+		if [ "$$files" ]; then \
+			gofmt_output=$$(gofmt -d -s $$files 2>&1); \
+			if [ "$$gofmt_output" ]; then \
+				echo "$$gofmt_output"; \
+				echo "Gofmt failure"; \
+				exit 1; \
+			fi; \
+		fi; \
+	done
+	@echo Gofmt success
+endif
+
+.PHONY: govet
+govet:
+ifneq ($(HAS_SERVER),)
+	@echo Running govet
+	@$(GO) vet $$(go list ./server/...) || exit 1
+	@echo Govet success
+endif
 
 # server/.depensure ensures the server dependencies are installed
 server/.depensure:
