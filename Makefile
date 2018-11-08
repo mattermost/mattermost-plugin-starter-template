@@ -10,22 +10,26 @@ include build/setup.mk
 
 BUNDLE_NAME ?= $(PLUGIN_ID)-$(PLUGIN_VERSION).tar.gz
 
-all: check-style test dist ## Checks the code style, tests, builds and bundles the plugin.
+## Checks the code style, tests, builds and bundles the plugin.
+all: check-style test dist
 
+## Propagates plugin manifest information into the server/ and webapp/ folders as required.
 .PHONY: apply
-apply: ## Propagates plugin manifest information into the server/ and webapp/ folders as required.
+apply:
 	./build/bin/manifest apply
 
+## Runs govet and gofmt against all packages.
 .PHONY: check-style
-check-style: server/.depensure webapp/.npminstall gofmt govet ## Runs govet and gofmt against all packages.
+check-style: server/.depensure webapp/.npminstall gofmt govet
 	@echo Checking for style guide compliance
 
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && npm run lint
 endif
 
+## Runs gofmt against all packages.
 .PHONY: gofmt
-gofmt: ## Runs gofmt against all packages.
+gofmt:
 ifneq ($(HAS_SERVER),)
 	@echo Running gofmt
 	@for package in $$(go list ./server/...); do \
@@ -43,22 +47,25 @@ ifneq ($(HAS_SERVER),)
 	@echo Gofmt success
 endif
 
+## Runs govet against all packages.
 .PHONY: govet
-govet: ## Runs govet against all packages.
+govet:
 ifneq ($(HAS_SERVER),)
 	@echo Running govet
 	@$(GO) vet $$(go list ./server/...) || exit 1
 	@echo Govet success
 endif
 
-server/.depensure: ## Ensures the server dependencies are installed.
+## Ensures the server dependencies are installed.
+server/.depensure:
 ifneq ($(HAS_SERVER),)
 	cd server && $(DEP) ensure
 	touch $@
 endif
 
+## Builds the server, if it exists, including support for multiple architectures.
 .PHONY: server
-server: server/.depensure ## Builds the server, if it exists, including support for multiple architectures.
+server: server/.depensure
 ifneq ($(HAS_SERVER),)
 	mkdir -p server/dist;
 	cd server && env GOOS=linux GOARCH=amd64 $(GO) build -o dist/plugin-linux-amd64;
@@ -66,20 +73,23 @@ ifneq ($(HAS_SERVER),)
 	cd server && env GOOS=windows GOARCH=amd64 $(GO) build -o dist/plugin-windows-amd64.exe;
 endif
 
-webapp/.npminstall: ## Ensures NPM dependencies are installed without having to run this all the time.
+## Ensures NPM dependencies are installed without having to run this all the time.
+webapp/.npminstall:
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) install
 	touch $@
 endif
 
+## Builds the webapp, if it exists.
 .PHONY: webapp
-webapp: webapp/.npminstall ## Builds the webapp, if it exists.
+webapp: webapp/.npminstall
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run build;
 endif
 
+## Generates a tar bundle of the plugin for install.
 .PHONY: bundle
-bundle: ## Generates a tar bundle of the plugin for install.
+bundle:
 	rm -rf dist/
 	mkdir -p dist/$(PLUGIN_ID)
 	cp $(MANIFEST_FILE) dist/$(PLUGIN_ID)/
@@ -95,11 +105,13 @@ endif
 
 	@echo plugin built at: dist/$(BUNDLE_NAME)
 
+## Builds and bundles the plugin.
 .PHONY: dist
-dist:	apply server webapp bundle ## Builds and bundles the plugin.
+dist:	apply server webapp bundle
 
+## Installs the plugin to a (development) server.
 .PHONY: deploy
-deploy: dist ## Installs the plugin to a (development) server.
+deploy: dist
 ## It uses the API if appropriate environment variables are defined,
 ## or copying the files directly to a sibling mattermost-server directory.
 ifneq ($(and $(MM_SERVICESETTINGS_SITEURL),$(MM_ADMIN_USERNAME),$(MM_ADMIN_PASSWORD),$(HTTP)),)
@@ -126,8 +138,9 @@ else
 	@echo "No supported deployment method available. Install plugin manually."
 endif
 
+## Runs any lints and unit tests defined for the server and webapp, if they exist.
 .PHONY: test
-test: server/.depensure webapp/.npminstall ## Runs any lints and unit tests defined for the server and webapp, if they exist.
+test: server/.depensure webapp/.npminstall
 ifneq ($(HAS_SERVER),)
 	cd server && $(GO) test -race -v -coverprofile=coverage.txt ./...
 endif
@@ -135,8 +148,9 @@ ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run fix;
 endif
 
+## Clean removes all build artifacts.
 .PHONY: clean
-clean: ## Clean removes all build artifacts.
+clean:
 	rm -fr dist/
 ifneq ($(HAS_SERVER),)
 	rm -fr server/dist
@@ -149,6 +163,6 @@ ifneq ($(HAS_WEBAPP),)
 endif
 	rm -fr build/bin/
 
- ## Help documentatin à la https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
+# Help documentatin à la https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help:
-	@grep -E '^[a-zA-Z_-.]+:.*?## .*$$' ./Makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+	@cat Makefile | grep -v '\.PHONY' |  grep -v '\help:' | grep -B1 -E '^[a-zA-Z_.-]+:.*' | sed -e "s/:.*//" | sed -e "s/^## //" |  grep -v '\-\-' | tac | awk 'NR%2{printf "\033[36m%-30s\033[0m",$$0;next;}1' | sort
