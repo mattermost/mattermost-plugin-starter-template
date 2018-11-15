@@ -1,6 +1,8 @@
 package main
 
 import (
+	"reflect"
+
 	"github.com/pkg/errors"
 )
 
@@ -53,6 +55,13 @@ func (p *Plugin) setConfiguration(configuration *configuration) {
 	defer p.configurationLock.Unlock()
 
 	if configuration != nil && p.configuration == configuration {
+		// Ignore assignment if the configuration struct is empty. Go will optimize the
+		// allocation for same to point at the same memory address, breaking the check
+		// above.
+		if reflect.ValueOf(*configuration).NumField() == 0 {
+			return
+		}
+
 		panic("setConfiguration called with the existing configuration")
 	}
 
