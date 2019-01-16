@@ -106,7 +106,7 @@ ifneq ($(HAS_WEBAPP),)
 	mkdir -p dist/$(PLUGIN_ID)/webapp/dist;
 	cp -r webapp/dist/* dist/$(PLUGIN_ID)/webapp/dist/;
 endif
-	cd dist && tar -cvzf $(BUNDLE_NAME) $(PLUGIN_ID)
+	cd dist && tar -czf $(BUNDLE_NAME) $(PLUGIN_ID)
 
 	@echo plugin built at: dist/$(BUNDLE_NAME)
 
