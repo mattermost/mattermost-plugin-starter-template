@@ -1,4 +1,4 @@
-# Sample Plugin [![Build Status](https://travis-ci.org/mattermost/mattermost-plugin-sample.svg?branch=master)](https://travis-ci.org/mattermost/mattermost-plugin-sample)
+# Sample Plugin [![CircleCI](https://circleci.com/gh/mattermost/mattermost-plugin-sample.svg?style=svg)](https://circleci.com/gh/mattermost/mattermost-plugin-sample)
 
 This plugin serves as a starting point for writing a Mattermost plugin. Feel free to base your own plugin off this repository.
 
