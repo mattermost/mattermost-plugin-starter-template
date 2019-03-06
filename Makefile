@@ -52,7 +52,9 @@ endif
 govet:
 ifneq ($(HAS_SERVER),)
 	@echo Running govet
-	@$(GO) vet -shadow $$(go list ./server/...) || exit 1
+	$(GO) get golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow
+	$(GO) vet $$(go list ./server/...)
+	$(GO) vet -vettool=$(GOPATH)/bin/shadow $$(go list ./server/...)
 	@echo Govet success
 endif
 
