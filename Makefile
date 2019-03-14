@@ -55,7 +55,9 @@ endif
 govet:
 ifneq ($(HAS_SERVER),)
 	@echo Running govet
-	@$(GO) vet $$(go list ./server/...) || exit 1
+	$(GO) get golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow
+	$(GO) vet $$(go list ./server/...)
+	$(GO) vet -vettool=$(GOPATH)/bin/shadow $$(go list ./server/...)
 	@echo Govet success
 endif
 
@@ -148,10 +150,18 @@ endif
 .PHONY: test
 test: server/.depensure webapp/.npminstall
 ifneq ($(HAS_SERVER),)
-	cd server && $(GO) test -race -v -coverprofile=coverage.txt ./...
+	cd server && $(GO) test -race -v ./...
 endif
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run fix;
+endif
+
+## Creates a coverage report for the server code.
+.PHONY: coverage
+coverage: server/.depensure webapp/.npminstall
+ifneq ($(HAS_SERVER),)
+	cd server && $(GO) test -race -coverprofile=coverage.txt ./...
+	@cd server && $(GO) tool cover -html=coverage.txt
 endif
 
 ## Clean removes all build artifacts.
