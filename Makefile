@@ -4,8 +4,9 @@ NPM ?= $(shell command -v npm 2> /dev/null)
 HTTP ?= $(shell command -v http 2> /dev/null)
 CURL ?= $(shell command -v curl 2> /dev/null)
 MANIFEST_FILE ?= plugin.json
-# You can include assets from a assets/ directory into the bundle. This can be e.g. used to include profile pictures.
-# ASSETS = somefile
+
+# You can include assets this directory into the bundle. This can be e.g. used to include profile pictures.
+ASSESTDIR = assets
 
 # Verify environment, and define PLUGIN_ID, PLUGIN_VERSION, HAS_SERVER and HAS_WEBAPP as needed.
 include build/setup.mk
@@ -95,8 +96,8 @@ bundle:
 	rm -rf dist/
 	mkdir -p dist/$(PLUGIN_ID)
 	cp $(MANIFEST_FILE) dist/$(PLUGIN_ID)/
-ifneq ($(ASSETS),)
-	cp -r assets/$(ASSETS) dist/$(PLUGIN_ID)/
+ifneq ($(wildcard $(ASSESTDIR)),)
+	cp -r $(ASSESTDIR) dist/$(PLUGIN_ID)/
 endif
 ifneq ($(HAS_SERVER),)
 	mkdir -p dist/$(PLUGIN_ID)/server/dist;
@@ -106,7 +107,7 @@ ifneq ($(HAS_WEBAPP),)
 	mkdir -p dist/$(PLUGIN_ID)/webapp/dist;
 	cp -r webapp/dist/* dist/$(PLUGIN_ID)/webapp/dist/;
 endif
-	cd dist && tar -czf $(BUNDLE_NAME) $(PLUGIN_ID)
+	cd dist && tar -cvzf $(BUNDLE_NAME) $(PLUGIN_ID)
 
 	@echo plugin built at: dist/$(BUNDLE_NAME)
 
