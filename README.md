@@ -48,4 +48,4 @@ Simply delete the `server` or `webapp` folders and remove the corresponding sect
 
 ### How do I include assets in the plugin bundle?
 
-By placing them into `assets` they automatically get bundled. You can change this directory name by editing `ASSESTDIR` in `Makefile`. 
+Place them into `assets` subfolder. You can change this directory name by editing `ASSESTDIR` in `Makefile`.
