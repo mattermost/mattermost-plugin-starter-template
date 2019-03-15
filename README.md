@@ -45,3 +45,7 @@ In production, deploy and upload your plugin via the [System Console](https://ab
 ### How do I make a server-only or web app-only plugin?
 
 Simply delete the `server` or `webapp` folders and remove the corresponding sections from `plugin.json`. The build scripts will skip the missing portions automatically.
+
+### How do I include assets in the plugin bundle?
+
+By placing them into `assets` they automatically get bundled. You can change this directory name by editing `ASSESTDIR` in `Makefile`. 
