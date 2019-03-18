@@ -48,4 +48,16 @@ Simply delete the `server` or `webapp` folders and remove the corresponding sect
 
 ### How do I include assets in the plugin bundle?
 
-Place them into `assets` subfolder. You can change this directory name by editing `ASSETSDIR` in `Makefile`.
+Place them into the `assets` directory. To use an asset at runtime, build the path to your asset and open as a regular file:
+
+```go
+profileImage, err := ioutil.ReadFile(filepath.Join(p.API.GetBundlePath(), "assets", "profile_image.png"))
+if err != nil {
+    return errors.Wrap(err, "failed to read profile image")
+}
+
+appErr := p.API.SetProfileImage(userID, profileImage)
+if appErr != nil {
+    return errors.Wrap(err, "failed to set profile image")
+}
+```
