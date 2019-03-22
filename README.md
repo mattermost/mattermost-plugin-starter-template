@@ -3,7 +3,7 @@
 This plugin serves as a starting point for writing a Mattermost plugin. Feel free to base your own plugin off this repository.
 
 ## Getting Started
-Shallow clone the repository to a directory matching your plugin name:
+Shallow clone the repository to a directory outside of `$GOPATH` matching your plugin name:
 ```
 git clone --depth 1 https://github.com/mattermost/mattermost-plugin-sample com.example.my-plugin
 ```
