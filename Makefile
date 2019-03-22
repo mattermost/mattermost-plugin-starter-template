@@ -32,7 +32,7 @@ endif
 gofmt:
 ifneq ($(HAS_SERVER),)
 	@echo Running gofmt
-	@cd server && for package in $$(go list ./...); do \
+	@for package in $$(go list ./server/...); do \
 		echo "Checking "$$package; \
 		files=$$(go list -f '{{range .GoFiles}}{{$$.Dir}}/{{.}} {{end}}' $$package); \
 		if [ "$$files" ]; then \
@@ -52,9 +52,9 @@ endif
 govet:
 ifneq ($(HAS_SERVER),)
 	@echo Running govet
-	cd server && $(GO) get -u golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow
-	cd server && $(GO) vet $$(go list ./...)
-	cd server && $(GO) vet -vettool=$(GOPATH)/bin/shadow $$(go list ./...)
+	$(GO) get golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow
+	$(GO) vet $$(go list ./...)
+	$(GO) vet -vettool=$(GOPATH)/bin/shadow $$(go list ./...)
 	@echo Govet success
 endif
 
