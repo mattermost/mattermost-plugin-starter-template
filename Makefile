@@ -100,12 +100,11 @@ bundle:
 ifneq ($(wildcard $(ASSETS_DIR)/.),)
 	cp -r $(ASSETS_DIR) dist/$(PLUGIN_ID)/
 endif
+ifneq ($(HAS_PUBLIC),)
+	cp -r public/ dist/$(PLUGIN_ID)/
+endif
 ifneq ($(HAS_SERVER),)
 	mkdir -p dist/$(PLUGIN_ID)/server/dist;
-ifneq ($(HAS_PUBLIC),)
-	mkdir -p server/dist/public;
-	cp -r public/* server/dist/public/;
-endif
 	cp -r server/dist/* dist/$(PLUGIN_ID)/server/dist/;
 endif
 ifneq ($(HAS_WEBAPP),)
