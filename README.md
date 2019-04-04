@@ -45,3 +45,23 @@ In production, deploy and upload your plugin via the [System Console](https://ab
 ### How do I make a server-only or web app-only plugin?
 
 Simply delete the `server` or `webapp` folders and remove the corresponding sections from `plugin.json`. The build scripts will skip the missing portions automatically.
+
+### How do I include assets in the plugin bundle?
+
+Place them into the `assets` directory. To use an asset at runtime, build the path to your asset and open as a regular file:
+
+```go
+bundlePath, err := p.API.GetBundlePath()
+if err != nil {
+    return errors.Wrap(err, "failed to get bundle path")
+}
+
+profileImage, err := ioutil.ReadFile(filepath.Join(bundlePath, "assets", "profile_image.png"))
+if err != nil {
+    return errors.Wrap(err, "failed to read profile image")
+}
+
+if appErr := p.API.SetProfileImage(userID, profileImage); appErr != nil {
+    return errors.Wrap(err, "failed to set profile image")
+}
+```
