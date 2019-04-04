@@ -54,7 +54,8 @@ endif
 govet:
 ifneq ($(HAS_SERVER),)
 	@echo Running govet
-	$(GO) get golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow
+	# Workaroung because you can't install binaries without adding them to go.mod 
+	cd /tmp	&& $(GO) get golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow@latest
 	$(GO) vet $$(go list ./...)
 	$(GO) vet -vettool=$(GOPATH)/bin/shadow $$(go list ./...)
 	@echo Govet success
