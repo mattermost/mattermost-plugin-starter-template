@@ -1,5 +1,7 @@
 module github.com/mattermost/mattermost-plugin-sample
 
+go 1.12
+
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
