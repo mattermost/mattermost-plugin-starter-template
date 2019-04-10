@@ -55,7 +55,7 @@ govet:
 ifneq ($(HAS_SERVER),)
 	@echo Running govet
 	@# Workaroung because you can't install binaries without adding them to go.mod 
-	cd /tmp	&& $(GO) get golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow@latest
+	env GO111MODULE=off $(GO) get golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow@latest
 	$(GO) vet -n ./server/...
 	$(GO) vet -n -vettool=$(GOPATH)/bin/shadow ./server/...
 	@echo Govet success
