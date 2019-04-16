@@ -122,7 +122,7 @@ ifneq ($(and $(MM_SERVICESETTINGS_SITEURL),$(MM_ADMIN_USERNAME),$(MM_ADMIN_PASSW
 	@echo "Installing plugin via API"
 	$(eval TOKEN := $(shell curl -i -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/users/login -d '{"login_id": "$(MM_ADMIN_USERNAME)", "password": "$(MM_ADMIN_PASSWORD)"}' | grep Token | cut -f2 -d' ' 2> /dev/null))
 	$(eval VERSION := $(shell curl -s -H "Authorization: Bearer $(TOKEN)" -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins -F "plugin=@dist/$(BUNDLE_NAME)" -F "force=true" | grep -Po '"version": *\K"[^"]*"' | sed 's/\"//g'))
-	@if [ "$(VERSION)" != "$(PLUGIN_VERSION)" ]; then echo "There was a problem uploading the plugin $(PLUGIN_VERSION) to $(PLUGIN_VERSION)."; exit 1; fi
+	@if [ "$(VERSION)" != "$(PLUGIN_VERSION)" ]; then echo "There was a problem uploading the plugin $(VERSION) to $(PLUGIN_VERSION)."; exit 1; fi
 	$(eval STATUS := $(shell curl -s -H "Authorization: Bearer $(TOKEN)" -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins/$(PLUGIN_ID)/enable | grep -Po '"status": *\K"[^"]*"' | sed 's/\"//g'))
 	@if [ "$(STATUS)" != "OK" ]; then echo "There was a problem enabling the plugin."; exit 1; fi
 	@echo "OK."
