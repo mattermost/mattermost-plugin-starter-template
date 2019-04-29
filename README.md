@@ -2,6 +2,8 @@
 
 This plugin serves as a starting point for writing a Mattermost plugin. Feel free to base your own plugin off this repository.
 
+To learn more about plugins, see [our plugin documentation](https://developers.mattermost.com/extend/plugins/).
+
 ## Getting Started
 Shallow clone the repository to a directory outside of `$GOPATH` matching your plugin name:
 ```
