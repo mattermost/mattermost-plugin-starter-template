@@ -177,6 +177,9 @@ debug: server-debug reset
 
 .PHONY: server-debug
 server-debug:
+ifeq ($(wildcard ../mattermost-server/.*),)
+	$(error in order to use the make debug commands, your plugin's development directory needs to be located in the same parent directory as the mattermost-server (they need to be 'peers' or 'siblings').)
+endif
 
 	./build/bin/manifest apply
 	mkdir -p server/dist
@@ -188,7 +191,7 @@ else ifeq ($(OS),Linux)
 else ifeq ($(OS),Windows_NT)
 	cd server && env GOOS=windows GOARCH=amd64 $(GO) build -gcflags "all=-N -l" -o dist/plugin-windows-amd64.exe;
 else
-	$(error make debug depends on uname to return your OS. If it does not return 'Darwin' (meaning OSX), 'Linux', or 'Windows_NT' (all recent versions of Windows), you will need to edit the Makefile for your own OS.)
+	$(error make server-debug depends on uname to return your OS. If it does not return 'Darwin' (meaning OSX), 'Linux', or 'Windows_NT' (all recent versions of Windows), you will need to edit the Makefile for your own OS.)
 endif
 
 	rm -rf dist/
@@ -201,13 +204,17 @@ endif
 # webapp-debug builds and deploys a debug version of the plugin's webapp
 .PHONY: webapp-debug
 webapp-debug:
+ifeq ($(wildcard ../mattermost-server/.*),)
+	$(error in order to use the make webapp-debug commands, your plugin's development directory needs to be located in the same parent directory as the mattermost-server (they need to be 'peers' or 'siblings').)
+endif
 
 ifneq ($(HAS_WEBAPP),)
 # link the webapp directory
+	rm -rf ../mattermost-server/plugins/$(PLUGIN_ID)/webapp
 	mkdir -p ../mattermost-server/plugins/$(PLUGIN_ID)/webapp
 	ln -nfs $(PWD)/webapp/dist ../mattermost-server/plugins/$(PLUGIN_ID)/webapp/dist
 # start an npm watch
-	cd webapp && $(NPM) run run &
+	cd webapp && $(NPM) run watch &
 endif
 
 	@echo "\n\n*** After the frontend is compiled, run 'make reset' to reset the plugin.\nRun 'make reset' every time a change is made to force the server to serve the chages in your webapp portion of the plugin.\nRun 'make stop' to stop the npm watcher.\n\n"

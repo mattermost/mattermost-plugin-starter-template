@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -euf -o pipefail
+
 PLUGIN_ID=$(build/bin/manifest id)
 
 if [[ -z ${PLUGIN_ID} ]]
@@ -8,7 +10,7 @@ then
     exit 1
 fi
 
-PLUGIN_PID=$(ps aux | grep ${PLUGIN_ID} | grep -v "grep" | awk -F " " '{print $2}')
+PLUGIN_PID=$(ps aux | grep "plugins/${PLUGIN_ID}" | grep -v "grep" | awk -F " " '{print $2}')
 
 if [[ -z ${PLUGIN_PID} ]]
 then
