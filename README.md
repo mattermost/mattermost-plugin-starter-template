@@ -5,7 +5,9 @@ This plugin serves as a starting point for writing a Mattermost plugin. Feel fre
 To learn more about plugins, see [our plugin documentation](https://developers.mattermost.com/extend/plugins/).
 
 ## Getting Started
-Shallow clone the repository to a directory outside of `$GOPATH` matching your plugin name:
+Use GitHub's template feature to make a copy of this repository by clicking the "Use this template" button then clone outside of `$GOPATH`.
+
+Alternatively shallow clone the repository to a directory outside of `$GOPATH` matching your plugin name:
 ```
 git clone --depth 1 https://github.com/mattermost/mattermost-plugin-sample com.example.my-plugin
 ```
