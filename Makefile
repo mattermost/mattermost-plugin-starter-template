@@ -2,6 +2,8 @@ GO ?= $(shell command -v go 2> /dev/null)
 NPM ?= $(shell command -v npm 2> /dev/null)
 CURL ?= $(shell command -v curl 2> /dev/null)
 MANIFEST_FILE ?= plugin.json
+MM_UTILITIES_DIR ?= ../mattermost-utilities
+
 export GO111MODULE=on
 
 # You can include assets this directory into the bundle. This can be e.g. used to include profile pictures.
@@ -150,6 +152,17 @@ ifneq ($(HAS_SERVER),)
 	$(GO) tool cover -html=server/coverage.txt
 endif
 
+## Extract strings for translation from the source code.
+.PHONY: i18n-extract
+i18n-extract:
+ifneq ($(HAS_WEBAPP),)
+ifeq ($(HAS_MM_UTILITIES),)
+	@echo "You must clone github.com/mattermost/mattermost-utilities repo in .. to use this command"
+else
+	cd $(MM_UTILITIES_DIR) && npm install && npm run babel && node mmjstool/build/index.js i18n extract-webapp --webapp-dir $(PWD)/webapp
+endif
+endif
+
 ## Clean removes all build artifacts.
 .PHONY: clean
 clean:
@@ -166,4 +179,4 @@ endif
 
 # Help documentatin à la https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help:
-	@cat Makefile | grep -v '\.PHONY' |  grep -v '\help:' | grep -B1 -E '^[a-zA-Z_.-]+:.*' | sed -e "s/:.*//" | sed -e "s/^## //" |  grep -v '\-\-' | sed '1!G;h;$$!d' | awk 'NR%2{printf "\033[36m%-30s\033[0m",$$0;next;}1' | sort
+	@cat Makefile | grep -v '\.PHONY' |  grep -v '\help:' | grep -B1 -E '^[a-zA-Z0-9_.-]+:.*' | sed -e "s/:.*//" | sed -e "s/^## //" |  grep -v '\-\-' | sed '1!G;h;$$!d' | awk 'NR%2{printf "\033[36m%-30s\033[0m",$$0;next;}1' | sort
