@@ -8,6 +8,7 @@ import (
 	"github.com/mattermost/mattermost-server/plugin"
 )
 
+// Plugin is the object to run the plugin
 type Plugin struct {
 	plugin.MattermostPlugin
 
@@ -19,8 +20,9 @@ type Plugin struct {
 	configuration *configuration
 }
 
+// This example demonstrates a plugin that handles HTTP requests which respond by greeting the world.
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello, world!")
+	fmt.Fprint(w, "Hello, world!")
 }
 
 // See https://developers.mattermost.com/extend/plugins/server/reference/
