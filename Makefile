@@ -36,7 +36,7 @@ endif
 gofmt:
 ifneq ($(HAS_SERVER),)
 	@echo Running gofmt
-	@for package in $$(go list ./server/...); do \
+	@for package in $$(go list ./...); do \
 		echo "Checking "$$package; \
 		files=$$(go list -f '{{range .GoFiles}}{{$$.Dir}}/{{.}} {{end}}' $$package); \
 		if [ "$$files" ]; then \
@@ -58,8 +58,8 @@ ifneq ($(HAS_SERVER),)
 	@echo Running govet
 	@# Workaroung because you can't install binaries without adding them to go.mod 
 	env GO111MODULE=off $(GO) get golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow
-	$(GO) vet ./server/...
-	$(GO) vet -vettool=$(GOPATH)/bin/shadow ./server/...
+	$(GO) vet ./...
+	$(GO) vet -vettool=$(GOPATH)/bin/shadow ./...
 	@echo Govet success
 endif
 
