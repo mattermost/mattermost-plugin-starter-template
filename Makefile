@@ -24,7 +24,7 @@ apply:
 
 ## Runs govet and gofmt against all packages.
 .PHONY: check-style
-check-style: webapp/.npminstall gofmt govet
+check-style: webapp/.npminstall gofmt govet golint
 	@echo Checking for style guide compliance
 
 ifneq ($(HAS_WEBAPP),)
@@ -62,6 +62,14 @@ ifneq ($(HAS_SERVER),)
 	$(GO) vet -vettool=$(GOPATH)/bin/shadow ./server/...
 	@echo Govet success
 endif
+
+## Runs golint against all packages.
+.PHONY: golint
+golint:
+	@echo Running lint
+	env GO111MODULE=off $(GO) get golang.org/x/lint/golint
+	golint -set_exit_status ./...
+	@echo lint success
 
 ## Builds the server, if it exists, including support for multiple architectures.
 .PHONY: server
