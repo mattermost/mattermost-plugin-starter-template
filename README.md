@@ -12,9 +12,7 @@ Alternatively shallow clone the repository to a directory outside of `$GOPATH` m
 git clone --depth 1 https://github.com/mattermost/mattermost-plugin-sample com.example.my-plugin
 ```
 
-<aside class="notice">
 Note that this project uses [Go modules](https://github.com/golang/go/wiki/Modules). Be sure to locate the project outside of `$GOPATH`, or allow the use of Go modules within your `$GOPATH` with an `export GO111MODULE=on`.
-</aside>
 
 Edit `plugin.json` with your `id`, `name`, and `description`:
 ```
