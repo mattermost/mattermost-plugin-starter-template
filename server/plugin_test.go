@@ -2,6 +2,7 @@ package main
 
 import (
 	"io/ioutil"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -12,7 +13,7 @@ func TestServeHTTP(t *testing.T) {
 	assert := assert.New(t)
 	plugin := Plugin{}
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/", nil)
+	r := httptest.NewRequest(http.MethodGet, "/", nil)
 
 	plugin.ServeHTTP(nil, w, r)
 

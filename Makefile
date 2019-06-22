@@ -2,6 +2,8 @@ GO ?= $(shell command -v go 2> /dev/null)
 NPM ?= $(shell command -v npm 2> /dev/null)
 CURL ?= $(shell command -v curl 2> /dev/null)
 MANIFEST_FILE ?= plugin.json
+MM_UTILITIES_DIR ?= ../mattermost-utilities
+
 export GO111MODULE=on
 
 # You can include assets this directory into the bundle. This can be e.g. used to include profile pictures.
@@ -22,7 +24,7 @@ apply:
 
 ## Runs govet and gofmt against all packages.
 .PHONY: check-style
-check-style: webapp/.npminstall gofmt govet
+check-style: webapp/.npminstall gofmt govet golint
 	@echo Checking for style guide compliance
 
 ifneq ($(HAS_WEBAPP),)
@@ -34,7 +36,7 @@ endif
 gofmt:
 ifneq ($(HAS_SERVER),)
 	@echo Running gofmt
-	@for package in $$(go list ./server/...); do \
+	@for package in $$(go list ./...); do \
 		echo "Checking "$$package; \
 		files=$$(go list -f '{{range .GoFiles}}{{$$.Dir}}/{{.}} {{end}}' $$package); \
 		if [ "$$files" ]; then \
@@ -56,10 +58,18 @@ ifneq ($(HAS_SERVER),)
 	@echo Running govet
 	@# Workaroung because you can't install binaries without adding them to go.mod 
 	env GO111MODULE=off $(GO) get golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow
-	$(GO) vet ./server/...
-	$(GO) vet -vettool=$(GOPATH)/bin/shadow ./server/...
+	$(GO) vet ./...
+	$(GO) vet -vettool=$(GOPATH)/bin/shadow ./...
 	@echo Govet success
 endif
+
+## Runs golint against all packages.
+.PHONY: golint
+golint:
+	@echo Running lint
+	env GO111MODULE=off $(GO) get golang.org/x/lint/golint
+	golint -set_exit_status ./...
+	@echo lint success
 
 ## Builds the server, if it exists, including support for multiple architectures.
 .PHONY: server
@@ -150,6 +160,17 @@ ifneq ($(HAS_SERVER),)
 	$(GO) tool cover -html=server/coverage.txt
 endif
 
+## Extract strings for translation from the source code.
+.PHONY: i18n-extract
+i18n-extract:
+ifneq ($(HAS_WEBAPP),)
+ifeq ($(HAS_MM_UTILITIES),)
+	@echo "You must clone github.com/mattermost/mattermost-utilities repo in .. to use this command"
+else
+	cd $(MM_UTILITIES_DIR) && npm install && npm run babel && node mmjstool/build/index.js i18n extract-webapp --webapp-dir $(PWD)/webapp
+endif
+endif
+
 ## Clean removes all build artifacts.
 .PHONY: clean
 clean:
@@ -166,4 +187,4 @@ endif
 
 # Help documentatin à la https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help:
-	@cat Makefile | grep -v '\.PHONY' |  grep -v '\help:' | grep -B1 -E '^[a-zA-Z_.-]+:.*' | sed -e "s/:.*//" | sed -e "s/^## //" |  grep -v '\-\-' | sed '1!G;h;$$!d' | awk 'NR%2{printf "\033[36m%-30s\033[0m",$$0;next;}1' | sort
+	@cat Makefile | grep -v '\.PHONY' |  grep -v '\help:' | grep -B1 -E '^[a-zA-Z0-9_.-]+:.*' | sed -e "s/:.*//" | sed -e "s/^## //" |  grep -v '\-\-' | sed '1!G;h;$$!d' | awk 'NR%2{printf "\033[36m%-30s\033[0m",$$0;next;}1' | sort
