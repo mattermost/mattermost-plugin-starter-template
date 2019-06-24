@@ -12,6 +12,7 @@ include build/setup.mk
 
 BUNDLE_NAME ?= $(PLUGIN_ID)-$(PLUGIN_VERSION).tar.gz
 
+# Include custom makefile, if pressent
 ifneq ($(wildcard build/custom.mk),)
 	include build/custom.mk
 endif
