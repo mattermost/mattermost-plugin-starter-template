@@ -2,33 +2,12 @@
   "name": "webapp",
   "version": "0.0.1",
   "description": "This plugin serves as a starting point for writing a Mattermost plugin.",
-  "main": "src/index.jsx",
+  "main": "src/index.js",
   "scripts": {
     "build": "webpack --mode=production",
     "lint": "eslint --ignore-pattern node_modules --ignore-pattern dist --ext .js --ext .jsx . --quiet",
     "fix": "eslint --ignore-pattern node_modules --ignore-pattern dist --ext .js --ext .jsx . --quiet --fix",
-    "test": "jest --forceExit --detectOpenHandles --verbose",
-    "updatesnapshot": "jest -u"
-  },
-  "jest": {
-    "testPathIgnorePatterns": [
-      "/node_modules/"
-    ],
-    "moduleNameMapper": {
-      "^.+\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "identity-obj-proxy",
-      "^.+\\.(css|less|scss)$": "identity-obj-proxy",
-      "^bundle-loader\\?lazy\\!(.*)$": "$1"
-    },
-    "moduleDirectories": [
-      "",
-      "node_modules"
-    ],
-    "transformIgnorePatterns": [
-      "node_modules/"
-    ],
-    "setupFilesAfterEnv": [
-      "<rootDir>/tests/setup.js"
-    ]
+    "test": "jest --forceExit --detectOpenHandles --verbose"
   },
   "author": "",
   "license": "",
@@ -40,8 +19,6 @@
     "@babel/preset-react": "^7.0.0",
     "babel-eslint": "^8.2.6",
     "babel-loader": "^8.0.6",
-    "enzyme": "^3.10.0",
-    "enzyme-adapter-react-16": "^1.14.0",
     "eslint": "^5.2.0",
     "eslint-import-resolver-webpack": "^0.10.1",
     "eslint-plugin-import": "^2.13.0",
