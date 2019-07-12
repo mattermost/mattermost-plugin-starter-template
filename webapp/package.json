@@ -6,7 +6,8 @@
   "scripts": {
     "build": "webpack --mode=production",
     "lint": "eslint --ignore-pattern node_modules --ignore-pattern dist --ext .js --ext .jsx . --quiet",
-    "fix": "eslint --ignore-pattern node_modules --ignore-pattern dist --ext .js --ext .jsx . --quiet --fix"
+    "fix": "eslint --ignore-pattern node_modules --ignore-pattern dist --ext .js --ext .jsx . --quiet --fix",
+    "test": "jest --forceExit --detectOpenHandles --verbose"
   },
   "author": "",
   "license": "",
@@ -26,6 +27,7 @@
     "eslint-plugin-import": "2.18.0",
     "eslint-plugin-react": "7.14.2",
     "file-loader": "4.0.0",
+    "jest": "^24.8.0",
     "webpack": "4.35.0",
     "webpack-cli": "3.3.5"
   },
