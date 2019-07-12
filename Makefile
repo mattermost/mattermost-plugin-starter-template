@@ -2,6 +2,7 @@ GO ?= $(shell command -v go 2> /dev/null)
 NPM ?= $(shell command -v npm 2> /dev/null)
 CURL ?= $(shell command -v curl 2> /dev/null)
 MANIFEST_FILE ?= plugin.json
+GOPATH ?= $(shell go env GOPATH)
 GO_TEST_FLAGS ?= -race
 GO_BUILD_FLAGS ?=
 MM_UTILITIES_DIR ?= ../mattermost-utilities
@@ -63,7 +64,7 @@ endif
 govet:
 ifneq ($(HAS_SERVER),)
 	@echo Running govet
-	@# Workaroung because you can't install binaries without adding them to go.mod 
+	@# Workaround because you can't install binaries without adding them to go.mod
 	env GO111MODULE=off $(GO) get golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow
 	$(GO) vet ./...
 	$(GO) vet -vettool=$(GOPATH)/bin/shadow ./...
@@ -75,7 +76,7 @@ endif
 golint:
 	@echo Running lint
 	env GO111MODULE=off $(GO) get golang.org/x/lint/golint
-	golint -set_exit_status ./...
+	$(GOPATH)/bin/golint -set_exit_status ./...
 	@echo lint success
 
 ## Builds the server, if it exists, including support for multiple architectures.
