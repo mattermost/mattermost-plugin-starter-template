@@ -19,7 +19,7 @@
         "footer": "",
         "settings": []
     },
-    "requires_config": {
+    "required_config": {
         "ServiceSettings": {
             "EnablePostUsernameOverride": true
         }

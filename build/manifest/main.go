@@ -12,12 +12,20 @@ import (
 
 const pluginIDGoFileTemplate = `package main
 
+import (
+	"strings"
+
+	"github.com/mattermost/mattermost-server/model"
+)
+
 var manifest = struct {
-	ID      string
-	Version string
+	ID             string
+	Version        string
+	RequiredConfig *model.Config
 }{
-	ID:      "%s",
-	Version: "%s",
+	ID:             "%s",
+	Version:        "%s",
+	RequiredConfig: model.ConfigFromJson(strings.NewReader(` + "`%s`" + `)),
 }
 `
 
@@ -101,7 +109,7 @@ func applyManifest(manifest *model.Manifest) error {
 	if manifest.HasServer() {
 		if err := ioutil.WriteFile(
 			"server/manifest.go",
-			[]byte(fmt.Sprintf(pluginIDGoFileTemplate, manifest.Id, manifest.Version)),
+			[]byte(fmt.Sprintf(pluginIDGoFileTemplate, manifest.Id, manifest.Version, model.ConfigToJsonWithoutEmptyFields(manifest.RequiredConfig))),
 			0644,
 		); err != nil {
 			return errors.Wrap(err, "failed to write server/manifest.go")
