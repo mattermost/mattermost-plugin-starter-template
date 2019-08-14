@@ -1,4 +1,4 @@
-manifest.go -diff -merge
-manifest.go linguist-generated=true
-manifest.js -diff -merge
-manifest.js linguist-generated=true
+server/manifest.go -diff -merge
+server/manifest.go linguist-generated=true
+webapp/src/manifest.js -diff -merge
+webapp/src/manifest.js linguist-generated=true
