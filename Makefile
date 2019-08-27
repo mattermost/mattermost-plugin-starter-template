@@ -17,7 +17,7 @@ include build/setup.mk
 
 BUNDLE_NAME ?= $(PLUGIN_ID)-$(PLUGIN_VERSION).tar.gz
 
-# Include custom makefile, if pressent
+# Include custom makefile, if present
 ifneq ($(wildcard build/custom.mk),)
 	include build/custom.mk
 endif
@@ -103,6 +103,13 @@ ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run build;
 endif
 
+## Builds the webapp in debug mode, if it exists.
+webapp-debug: webapp/.npminstall
+ifneq ($(HAS_WEBAPP),)
+	cd webapp && \
+	$(NPM) run debug;
+endif
+
 ## Generates a tar bundle of the plugin for install.
 .PHONY: bundle
 bundle:
@@ -149,6 +156,12 @@ else ifneq ($(wildcard ../mattermost-server/.*),)
 else
 	@echo "No supported deployment method available. Install plugin manually."
 endif
+
+.PHONY: debug-deploy
+debug-deploy: debug-dist deploy
+
+.PHONY: debug-dist
+debug-dist: apply server webapp-debug bundle
 
 ## Runs any lints and unit tests defined for the server and webapp, if they exist.
 .PHONY: test
