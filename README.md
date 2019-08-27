@@ -73,4 +73,4 @@ if appErr := p.API.SetProfileImage(userID, profileImage); appErr != nil {
 ```
 
 ### How do I build the plugin with unminified JavaScript?
-Use `make debug-dist` and `make debug-deploy`in place of `make debug-dist` and `make deploy` to use produce or install the plugin with unminified Javascript.
+Use `make debug-dist` and `make debug-deploy` in place of `make dist` and `make deploy` to configure webpack to generate unminified Javascript.
