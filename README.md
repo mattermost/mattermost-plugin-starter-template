@@ -71,3 +71,6 @@ if appErr := p.API.SetProfileImage(userID, profileImage); appErr != nil {
     return errors.Wrap(err, "failed to set profile image")
 }
 ```
+
+### How do I build the plugin with unminified JavaScript?
+Use `make debug-dist` and `make debug-deploy` in place of `make dist` and `make deploy` to configure webpack to generate unminified Javascript.
