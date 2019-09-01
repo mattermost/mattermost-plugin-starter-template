@@ -6,8 +6,8 @@
   "scripts": {
     "build": "webpack --mode=production",
     "debug": "webpack --mode=none",
-    "lint": "eslint --ignore-pattern node_modules --ignore-pattern dist --ext .js --ext .jsx . --quiet",
-    "fix": "eslint --ignore-pattern node_modules --ignore-pattern dist --ext .js --ext .jsx . --quiet --fix",
+    "lint": "eslint --ignore-pattern node_modules --ignore-pattern dist --ext .js --ext .jsx --ext tsx --ext ts . --quiet",
+    "fix": "eslint --ignore-pattern node_modules --ignore-pattern dist --ext .js --ext .jsx --ext tsx --ext ts . --quiet --fix",
     "test": "jest --forceExit --detectOpenHandles --verbose"
   },
   "author": "",
@@ -16,14 +16,20 @@
     "@babel/cli": "7.4.4",
     "@babel/core": "7.4.5",
     "@babel/plugin-proposal-class-properties": "7.4.4",
+    "@babel/plugin-proposal-object-rest-spread": "7.5.5",
     "@babel/plugin-syntax-dynamic-import": "7.2.0",
     "@babel/polyfill": "7.4.4",
     "@babel/preset-env": "7.4.5",
     "@babel/preset-react": "7.0.0",
+    "@babel/preset-typescript": "7.3.3",
     "@babel/runtime": "7.4.5",
+    "@types/react-intl": "2.3.18",
+    "@typescript-eslint/eslint-plugin": "1.13.0",
     "babel-eslint": "10.0.2",
     "babel-loader": "8.0.6",
+    "babel-plugin-typescript-to-proptypes": "0.17.1",
     "eslint": "6.0.1",
+    "eslint-config-mattermost": "github:mattermost/eslint-config-mattermost#6fe27a2bd1f9df4d4eb96fac6fcdcc0fee0ecbd7",
     "eslint-import-resolver-webpack": "0.11.1",
     "eslint-plugin-import": "2.18.0",
     "eslint-plugin-react": "7.14.2",
@@ -33,8 +39,17 @@
     "webpack-cli": "3.3.5"
   },
   "dependencies": {
+    "@types/enzyme": "3.10.3",
+    "@types/jest": "24.0.17",
+    "@types/node": "12.7.0",
+    "@types/react": "16.8.24",
+    "@types/react-dom": "16.8.5",
+    "@types/react-router-dom": "4.3.4",
+    "@types/react-transition-group": "4.2.2",
+    "@typescript-eslint/parser": "1.13.0",
     "react": "16.8.6",
     "react-redux": "5.0.7",
-    "redux": "4.0.1"
+    "redux": "4.0.1",
+    "typescript": "3.5.3"
   }
 }
