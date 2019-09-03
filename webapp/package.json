@@ -29,7 +29,6 @@
     "babel-loader": "8.0.6",
     "babel-plugin-typescript-to-proptypes": "0.17.1",
     "eslint": "6.0.1",
-    "eslint-config-mattermost": "github:mattermost/eslint-config-mattermost#6fe27a2bd1f9df4d4eb96fac6fcdcc0fee0ecbd7",
     "eslint-import-resolver-webpack": "0.11.1",
     "eslint-plugin-import": "2.18.0",
     "eslint-plugin-react": "7.14.2",
