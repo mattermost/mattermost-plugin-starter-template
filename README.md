@@ -1,4 +1,4 @@
-# Plugin Starter Template ![CircleCI branch](https://img.shields.io/circleci/project/github/mattermost/mattermost-plugin-starter-template/master.svg)
+# Plugin Starter Template [![CircleCI branch](https://img.shields.io/circleci/project/github/mattermost/mattermost-plugin-starter-template/master.svg)](https://circleci.com/gh/mattermost/mattermost-plugin-starter-template)
 
 This plugin serves as a starting point for writing a Mattermost plugin. Feel free to base your own plugin off this repository.
 
