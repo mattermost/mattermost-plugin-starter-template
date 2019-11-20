@@ -114,7 +114,7 @@ func applyManifest(manifest *model.Manifest) error {
 	//   is actually JS code generation.
 	// * this JSON ouput will also be used by the Go version to parse it internally to
 	//   expose a *model.Manifest.
-	manifestBytes, err := json.MarshalIndent(manifest, "", " ")
+	manifestBytes, err := json.MarshalIndent(manifest, "", "  ")
 	if err != nil {
 		return err
 	}
