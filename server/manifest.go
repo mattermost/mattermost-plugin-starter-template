@@ -2,19 +2,40 @@
 
 package main
 
-import "github.com/mattermost/mattermost-server/model"
+import (
+	"strings"
 
-var manifest = &model.Manifest{
-	Description:      "This plugin serves as a starting point for writing a Mattermost plugin.",
-	Id:               "com.mattermost.plugin-starter-template",
-	MinServerVersion: "5.12.0",
-	Name:             "Plugin Starter Template",
-	Server: &model.ManifestServer{Executables: &model.ManifestExecutables{
-		DarwinAmd64:  "server/dist/plugin-darwin-amd64",
-		LinuxAmd64:   "server/dist/plugin-linux-amd64",
-		WindowsAmd64: "server/dist/plugin-windows-amd64.exe",
-	}},
-	SettingsSchema: &model.PluginSettingsSchema{Settings: []*model.PluginSetting{}},
-	Version:        "0.1.0",
-	Webapp:         &model.ManifestWebapp{BundlePath: "webapp/dist/main.js"},
+	"github.com/mattermost/mattermost-server/model"
+)
+
+var manifest *model.Manifest
+
+const manifestStr = `
+{
+ "id": "com.mattermost.plugin-starter-template",
+ "name": "Plugin Starter Template",
+ "description": "This plugin serves as a starting point for writing a Mattermost plugin.",
+ "version": "0.1.0",
+ "min_server_version": "5.12.0",
+ "server": {
+  "executables": {
+   "linux-amd64": "server/dist/plugin-linux-amd64",
+   "darwin-amd64": "server/dist/plugin-darwin-amd64",
+   "windows-amd64": "server/dist/plugin-windows-amd64.exe"
+  },
+  "executable": ""
+ },
+ "webapp": {
+  "bundle_path": "webapp/dist/main.js"
+ },
+ "settings_schema": {
+  "header": "",
+  "footer": "",
+  "settings": []
+ }
+}
+`
+
+func init() {
+	manifest = model.ManifestFromJson(strings.NewReader(manifestStr))
 }
