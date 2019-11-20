@@ -16,7 +16,10 @@ import (
 func main() {
 	err := deploy()
 	if err != nil {
-		log.Print(err.Error())
+		fmt.Printf("Failed to deploy: %s\n", err.Error())
+		fmt.Println()
+		fmt.Println("Usage:")
+		fmt.Println("    deploy <plugin id> <bundle path>")
 		os.Exit(1)
 	}
 }
@@ -24,10 +27,10 @@ func main() {
 // deploy handles deployment of the plugin to a development server.
 func deploy() error {
 	if len(os.Args) < 3 {
-		return errors.New("deploy <plugin id> <bundle path>")
+		return errors.New("invalid number of arguments")
 	}
 
-	pluginId := os.Args[1]
+	pluginID := os.Args[1]
 	bundlePath := os.Args[2]
 
 	siteURL := os.Getenv("MM_SERVICESETTINGS_SITEURL")
@@ -35,23 +38,24 @@ func deploy() error {
 	adminPassword := os.Getenv("MM_ADMIN_PASSWORD")
 	copyTargetDirectory, _ := filepath.Abs("../mattermost-server")
 	if siteURL != "" && adminUsername != "" && adminPassword != "" {
-		return uploadPlugin(pluginId, bundlePath, siteURL, adminUsername, adminPassword)
-	} else if _, err := os.Stat(copyTargetDirectory); err == nil {
-		log.Printf("Installing plugin to mattermost-server found in %s.", copyTargetDirectory)
-		log.Print("Server restart and manual plugin enabling required.")
-		return copyPlugin(pluginId, copyTargetDirectory, bundlePath)
-	} else {
-		p, _ := filepath.Abs("../mattermost-server")
-		log.Print("ERROR", err.Error(), p)
-		return errors.New("No supported deployment method available. Install plugin manually.")
+		return uploadPlugin(pluginID, bundlePath, siteURL, adminUsername, adminPassword)
 	}
 
-	return nil
+	_, err := os.Stat(copyTargetDirectory)
+	if os.IsNotExist(err) {
+		return errors.New("no supported deployment method available, please install plugin manually")
+	} else if err != nil {
+		return errors.Errorf("Failed to stat %s", copyTargetDirectory)
+	}
+
+	log.Printf("Installing plugin to mattermost-server found in %s.", copyTargetDirectory)
+	log.Print("Server restart and manual plugin enabling required.")
+	return copyPlugin(pluginID, copyTargetDirectory, bundlePath)
 }
 
 // uploadPlugin attempts to upload and enable a plugin via the Client4 API.
 // It will fail if plugin uploads are disabled.
-func uploadPlugin(pluginId, bundlePath, siteURL, adminUsername, adminPassword string) error {
+func uploadPlugin(pluginID, bundlePath, siteURL, adminUsername, adminPassword string) error {
 	client := model.NewAPIv4Client(siteURL)
 	log.Printf("Authenticating as %s against %s.", adminUsername, siteURL)
 	_, resp := client.Login(adminUsername, adminPassword)
@@ -72,7 +76,7 @@ func uploadPlugin(pluginId, bundlePath, siteURL, adminUsername, adminPassword st
 	}
 
 	log.Print("Enabling plugin.")
-	_, resp = client.EnablePlugin(pluginId)
+	_, resp = client.EnablePlugin(pluginID)
 	if resp.Error != nil {
 		return fmt.Errorf("Failed to enable plugin: %s", resp.Error.Error())
 	}
@@ -82,7 +86,7 @@ func uploadPlugin(pluginId, bundlePath, siteURL, adminUsername, adminPassword st
 
 // copyPlugin attempts to install a plugin by copying it to a sibling ../mattermost-server/plugin
 // directory. A server restart is required before the plugin will start.
-func copyPlugin(pluginId, targetPath, bundlePath string) error {
+func copyPlugin(pluginID, targetPath, bundlePath string) error {
 	targetPath = filepath.Join(targetPath, "plugins")
 
 	err := os.MkdirAll(targetPath, 0777)
@@ -90,7 +94,7 @@ func copyPlugin(pluginId, targetPath, bundlePath string) error {
 		return errors.Wrapf(err, "failed to create %s", targetPath)
 	}
 
-	existingPluginPath := filepath.Join(targetPath, pluginId)
+	existingPluginPath := filepath.Join(targetPath, pluginID)
 	err = os.RemoveAll(existingPluginPath)
 	if err != nil {
 		return errors.Wrapf(err, "failed to remove existing existing plugin directory %s", existingPluginPath)
