@@ -49,7 +49,7 @@ func deploy() error {
 	}
 
 	log.Printf("Installing plugin to mattermost-server found in %s.", copyTargetDirectory)
-	log.Print("Server restart and manual plugin enabling required.")
+	log.Print("Server restart required to load updated plugin.")
 	return copyPlugin(pluginID, copyTargetDirectory, bundlePath)
 }
 
