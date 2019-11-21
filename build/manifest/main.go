@@ -112,7 +112,7 @@ func applyManifest(manifest *model.Manifest) error {
 	// generate JSON representation of Manifest.
 	// * JSON is very similar and compatible with JS's object literals. so, what we do here
 	//   is actually JS code generation.
-	// * this JSON ouput will also be used by the Go version to parse it internally to
+	// * this JSON output will also be used by the Go version to parse it internally to
 	//   expose a *model.Manifest.
 	manifestBytes, err := json.MarshalIndent(manifest, "", "  ")
 	if err != nil {
