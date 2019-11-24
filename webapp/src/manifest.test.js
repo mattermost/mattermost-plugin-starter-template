@@ -1,6 +1,7 @@
-import {id, version} from './manifest';
+import {manifest} from './manifest';
 
-test('Plugin id and version are defined', () => {
-    expect(id).toBeDefined();
-    expect(version).toBeDefined();
+test('Plugin manifest, id and version are defined', () => {
+    expect(manifest).toBeDefined();
+    expect(manifest.id).toBeDefined();
+    expect(manifest.version).toBeDefined();
 });
