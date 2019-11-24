@@ -139,12 +139,13 @@ func applyManifest(manifest *model.Manifest) error {
 		}
 		manifestStr := string(manifestBytes)
 
-		// write generated code to file by using JS file template.
+		// format object literal to satisfy linter.
 		objectLiteral, err := linterFriendlyObjectLiteral(manifestStr)
 		if err != nil {
 			return errors.Wrap(err, "cannot make JS object literal linter friendly")
 		}
 
+		// write generated code to file by using JS file template.
 		if err := ioutil.WriteFile(
 			"webapp/src/manifest.js",
 			[]byte(fmt.Sprintf(pluginIDJSFileTemplate, objectLiteral)),
