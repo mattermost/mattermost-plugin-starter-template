@@ -7,4 +7,4 @@ export default class Plugin {
     }
 }
 
-window.registerPlugin(manifest.Id, new Plugin());
+window.registerPlugin(manifest.id, new Plugin());
