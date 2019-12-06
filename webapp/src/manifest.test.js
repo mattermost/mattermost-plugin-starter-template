@@ -1,4 +1,4 @@
-import {manifest} from './manifest';
+import manifest from './manifest';
 
 test('Plugin manifest, id and version are defined', () => {
     expect(manifest).toBeDefined();
