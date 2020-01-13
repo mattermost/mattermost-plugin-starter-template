@@ -52,7 +52,7 @@ func deploy() error {
 			log.Printf("Authenticating as %s against %s.", adminUsername, siteURL)
 			_, resp := client.Login(adminUsername, adminPassword)
 			if resp.Error != nil {
-				return fmt.Errorf("Failed to login as %s: %s", adminUsername, resp.Error.Error())
+				return errors.Wrapf(resp.Error, "failed to login as %s: %s", adminUsername, resp.Error.Error())
 			}
 
 			return uploadPlugin(client, pluginID, bundlePath)
@@ -63,7 +63,7 @@ func deploy() error {
 	if os.IsNotExist(err) {
 		return errors.New("no supported deployment method available, please install plugin manually")
 	} else if err != nil {
-		return errors.Errorf("Failed to stat %s", copyTargetDirectory)
+		return errors.Wrapf(err, "failed to stat %s", copyTargetDirectory)
 	}
 
 	log.Printf("Installing plugin to mattermost-server found in %s.", copyTargetDirectory)
