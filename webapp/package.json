@@ -1,5 +1,5 @@
 {
-  "name": "webapp",
+  "name": "plugin-starter",
   "version": "0.0.1",
   "description": "This plugin serves as a starting point for writing a Mattermost plugin.",
   "main": "src/index.js",
