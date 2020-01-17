@@ -48,7 +48,7 @@ func deploy() error {
 
 			return uploadPlugin(client, pluginID, bundlePath)
 		}
-		
+
 		if adminUsername != "" && adminPassword != "" {
 			client := model.NewAPIv4Client(siteURL)
 			log.Printf("Authenticating as %s against %s.", adminUsername, siteURL)
