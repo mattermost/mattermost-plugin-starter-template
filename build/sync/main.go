@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mattermost/mattermost-plugin-starter-template/build/sync/git"
+	"github.com/mattermost/mattermost-plugin-starter-template/build/sync/run"
 )
 
 func main() {
@@ -13,21 +13,18 @@ func main() {
 		reportError(fmt.Errorf("failed to get current directory: %w", err))
 	}
 
-	repo, err := git.Open(wd)
+	sync := run.Synchronize{
+		Checks: []run.Check{
+			run.RepoIsClean(wd),
+		},
+	}
+	err = sync.Run()
 	if err != nil {
 		reportError(err)
-	}
-
-	clean, err := repo.IsClean()
-	if err != nil {
-		reportError(err)
-	}
-	if !clean {
-		reportError(fmt.Errorf("template repository is not clean"))
 	}
 }
 
 func reportError(err error) {
-	fmt.Fprintf(os.Stderr, "error: %v", err)
+	fmt.Fprintf(os.Stderr, "%v\n", err)
 	os.Exit(1)
 }
