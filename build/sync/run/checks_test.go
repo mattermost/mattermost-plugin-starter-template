@@ -17,10 +17,10 @@ import (
 func TestRepoIsClean(t *testing.T) {
 	assert := assert.New(t)
 
+	// Create a git repository in a temporary dir.
 	dir, err := ioutil.TempDir("", "test")
 	assert.Nil(err)
 	defer os.RemoveAll(dir)
-
 	_, err = git.PlainInit(dir, false)
 	assert.Nil(err)
 
