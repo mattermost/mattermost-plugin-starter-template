@@ -1,0 +1,20 @@
+checks:
+  - repo_clean:
+      repo: source
+  - repo_clean:
+      repo: target
+
+actions:
+  - path: go.mod
+    action:
+      first_succesful:
+        - do: overwrite
+          conditions:
+            - type: exists
+            - type: in_repo
+              params:
+                repo: source
+        - do: merge_gomod
+  - path: go.sum
+    action:
+      
