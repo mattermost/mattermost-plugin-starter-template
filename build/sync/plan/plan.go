@@ -19,8 +19,8 @@ func (p *Plan) UnmarshalJSON(raw []byte) error {
 	p.Checks = make([]Check, len(t.Checks))
 	for i, check := range t.Checks {
 		switch check.Type {
-		case "nil":
-			c := NilCheck{}
+		case "repo_is_clean":
+			c := RepoIsCleanChecker{}
 			err := json.Unmarshal(check.Params, &c.Params)
 			if err != nil {
 				return fmt.Errorf("failed to unmarshal params for %s: %w", check.Type, err)
@@ -33,7 +33,7 @@ func (p *Plan) UnmarshalJSON(raw []byte) error {
 
 // Check returns an error if the condition fails.
 type Check interface {
-	Check() error
+	Check(Context) error
 }
 
 // Action runs the defined action.

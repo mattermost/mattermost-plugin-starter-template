@@ -3,8 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
-
-	"github.com/mattermost/mattermost-plugin-starter-template/build/sync/run"
+	//	"github.com/mattermost/mattermost-plugin-starter-template/build/sync/plan"
 )
 
 func main() {
@@ -12,16 +11,7 @@ func main() {
 	if err != nil {
 		reportError(fmt.Errorf("failed to get current directory: %w", err))
 	}
-
-	sync := run.Synchronize{
-		Checks: []run.Check{
-			run.RepoIsClean(wd),
-		},
-	}
-	err = sync.Run()
-	if err != nil {
-		reportError(err)
-	}
+	println(wd)
 }
 
 func reportError(err error) {

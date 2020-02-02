@@ -14,14 +14,14 @@ func TestUnmarshalPlan(t *testing.T) {
 	rawJson := []byte(`
 {
   "checks": [
-    {"type": "nil", "params": {"echo": "yay"}}
+    {"type": "repo_is_clean", "params": {"repo": "template"}}
   ]
 }`)
 	var p plan.Plan
 	err := json.Unmarshal(rawJson, &p)
 	assert.Nil(err)
-	expectedCheck := plan.NilCheck{}
-	expectedCheck.Params.Echo = "yay"
+	expectedCheck := plan.RepoIsCleanChecker{}
+	expectedCheck.Params.Repo = "template"
 	expected := plan.Plan{Checks: []plan.Check{&expectedCheck}}
 	assert.Equal(expected, p)
 }

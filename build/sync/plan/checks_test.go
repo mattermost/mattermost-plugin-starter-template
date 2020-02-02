@@ -1,7 +1,6 @@
-package run_test
+package plan_test
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -10,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	git "gopkg.in/src-d/go-git.v4"
 
-	"github.com/mattermost/mattermost-plugin-starter-template/build/sync/run"
+	"github.com/mattermost/mattermost-plugin-starter-template/build/sync/plan"
 )
 
 // Tests for the RepoIsClean checker.
@@ -21,15 +20,23 @@ func TestRepoIsClean(t *testing.T) {
 	dir, err := ioutil.TempDir("", "test")
 	assert.Nil(err)
 	defer os.RemoveAll(dir)
-	_, err = git.PlainInit(dir, false)
+	repo, err := git.PlainInit(dir, false)
 	assert.Nil(err)
 
 	// Repo should be clean.
-	checker := run.RepoIsClean(dir)
-	assert.Nil(checker())
+	checker := plan.RepoIsCleanChecker{}
+	checker.Params.Repo = "plugin"
+
+	ctx := plan.Context{
+		Plugin: plan.RepoContext{
+			Path: dir,
+			Git:  repo,
+		},
+	}
+	assert.Nil(checker.Check(ctx))
 
 	// Create a file in the repository.
 	err = ioutil.WriteFile(path.Join(dir, "data.txt"), []byte("lorem ipsum"), 0666)
 	assert.Nil(err)
-	assert.EqualError(checker(), fmt.Sprintf("git repository %q is not clean", dir))
+	assert.EqualError(checker.Check(ctx), "\"plugin\" repository is not clean")
 }
