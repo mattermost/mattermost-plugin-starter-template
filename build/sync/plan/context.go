@@ -34,3 +34,15 @@ type RepoContext struct {
 	Git  *git.Repository
 	Path string
 }
+
+// GetRepoContext returns the repository context for the specified path.
+func GetRepoContext(path string) (RepoContext, error) {
+	repo, err := git.PlainOpen(path)
+	if err != nil {
+		return RepoContext{}, fmt.Errorf("failed to access git repository at %q: %w", path, err)
+	}
+	return RepoContext{
+		Git:  repo,
+		Path: path,
+	}, nil
+}

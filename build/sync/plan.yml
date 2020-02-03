@@ -1,12 +1,13 @@
 checks:
-  - repo_clean:
-      repo: source
-  - repo_clean:
-      repo: target
-
+  - type: repo_is_clean
+    params:
+      repo: template
+  - type: repo_is_clean
+    params:
+      repo: plugin
 actions:
   - path: go.mod
-    action:
+    actions:
       first_succesful:
         - do: overwrite
           conditions:
