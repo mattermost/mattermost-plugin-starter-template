@@ -27,8 +27,8 @@ func TestRepoIsClean(t *testing.T) {
 	checker := plan.RepoIsCleanChecker{}
 	checker.Params.Repo = "plugin"
 
-	ctx := plan.Context{
-		Plugin: plan.RepoContext{
+	ctx := plan.Setup{
+		Plugin: plan.RepoSetup{
 			Path: dir,
 			Git:  repo,
 		},

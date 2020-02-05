@@ -36,18 +36,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	tplRepo, err := plan.GetRepoContext(tplDir)
+	tplRepo, err := plan.GetRepoSetup(tplDir)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
 	}
-	pluginRepo, err := plan.GetRepoContext(pluginDir)
+	pluginRepo, err := plan.GetRepoSetup(pluginDir)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
 	}
 
-	planSetup := plan.Context{
+	planSetup := plan.Setup{
 		Template: tplRepo,
 		Plugin:   pluginRepo,
 	}

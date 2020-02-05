@@ -32,7 +32,7 @@ func (p *Plan) UnmarshalJSON(raw []byte) error {
 }
 
 // Execute executes the synchronization plan.
-func (p *Plan) Execute(c Context) error {
+func (p *Plan) Execute(c Setup) error {
 	for _, check := range p.Checks {
 		err := check.Check(c)
 		if err != nil {
@@ -44,13 +44,13 @@ func (p *Plan) Execute(c Context) error {
 
 // Check returns an error if the condition fails.
 type Check interface {
-	Check(Context) error
+	Check(Setup) error
 }
 
 // Action runs the defined action.
 type Action interface {
 	// Run performs the action on the specified path.
-	Run(string, Context) error
+	Run(string, Setup) error
 }
 
 // jsonPlan is used to unmarshal Plan structures.
