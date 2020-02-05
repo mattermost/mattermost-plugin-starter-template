@@ -8,16 +8,49 @@ import (
 	"strings"
 )
 
-// OverwriteDirectoryAction is used to completely
-// overwrite files or directories.
-// If the target directory exists, it will be removed
-// first.
-type CleanOverwriteAction struct {
+// OverwriteDirectoryAction is used to completely overwrite directories.
+// If the target directory exists, it will be removed first.
+type OverwriteDirectoryAction struct {
 	Params struct {
 		// Create determines whether the target (file or directory)
 		// will be created if it does not exist.
 		Create bool
 	}
+}
+
+// Run implements plan.Action.Run.
+func (a OverwriteDirectoryAction) Run(path string, setup Setup) error {
+	src := setup.PathInRepo(TemplateRepo, path)
+	dst := setup.PathInRepo(PluginRepo, path)
+
+	dstInfo, err := os.Stat(dst)
+	if os.IsNotExist(err) {
+		if !a.Params.Create {
+			return fmt.Errorf("path %q does not exist, not creating", dst)
+		}
+	} else if err != nil {
+		return fmt.Errorf("failed to check path %q: %w", dst, err)
+	} else {
+		if !dstInfo.IsDir() {
+			return fmt.Errorf("path %q is not a directory", dst)
+		}
+	}
+
+	srcInfo, err := os.Stat(src)
+	if os.IsNotExist(err) {
+		return fmt.Errorf("directory %q does not exist", src)
+	} else if err != nil {
+		return fmt.Errorf("failed to check path %q: %w", src, err)
+	}
+	if !srcInfo.IsDir() {
+		return fmt.Errorf("path %q is not a directory", src)
+	}
+
+	err = CopyDirectory(src, dst)
+	if err != nil {
+		return fmt.Errorf("failed to copy path %q: %w", path, err)
+	}
+	return nil
 }
 
 func CopyDirectory(src, dst string) error {

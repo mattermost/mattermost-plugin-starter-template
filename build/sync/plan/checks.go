@@ -19,7 +19,7 @@ func (NilCheck) Check() error {
 // Check whether the git repository is clean.
 type RepoIsCleanChecker struct {
 	Params struct {
-		Repo string
+		Repo RepoId
 	}
 }
 
