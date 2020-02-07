@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 
 	git "gopkg.in/src-d/go-git.v4"
@@ -81,4 +82,18 @@ func getReaderHash(r io.Reader) (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(h.Sum(nil)), nil
+}
+
+// GetFileHash calculates the sha1 hash sum of the file.
+func GetFileHash(path string) (string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	sum, err := getReaderHash(f)
+	if err != nil {
+		return "", err
+	}
+	return sum, nil
 }

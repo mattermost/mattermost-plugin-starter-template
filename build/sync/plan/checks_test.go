@@ -1,9 +1,11 @@
 package plan_test
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -67,4 +69,52 @@ func TestPathExistsChecker(t *testing.T) {
 	err = checker.Check("nosuchpath", ctx)
 	assert.NotNil(err)
 	assert.True(plan.IsCheckFail(err))
+}
+
+func TestUnalteredChecker(t *testing.T) {
+	assert := assert.New(t)
+
+	wd, err := filepath.Abs("../../../")
+	assert.Nil(err)
+
+	gitRepo, err := git.PlainOpen(wd)
+	assert.Nil(err)
+
+	ctx := plan.Setup{
+		Template: plan.RepoSetup{
+			Path: wd,
+			Git:  gitRepo,
+		},
+		Plugin: plan.RepoSetup{
+			Path: wd,
+		},
+	}
+
+	checker := plan.FileUnalteredChecker{}
+	checker.Params.ReferenceRepo = plan.TemplateRepo
+	checker.Params.Repo = plan.PluginRepo
+
+	// Check with the same file - check should succeed
+	hashPath := "build/sync/plan/testdata/a"
+	err = checker.Check(hashPath, ctx)
+	assert.Nil(err)
+
+	// Create a file with the same suffix path, but different contents.
+	tmpDir, err := ioutil.TempDir("", "test")
+	assert.Nil(err)
+	//defer os.RemoveAll(tmpDir)
+	fullPath := filepath.Join(tmpDir, "build/sync/plan/testdata")
+	os.MkdirAll(fullPath, 0777)
+	file, err := os.OpenFile(filepath.Join(fullPath, "a"), os.O_CREATE|os.O_WRONLY, 0755)
+	assert.Nil(err)
+	_, err = file.WriteString("this file has different contents")
+	assert.Nil(err)
+	assert.Nil(file.Close())
+
+	// Set the plugin path to the temporary directory.
+	ctx.Plugin.Path = tmpDir
+
+	err = checker.Check(hashPath, ctx)
+	assert.True(plan.IsCheckFail(err))
+	assert.EqualError(err, fmt.Sprintf("file %q has been altered", hashPath))
 }
