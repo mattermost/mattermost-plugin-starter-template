@@ -29,6 +29,35 @@ func TestCopyDirectory(t *testing.T) {
 	compareDirectories(assert, dir, srcDir)
 }
 
+func TestOverwriteFileAction(t *testing.T) {
+	assert := assert.New(t)
+
+	// Create a temporary directory to copy to.
+	dir, err := ioutil.TempDir("", "test")
+	assert.Nil(err)
+	defer os.RemoveAll(dir)
+
+	wd, err := os.Getwd()
+	assert.Nil(err)
+
+	setup := plan.Setup{
+		Template: plan.RepoSetup{
+			Git:  nil,
+			Path: filepath.Join(wd, "testdata", "b"),
+		},
+		Plugin: plan.RepoSetup{
+			Git:  nil,
+			Path: dir,
+		},
+	}
+	action := plan.OverwriteFileAction{}
+	action.Params.Create = true
+	err = action.Run("c", setup)
+	assert.Nil(err)
+
+	compareDirectories(assert, dir, filepath.Join(wd, "testdata", "b"))
+}
+
 func TestOverwriteDirectoryAction(t *testing.T) {
 	assert := assert.New(t)
 

@@ -24,7 +24,7 @@ type RepoIsCleanChecker struct {
 }
 
 // Check implements the Checker interface.
-func (r RepoIsCleanChecker) Check(ctx Setup) error {
+func (r RepoIsCleanChecker) Check(_ string, ctx Setup) error {
 	rc := ctx.GetRepo(r.Params.Repo)
 	repo := rc.Git
 	worktree, err := repo.Worktree()
