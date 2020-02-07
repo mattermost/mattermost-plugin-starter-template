@@ -13,7 +13,7 @@ import (
 )
 
 // Tests for the RepoIsClean checker.
-func TestRepoIsClean(t *testing.T) {
+func TestRepoIsCleanChecker(t *testing.T) {
 	assert := assert.New(t)
 
 	// Create a git repository in a temporary dir.
@@ -25,7 +25,7 @@ func TestRepoIsClean(t *testing.T) {
 
 	// Repo should be clean.
 	checker := plan.RepoIsCleanChecker{}
-	checker.Params.Repo = "plugin"
+	checker.Params.Repo = plan.PluginRepo
 
 	ctx := plan.Setup{
 		Plugin: plan.RepoSetup{
@@ -38,5 +38,33 @@ func TestRepoIsClean(t *testing.T) {
 	// Create a file in the repository.
 	err = ioutil.WriteFile(path.Join(dir, "data.txt"), []byte("lorem ipsum"), 0666)
 	assert.Nil(err)
-	assert.EqualError(checker.Check("", ctx), "\"plugin\" repository is not clean")
+	err = checker.Check("", ctx)
+	assert.EqualError(err, "\"plugin\" repository is not clean")
+	assert.True(plan.IsCheckFail(err))
+}
+
+func TestPathExistsChecker(t *testing.T) {
+	assert := assert.New(t)
+
+	wd, err := os.Getwd()
+	assert.Nil(err)
+
+	checker := plan.PathExistsChecker{}
+	checker.Params.Repo = plan.TemplateRepo
+
+	ctx := plan.Setup{
+		Template: plan.RepoSetup{
+			Path: wd,
+		},
+	}
+
+	// Check with existing directory.
+	assert.Nil(checker.Check("testdata", ctx))
+
+	// Check with existing file.
+	assert.Nil(checker.Check("testdata/a", ctx))
+
+	err = checker.Check("nosuchpath", ctx)
+	assert.NotNil(err)
+	assert.True(plan.IsCheckFail(err))
 }
