@@ -34,18 +34,38 @@ func deploy() error {
 	bundlePath := os.Args[2]
 
 	siteURL := os.Getenv("MM_SERVICESETTINGS_SITEURL")
+	adminToken := os.Getenv("MM_ADMIN_TOKEN")
 	adminUsername := os.Getenv("MM_ADMIN_USERNAME")
 	adminPassword := os.Getenv("MM_ADMIN_PASSWORD")
 	copyTargetDirectory, _ := filepath.Abs("../mattermost-server")
-	if siteURL != "" && adminUsername != "" && adminPassword != "" {
-		return uploadPlugin(pluginID, bundlePath, siteURL, adminUsername, adminPassword)
+
+	if siteURL != "" {
+		client := model.NewAPIv4Client(siteURL)
+
+		if adminToken != "" {
+			log.Printf("Authenticating using token against %s.", siteURL)
+			client.SetToken(adminToken)
+
+			return uploadPlugin(client, pluginID, bundlePath)
+		}
+
+		if adminUsername != "" && adminPassword != "" {
+			client := model.NewAPIv4Client(siteURL)
+			log.Printf("Authenticating as %s against %s.", adminUsername, siteURL)
+			_, resp := client.Login(adminUsername, adminPassword)
+			if resp.Error != nil {
+				return errors.Wrapf(resp.Error, "failed to login as %s: %s", adminUsername, resp.Error.Error())
+			}
+
+			return uploadPlugin(client, pluginID, bundlePath)
+		}
 	}
 
 	_, err := os.Stat(copyTargetDirectory)
 	if os.IsNotExist(err) {
 		return errors.New("no supported deployment method available, please install plugin manually")
 	} else if err != nil {
-		return errors.Errorf("Failed to stat %s", copyTargetDirectory)
+		return errors.Wrapf(err, "failed to stat %s", copyTargetDirectory)
 	}
 
 	log.Printf("Installing plugin to mattermost-server found in %s.", copyTargetDirectory)
@@ -55,14 +75,7 @@ func deploy() error {
 
 // uploadPlugin attempts to upload and enable a plugin via the Client4 API.
 // It will fail if plugin uploads are disabled.
-func uploadPlugin(pluginID, bundlePath, siteURL, adminUsername, adminPassword string) error {
-	client := model.NewAPIv4Client(siteURL)
-	log.Printf("Authenticating as %s against %s.", adminUsername, siteURL)
-	_, resp := client.Login(adminUsername, adminPassword)
-	if resp.Error != nil {
-		return fmt.Errorf("Failed to login as %s: %s", adminUsername, resp.Error.Error())
-	}
-
+func uploadPlugin(client *model.Client4, pluginID, bundlePath string) error {
 	pluginBundle, err := os.Open(bundlePath)
 	if err != nil {
 		return errors.Wrapf(err, "failed to open %s", bundlePath)
@@ -70,7 +83,7 @@ func uploadPlugin(pluginID, bundlePath, siteURL, adminUsername, adminPassword st
 	defer pluginBundle.Close()
 
 	log.Print("Uploading plugin via API.")
-	_, resp = client.UploadPluginForced(pluginBundle)
+	_, resp := client.UploadPluginForced(pluginBundle)
 	if resp.Error != nil {
 		return fmt.Errorf("Failed to upload plugin bundle: %s", resp.Error.Error())
 	}
