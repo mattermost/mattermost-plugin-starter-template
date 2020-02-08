@@ -15,6 +15,19 @@ func TestUnmarshalPlan(t *testing.T) {
 {
   "checks": [
     {"type": "repo_is_clean", "params": {"repo": "template"}}
+  ],
+  "paths": [
+    {
+      "path": "abc",
+      "actions": [{
+        "type": "overwrite_file",
+        "params": {"create": true},
+        "conditions": [{
+          "type": "exists",
+          "params": {"repo": "plugin"}
+        }]
+      }]
+    }
   ]
 }`)
 	var p plan.Plan
@@ -22,6 +35,19 @@ func TestUnmarshalPlan(t *testing.T) {
 	assert.Nil(err)
 	expectedCheck := plan.RepoIsCleanChecker{}
 	expectedCheck.Params.Repo = "template"
-	expected := plan.Plan{Checks: []plan.Check{&expectedCheck}}
+
+	expectedAction := plan.OverwriteFileAction{}
+	expectedAction.Params.Create = true
+	expectedActionCheck := plan.PathExistsChecker{}
+	expectedActionCheck.Params.Repo = "plugin"
+	expectedAction.Conditions = []plan.Check{&expectedActionCheck}
+	expected := plan.Plan{
+		Checks: []plan.Check{&expectedCheck},
+		Paths: map[string][]plan.Action{
+			"abc": []plan.Action{
+				&expectedAction,
+			},
+		},
+	}
 	assert.Equal(expected, p)
 }

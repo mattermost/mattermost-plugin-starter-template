@@ -1,3 +1,7 @@
+// The plan package handles the synchronization plan.
+//
+// Each synchronization plan is a set of checks and actions to perform on specified paths
+// that will result in the "plugin" repository being updated.
 package plan
 
 import (
@@ -19,40 +23,36 @@ func (p *Plan) UnmarshalJSON(raw []byte) error {
 	}
 	p.Checks = make([]Check, len(t.Checks))
 	for i, check := range t.Checks {
-		switch check.Type {
-		case "repo_is_clean":
-			c := RepoIsCleanChecker{}
-			err := json.Unmarshal(check.Params, &c.Params)
-			if err != nil {
-				return fmt.Errorf("failed to unmarshal params for %s: %w", check.Type, err)
-			}
-			p.Checks[i] = &c
+		c, err := parseCheck(check.Type, check.Params)
+		if err != nil {
+			return fmt.Errorf("failed to parse check %q: %w", check.Type, err)
 		}
+		p.Checks[i] = c
 	}
 
 	if len(t.Paths) > 0 {
 		p.Paths = make(map[string][]Action)
 	}
 	for _, path := range t.Paths {
+		var err error
 		pathActions := make([]Action, len(path.Actions))
 		for i, action := range path.Actions {
-			switch action.Type {
-			case "overwrite_directory":
-				a := OverwriteDirectoryAction{}
-				err := json.Unmarshal(action.Params, &a.Params)
+			var actionConditions []Check
+			if len(action.Conditions) > 0 {
+				actionConditions = make([]Check, len(action.Conditions))
+			}
+			for j, check := range action.Conditions {
+				actionConditions[j], err = parseCheck(check.Type, check.Params)
 				if err != nil {
-					return fmt.Errorf("failed to unmarshal params for %s: %w", action.Type, err)
+					return err
 				}
-				pathActions[i] = a
-			case "overwrite_file":
-				a := OverwriteFileAction{}
-				err := json.Unmarshal(action.Params, &a.Params)
-				if err != nil {
-					return fmt.Errorf("failed to unmarshal params for %s: %w", action.Type, err)
-				}
-				pathActions[i] = a
+			}
+			pathActions[i], err = parseAction(action.Type, action.Params, actionConditions)
+			if err != nil {
+				return err
 			}
 		}
+		p.Paths[path.Path] = pathActions
 	}
 	return nil
 }
@@ -99,4 +99,60 @@ type jsonPlan struct {
 			}
 		}
 	}
+}
+
+func parseCheck(checkType string, rawParams json.RawMessage) (Check, error) {
+	var c Check
+
+	var params interface{}
+
+	switch checkType {
+	case "repo_is_clean":
+		tc := RepoIsCleanChecker{}
+		params = &tc.Params
+		c = &tc
+	case "exists":
+		tc := PathExistsChecker{}
+		params = &tc.Params
+		c = &tc
+	case "file_unaltered":
+		tc := FileUnalteredChecker{}
+		params = &tc.Params
+		c = &tc
+	default:
+		return nil, fmt.Errorf("unknown checker type %q", checkType)
+	}
+
+	err := json.Unmarshal(rawParams, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal params for %s: %w", checkType, err)
+	}
+	return c, nil
+}
+
+func parseAction(actionType string, rawParams json.RawMessage, checks []Check) (Action, error) {
+	var a Action
+
+	var params interface{}
+
+	switch actionType {
+	case "overwrite_file":
+		ta := OverwriteFileAction{}
+		ta.Conditions = checks
+		params = &ta.Params
+		a = &ta
+	case "overwrite_directory":
+		ta := OverwriteDirectoryAction{}
+		ta.Conditions = checks
+		params = &ta.Params
+		a = &ta
+	default:
+		return nil, fmt.Errorf("unknown action type %q", actionType)
+	}
+
+	err := json.Unmarshal(rawParams, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal params for %s: %w", actionType, err)
+	}
+	return a, nil
 }
