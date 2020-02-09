@@ -1,6 +1,7 @@
 package plan
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"sort"
@@ -18,7 +19,7 @@ func (e checkFail) Error() string {
 	return string(e)
 }
 
-func checkFailf(msg string, args ...interface{}) checkFail {
+func CheckFailf(msg string, args ...interface{}) checkFail {
 	if len(args) > 0 {
 		msg = fmt.Sprintf(msg, args...)
 	}
@@ -30,7 +31,11 @@ func IsCheckFail(err error) bool {
 	if err == nil {
 		return false
 	}
-	_, ok := err.(checkFail)
+	e := errors.Unwrap(err)
+	if e == nil {
+		e = err
+	}
+	_, ok := e.(checkFail)
 	return ok
 }
 
@@ -55,7 +60,7 @@ func (r RepoIsCleanChecker) Check(_ string, ctx Setup) error {
 		return fmt.Errorf("failed to get worktree status: %w", err)
 	}
 	if !status.IsClean() {
-		return checkFailf("%q repository is not clean", r.Params.Repo)
+		return CheckFailf("%q repository is not clean", r.Params.Repo)
 	}
 	return nil
 
@@ -74,7 +79,7 @@ func (r PathExistsChecker) Check(path string, ctx Setup) error {
 	absPath := ctx.PathInRepo(r.Params.Repo, path)
 	_, err := os.Stat(absPath)
 	if os.IsNotExist(err) {
-		return checkFailf("path %q does not exist", path)
+		return CheckFailf("path %q does not exist", path)
 	} else if err != nil {
 		return fmt.Errorf("failed to stat path %q: %w", absPath, err)
 	}
@@ -89,8 +94,8 @@ func (r PathExistsChecker) Check(path string, ctx Setup) error {
 // until a matching version is found.
 type FileUnalteredChecker struct {
 	Params struct {
-		ReferenceRepo RepoId
-		Repo          RepoId
+		ReferenceRepo RepoId `json:"reference-repo"`
+		Repo          RepoId `json:"repo"`
 	}
 }
 
@@ -121,5 +126,5 @@ func (f FileUnalteredChecker) Check(path string, setup Setup) error {
 	if idx < len(fileHashes) && fileHashes[idx] == currentHash {
 		return nil
 	}
-	return checkFailf("file %q has been altered", path)
+	return CheckFailf("file %q has been altered", path)
 }

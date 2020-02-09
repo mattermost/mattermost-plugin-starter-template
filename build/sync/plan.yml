@@ -5,22 +5,17 @@ checks:
   - type: repo_is_clean
     params:
       repo: plugin
-targets:
+paths:
   - path: go.mod
     actions:
       - type: overwrite_file
         params:
-          conditions:
-            - type: exists
-            - type: unaltered
-              params:
-                repo: template
-      - type: warn
-        params:
-          text: Could not sync file, local changes detected.
-  - path: build/
-    actions:
-      - type: overwrite_directory
-        params:
-          create: yes
-
+          create: false
+        conditions:
+          - type: exists
+            params:
+              repo: plugin
+          - type: file_unaltered
+            params:
+              repo: plugin
+              reference-repo: template

@@ -12,7 +12,9 @@ import (
 // Plan defines the plan for synchronizing a plugin and a template directory.
 type Plan struct {
 	Checks []Check `json:"checks"`
-	Paths  map[string][]Action
+	// Each path has multiple actions associated, each a fallback for the one
+	// previous to it.
+	Paths map[string][]Action
 }
 
 // UnmarshalJSON implements the `json.Unmarshaler` interface.
@@ -59,10 +61,41 @@ func (p *Plan) UnmarshalJSON(raw []byte) error {
 
 // Execute executes the synchronization plan.
 func (p *Plan) Execute(c Setup) error {
+	c.Logf(INFO, "running pre-checks")
 	for _, check := range p.Checks {
 		err := check.Check("", c) // For pre-sync checks, the path is ignored.
 		if err != nil {
 			return fmt.Errorf("failed check: %w", err)
+		}
+	}
+	c.Logf(INFO, "running actions %d", len(p.Paths))
+PATHS_LOOP:
+	for path, actions := range p.Paths {
+		c.Logf(INFO, "syncing path %q", path)
+	ACTIONS_LOOP:
+		for i, action := range actions {
+			c.Logf(INFO, "running action for path %q", path)
+			err := action.Check(path, c)
+			if IsCheckFail(err) {
+				c.Logf(WARN, "check failed, not running action: %v", err)
+				// If a check for an action fails, we switch to
+				// the next action associated with the path.
+				if i == len(actions)-1 { // no actions to fallback to.
+					return fmt.Errorf("path %q not handled - no more fallbacks", path)
+				}
+				continue ACTIONS_LOOP
+			} else if err != nil {
+				c.Logf(ERROR, "unexpected error when running check: %v", err)
+				return fmt.Errorf("failed to run checks for action: %w", err)
+			}
+			err = action.Run(path, c)
+			if err != nil {
+				c.Logf(ERROR, "action failed: %v", err)
+				return fmt.Errorf("action failed: %w", err)
+			} else {
+				c.Logf(INFO, "path %q sync'ed succesfully", path)
+			}
+			continue PATHS_LOOP
 		}
 	}
 	return nil
@@ -86,13 +119,13 @@ type Action interface {
 type jsonPlan struct {
 	Checks []struct {
 		Type   string          `json:"type"`
-		Params json.RawMessage `json:"params"`
+		Params json.RawMessage `json:"params,omitempty"`
 	}
 	Paths []struct {
 		Path    string `json:"path"`
 		Actions []struct {
 			Type       string          `json:"type"`
-			Params     json.RawMessage `json:"params"`
+			Params     json.RawMessage `json:"params,omitempty"`
 			Conditions []struct {
 				Type   string          `json:"type"`
 				Params json.RawMessage `json:"params"`
@@ -123,9 +156,11 @@ func parseCheck(checkType string, rawParams json.RawMessage) (Check, error) {
 		return nil, fmt.Errorf("unknown checker type %q", checkType)
 	}
 
-	err := json.Unmarshal(rawParams, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal params for %s: %w", checkType, err)
+	if len(rawParams) > 0 {
+		err := json.Unmarshal(rawParams, params)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal params for %s: %w", checkType, err)
+		}
 	}
 	return c, nil
 }
@@ -150,9 +185,11 @@ func parseAction(actionType string, rawParams json.RawMessage, checks []Check) (
 		return nil, fmt.Errorf("unknown action type %q", actionType)
 	}
 
-	err := json.Unmarshal(rawParams, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal params for %s: %w", actionType, err)
+	if len(rawParams) > 0 {
+		err := json.Unmarshal(rawParams, params)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal params for %s: %w", actionType, err)
+		}
 	}
 	return a, nil
 }

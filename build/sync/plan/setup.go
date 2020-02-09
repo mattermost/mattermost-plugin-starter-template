@@ -52,7 +52,7 @@ type Setup struct {
 
 // Logf logs the provided message with the set level.
 func (c Setup) Logf(lvl LogLevel, tpl string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, lvl.String()+": "+tpl, args...)
+	fmt.Fprintf(os.Stderr, lvl.String()+": "+tpl+"\n", args...)
 }
 
 // GetRepo is a helper to get the required repo setup.
