@@ -49,6 +49,7 @@ type RepoIsCleanChecker struct {
 // Check implements the Checker interface.
 // The path parameter is ignored because this checker checks the state of a repository.
 func (r RepoIsCleanChecker) Check(_ string, ctx Setup) error {
+	ctx.Logf(DEBUG, "checking if repository %q is clean", r.Params.Repo)
 	rc := ctx.GetRepo(r.Params.Repo)
 	repo := rc.Git
 	worktree, err := repo.Worktree()
@@ -76,6 +77,7 @@ type PathExistsChecker struct {
 
 // Check implements the Checker interface.
 func (r PathExistsChecker) Check(path string, ctx Setup) error {
+	ctx.Logf(DEBUG, "checking if path %q exists in repo %q", path, r.Params.Repo)
 	absPath := ctx.PathInRepo(r.Params.Repo, path)
 	_, err := os.Stat(absPath)
 	if os.IsNotExist(err) {
@@ -101,6 +103,7 @@ type FileUnalteredChecker struct {
 
 // Check implements the Checker interface.
 func (f FileUnalteredChecker) Check(path string, setup Setup) error {
+	setup.Logf(DEBUG, "checking if file %q has not been altered", path)
 	absPath := setup.PathInRepo(f.Params.Repo, path)
 
 	info, err := os.Stat(absPath)
