@@ -28,7 +28,7 @@ func FileHistory(path string, repo *git.Repository) ([]string, error) {
 	defer commits.Close()
 
 	hashHistory := []string{}
-	err = commits.ForEach(func(c *object.Commit) error {
+	cerr := commits.ForEach(func(c *object.Commit) error {
 		root, err := repo.TreeObject(c.TreeHash)
 		if err != nil {
 			return fmt.Errorf("failed to get commit tree: %v", err)
@@ -45,8 +45,8 @@ func FileHistory(path string, repo *git.Repository) ([]string, error) {
 		hashHistory = append(hashHistory, sum)
 		return nil
 	})
-	if err != nil && err != io.EOF {
-		return nil, err
+	if cerr != nil && cerr != io.EOF {
+		return nil, cerr
 	}
 	if len(hashHistory) == 0 {
 		return nil, ErrNotFound

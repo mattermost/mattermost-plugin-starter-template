@@ -203,7 +203,7 @@ func copyFile(src, dst string, info os.FileInfo) error {
 		dstF.Close()
 		return fmt.Errorf("failed to copy file %q: %v", src, err)
 	}
-	if err := dstF.Close(); err != nil {
+	if err = dstF.Close(); err != nil {
 		return fmt.Errorf("failed to close file %q: %v", dst, err)
 	}
 	err = os.Chtimes(dst, info.ModTime(), info.ModTime())
