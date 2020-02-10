@@ -19,3 +19,8 @@ paths:
             params:
               repo: plugin
               reference-repo: template
+  - path: build
+    actions:
+      - type: overwrite_directory
+        params:
+          create: true
