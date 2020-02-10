@@ -1,4 +1,4 @@
-// The plan package handles the synchronization plan.
+// Package plan handles the synchronization plan.
 //
 // Each synchronization plan is a set of checks and actions to perform on specified paths
 // that will result in the "plugin" repository being updated.
@@ -92,9 +92,9 @@ PATHS_LOOP:
 			if err != nil {
 				c.Logf(ERROR, "action failed: %v", err)
 				return fmt.Errorf("action failed: %w", err)
-			} else {
-				c.Logf(INFO, "path %q sync'ed succesfully", path)
 			}
+			c.Logf(INFO, "path %q sync'ed succesfully", path)
+
 			continue PATHS_LOOP
 		}
 	}

@@ -19,6 +19,8 @@ func (e checkFail) Error() string {
 	return string(e)
 }
 
+// CheckFailf creates an error with the specified message string.
+// The error will pass the IsCheckFail filter.
 func CheckFailf(msg string, args ...interface{}) checkFail {
 	if len(args) > 0 {
 		msg = fmt.Sprintf(msg, args...)
@@ -39,7 +41,7 @@ func IsCheckFail(err error) bool {
 	return ok
 }
 
-// Check whether the git repository is clean.
+// RepoIsCleanChecker checks whether the git repository is clean.
 type RepoIsCleanChecker struct {
 	Params struct {
 		Repo RepoId

@@ -8,12 +8,14 @@ import (
 	git "gopkg.in/src-d/go-git.v4"
 )
 
-// RepoId identifies a repository - either plugin or template.
-type RepoId string
+// RepoID identifies a repository - either plugin or template.
+type RepoID string
 
 const (
-	TemplateRepo RepoId = "template"
-	PluginRepo   RepoId = "plugin"
+	// TemplateRepo is the id of the template repository (source).
+	TemplateRepo RepoID = "template"
+	// PluginRepo is the id of the plugin repository (target).
+	PluginRepo RepoID = "plugin"
 )
 
 // LogLevel sets the level of the log mesage.
@@ -58,7 +60,7 @@ func (c Setup) Logf(lvl LogLevel, tpl string, args ...interface{}) {
 // GetRepo is a helper to get the required repo setup.
 // If the target parameter is not one of "plugin" or "template",
 // the function panics.
-func (c Setup) GetRepo(r RepoId) RepoSetup {
+func (c Setup) GetRepo(r RepoID) RepoSetup {
 	switch r {
 	case PluginRepo:
 		return c.Plugin
@@ -70,7 +72,7 @@ func (c Setup) GetRepo(r RepoId) RepoSetup {
 }
 
 // PathInRepo returns the full path of a file in the specified repository.
-func (c Setup) PathInRepo(repo RepoId, path string) string {
+func (c Setup) PathInRepo(repo RepoID, path string) string {
 	r := c.GetRepo(repo)
 	return filepath.Join(r.Path, path)
 }

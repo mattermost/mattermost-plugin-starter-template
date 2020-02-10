@@ -12,6 +12,7 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
+// ErrNotFound signifies the file was not found.
 var ErrNotFound = fmt.Errorf("not found")
 
 // FileHistory will trace all the versions of a file in the git repository
