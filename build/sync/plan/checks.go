@@ -1,7 +1,6 @@
 package plan
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"sort"
@@ -9,23 +8,23 @@ import (
 	"github.com/mattermost/mattermost-plugin-starter-template/build/sync/plan/git"
 )
 
-// checkFail is a custom error type used to indicate a
+// CheckFail is a custom error type used to indicate a
 // check that did not pass (but did not fail due to external
 // causes.
 // Use `IsCheckFail` to check if an error is a check failure.
-type checkFail string
+type CheckFail string
 
-func (e checkFail) Error() string {
+func (e CheckFail) Error() string {
 	return string(e)
 }
 
 // CheckFailf creates an error with the specified message string.
 // The error will pass the IsCheckFail filter.
-func CheckFailf(msg string, args ...interface{}) checkFail {
+func CheckFailf(msg string, args ...interface{}) CheckFail {
 	if len(args) > 0 {
 		msg = fmt.Sprintf(msg, args...)
 	}
-	return checkFail(msg)
+	return CheckFail(msg)
 }
 
 // IsCheckFail determines if an error is a check fail error.
@@ -33,18 +32,14 @@ func IsCheckFail(err error) bool {
 	if err == nil {
 		return false
 	}
-	e := errors.Unwrap(err)
-	if e == nil {
-		e = err
-	}
-	_, ok := e.(checkFail)
+	_, ok := err.(CheckFail)
 	return ok
 }
 
 // RepoIsCleanChecker checks whether the git repository is clean.
 type RepoIsCleanChecker struct {
 	Params struct {
-		Repo RepoId
+		Repo RepoID
 	}
 }
 
@@ -56,11 +51,11 @@ func (r RepoIsCleanChecker) Check(_ string, ctx Setup) error {
 	repo := rc.Git
 	worktree, err := repo.Worktree()
 	if err != nil {
-		return fmt.Errorf("failed to get worktree: %w", err)
+		return fmt.Errorf("failed to get worktree: %v", err)
 	}
 	status, err := worktree.Status()
 	if err != nil {
-		return fmt.Errorf("failed to get worktree status: %w", err)
+		return fmt.Errorf("failed to get worktree status: %v", err)
 	}
 	if !status.IsClean() {
 		return CheckFailf("%q repository is not clean", r.Params.Repo)
@@ -73,7 +68,7 @@ func (r RepoIsCleanChecker) Check(_ string, ctx Setup) error {
 // path exists. If it does not, an error is returned.
 type PathExistsChecker struct {
 	Params struct {
-		Repo RepoId
+		Repo RepoID
 	}
 }
 
@@ -85,7 +80,7 @@ func (r PathExistsChecker) Check(path string, ctx Setup) error {
 	if os.IsNotExist(err) {
 		return CheckFailf("path %q does not exist", path)
 	} else if err != nil {
-		return fmt.Errorf("failed to stat path %q: %w", absPath, err)
+		return fmt.Errorf("failed to stat path %q: %v", absPath, err)
 	}
 	return nil
 }
@@ -98,8 +93,8 @@ func (r PathExistsChecker) Check(path string, ctx Setup) error {
 // until a matching version is found.
 type FileUnalteredChecker struct {
 	Params struct {
-		ReferenceRepo RepoId `json:"reference-repo"`
-		Repo          RepoId `json:"repo"`
+		ReferenceRepo RepoID `json:"reference-repo"`
+		Repo          RepoID `json:"repo"`
 	}
 }
 
@@ -110,7 +105,7 @@ func (f FileUnalteredChecker) Check(path string, setup Setup) error {
 
 	info, err := os.Stat(absPath)
 	if err != nil {
-		return fmt.Errorf("failed to get stat for %q: %w", absPath, err)
+		return fmt.Errorf("failed to get stat for %q: %v", absPath, err)
 	}
 	if info.IsDir() {
 		return fmt.Errorf("%q is a directory", absPath)

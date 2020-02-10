@@ -61,13 +61,13 @@ func main() {
 func readPlan(path string) (*plan.Plan, error) {
 	raw, err := ioutil.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read plan file %q: %w", path, err)
+		return nil, fmt.Errorf("failed to read plan file %q: %v", path, err)
 	}
 
 	var p plan.Plan
 	err = yaml.Unmarshal(raw, &p)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal plan yaml: %w", err)
+		return nil, fmt.Errorf("failed to unmarshal plan yaml: %v", err)
 	}
 
 	return &p, err

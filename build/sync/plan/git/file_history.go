@@ -23,7 +23,7 @@ func FileHistory(path string, repo *git.Repository) ([]string, error) {
 	}
 	commits, err := repo.Log(&logOpts)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get commits for path %q: %w", path, err)
+		return nil, fmt.Errorf("failed to get commits for path %q: %v", path, err)
 	}
 	defer commits.Close()
 
@@ -31,7 +31,7 @@ func FileHistory(path string, repo *git.Repository) ([]string, error) {
 	err = commits.ForEach(func(c *object.Commit) error {
 		root, err := repo.TreeObject(c.TreeHash)
 		if err != nil {
-			return fmt.Errorf("failed to get commit tree: %w", err)
+			return fmt.Errorf("failed to get commit tree: %v", err)
 		}
 		f, err := traverseTree(root, path)
 		if err != nil {
@@ -49,7 +49,7 @@ func FileHistory(path string, repo *git.Repository) ([]string, error) {
 		return nil, err
 	}
 	if len(hashHistory) == 0 {
-		return nil, fmt.Errorf("file %q: %w", path, ErrNotFound)
+		return nil, ErrNotFound
 	}
 	return hashHistory, nil
 
@@ -62,16 +62,16 @@ func traverseTree(root *object.Tree, path string) (io.ReadCloser, error) {
 	if dirName != "" {
 		t, err = root.Tree(filepath.Clean(dirName))
 		if err != nil {
-			return nil, fmt.Errorf("failed to traverse tree to %q: %w", dirName, err)
+			return nil, fmt.Errorf("failed to traverse tree to %q: %v", dirName, err)
 		}
 	}
 	f, err := t.File(fileName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to lookup file %q: %w", fileName, err)
+		return nil, fmt.Errorf("failed to lookup file %q: %v", fileName, err)
 	}
 	reader, err := f.Reader()
 	if err != nil {
-		return nil, fmt.Errorf("failed to open %q: %w", path, err)
+		return nil, fmt.Errorf("failed to open %q: %v", path, err)
 	}
 	return reader, nil
 }

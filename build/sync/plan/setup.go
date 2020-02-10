@@ -21,6 +21,7 @@ const (
 // LogLevel sets the level of the log mesage.
 type LogLevel int
 
+// LogLevel constants.
 const (
 	DEBUG LogLevel = iota
 	INFO
@@ -88,7 +89,7 @@ type RepoSetup struct {
 func GetRepoSetup(path string) (RepoSetup, error) {
 	repo, err := git.PlainOpen(path)
 	if err != nil {
-		return RepoSetup{}, fmt.Errorf("failed to access git repository at %q: %w", path, err)
+		return RepoSetup{}, fmt.Errorf("failed to access git repository at %q: %v", path, err)
 	}
 	return RepoSetup{
 		Git:  repo,

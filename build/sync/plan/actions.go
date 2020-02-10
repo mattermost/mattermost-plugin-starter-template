@@ -53,7 +53,7 @@ func (a OverwriteFileAction) Run(path string, setup Setup) error {
 			return fmt.Errorf("path %q does not exist, not creating", dst)
 		}
 	} else if err != nil {
-		return fmt.Errorf("failed to check path %q: %w", dst, err)
+		return fmt.Errorf("failed to check path %q: %v", dst, err)
 	} else {
 		if dstInfo.IsDir() {
 			return fmt.Errorf("path %q is a directory", dst)
@@ -64,7 +64,7 @@ func (a OverwriteFileAction) Run(path string, setup Setup) error {
 	if os.IsNotExist(err) {
 		return fmt.Errorf("file %q does not exist", src)
 	} else if err != nil {
-		return fmt.Errorf("failed to check path %q: %w", src, err)
+		return fmt.Errorf("failed to check path %q: %v", src, err)
 	}
 	if srcInfo.IsDir() {
 		return fmt.Errorf("path %q is a directory", src)
@@ -72,17 +72,17 @@ func (a OverwriteFileAction) Run(path string, setup Setup) error {
 
 	srcF, err := os.Open(src)
 	if err != nil {
-		return fmt.Errorf("failed to open %q: %w", src, err)
+		return fmt.Errorf("failed to open %q: %v", src, err)
 	}
 	defer srcF.Close()
 	dstF, err := os.OpenFile(dst, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, srcInfo.Mode())
 	if err != nil {
-		return fmt.Errorf("failed to open %q: %w", src, err)
+		return fmt.Errorf("failed to open %q: %v", src, err)
 	}
 	defer dstF.Close()
 	_, err = io.Copy(dstF, srcF)
 	if err != nil {
-		return fmt.Errorf("failed to copy file %q: %w", path, err)
+		return fmt.Errorf("failed to copy file %q: %v", path, err)
 	}
 	return nil
 }
@@ -110,14 +110,14 @@ func (a OverwriteDirectoryAction) Run(path string, setup Setup) error {
 			return fmt.Errorf("path %q does not exist, not creating", dst)
 		}
 	} else if err != nil {
-		return fmt.Errorf("failed to check path %q: %w", dst, err)
+		return fmt.Errorf("failed to check path %q: %v", dst, err)
 	} else {
 		if !dstInfo.IsDir() {
 			return fmt.Errorf("path %q is not a directory", dst)
 		}
 		err = os.RemoveAll(dst)
 		if err != nil {
-			return fmt.Errorf("failed to remove directory %q: %w", dst, err)
+			return fmt.Errorf("failed to remove directory %q: %v", dst, err)
 		}
 	}
 
@@ -125,7 +125,7 @@ func (a OverwriteDirectoryAction) Run(path string, setup Setup) error {
 	if os.IsNotExist(err) {
 		return fmt.Errorf("directory %q does not exist", src)
 	} else if err != nil {
-		return fmt.Errorf("failed to check path %q: %w", src, err)
+		return fmt.Errorf("failed to check path %q: %v", src, err)
 	}
 	if !srcInfo.IsDir() {
 		return fmt.Errorf("path %q is not a directory", src)
@@ -133,7 +133,7 @@ func (a OverwriteDirectoryAction) Run(path string, setup Setup) error {
 
 	err = CopyDirectory(src, dst)
 	if err != nil {
-		return fmt.Errorf("failed to copy path %q: %w", path, err)
+		return fmt.Errorf("failed to copy path %q: %v", path, err)
 	}
 	return nil
 }
@@ -164,7 +164,7 @@ func (d dirCopier) srcToDst(path string) (string, error) {
 // source directory to target with all subdirectories.
 func (d dirCopier) Copy(srcPath string, info os.FileInfo, err error) error {
 	if err != nil {
-		return fmt.Errorf("failed to copy directory: %w", err)
+		return fmt.Errorf("failed to copy directory: %v", err)
 	}
 	trgPath, err := d.srcToDst(srcPath)
 	if err != nil {
@@ -173,17 +173,17 @@ func (d dirCopier) Copy(srcPath string, info os.FileInfo, err error) error {
 	if info.IsDir() {
 		err = os.MkdirAll(trgPath, info.Mode())
 		if err != nil {
-			return fmt.Errorf("failed to create directory %q: %w", trgPath, err)
+			return fmt.Errorf("failed to create directory %q: %v", trgPath, err)
 		}
 		err = os.Chtimes(trgPath, info.ModTime(), info.ModTime())
 		if err != nil {
-			return fmt.Errorf("failed to create directory %q: %w", trgPath, err)
+			return fmt.Errorf("failed to create directory %q: %v", trgPath, err)
 		}
 		return nil
 	}
 	err = copyFile(srcPath, trgPath, info)
 	if err != nil {
-		return fmt.Errorf("failed to copy file %q: %w", srcPath, err)
+		return fmt.Errorf("failed to copy file %q: %v", srcPath, err)
 	}
 	return nil
 }
@@ -191,24 +191,24 @@ func (d dirCopier) Copy(srcPath string, info os.FileInfo, err error) error {
 func copyFile(src, dst string, info os.FileInfo) error {
 	srcF, err := os.Open(src)
 	if err != nil {
-		return fmt.Errorf("failed to open source file %q: %w", src, err)
+		return fmt.Errorf("failed to open source file %q: %v", src, err)
 	}
 	defer srcF.Close()
 	dstF, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY, info.Mode())
 	if err != nil {
-		return fmt.Errorf("failed to open destination file %q: %w", dst, err)
+		return fmt.Errorf("failed to open destination file %q: %v", dst, err)
 	}
 	_, err = io.Copy(dstF, srcF)
 	if err != nil {
 		dstF.Close()
-		return fmt.Errorf("failed to copy file %q: %w", src, err)
+		return fmt.Errorf("failed to copy file %q: %v", src, err)
 	}
 	if err := dstF.Close(); err != nil {
-		return fmt.Errorf("failed to close file %q: %w", dst, err)
+		return fmt.Errorf("failed to close file %q: %v", dst, err)
 	}
 	err = os.Chtimes(dst, info.ModTime(), info.ModTime())
 	if err != nil {
-		return fmt.Errorf("failed to adjust file modification time for %q: %w", dst, err)
+		return fmt.Errorf("failed to adjust file modification time for %q: %v", dst, err)
 	}
 	return nil
 }

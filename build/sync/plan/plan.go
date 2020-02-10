@@ -27,7 +27,7 @@ func (p *Plan) UnmarshalJSON(raw []byte) error {
 	for i, check := range t.Checks {
 		c, err := parseCheck(check.Type, check.Params)
 		if err != nil {
-			return fmt.Errorf("failed to parse check %q: %w", check.Type, err)
+			return fmt.Errorf("failed to parse check %q: %v", check.Type, err)
 		}
 		p.Checks[i] = c
 	}
@@ -65,7 +65,7 @@ func (p *Plan) Execute(c Setup) error {
 	for _, check := range p.Checks {
 		err := check.Check("", c) // For pre-sync checks, the path is ignored.
 		if err != nil {
-			return fmt.Errorf("failed check: %w", err)
+			return fmt.Errorf("failed check: %v", err)
 		}
 	}
 	c.Logf(INFO, "running actions")
@@ -86,12 +86,12 @@ PATHS_LOOP:
 				continue ACTIONS_LOOP
 			} else if err != nil {
 				c.Logf(ERROR, "unexpected error when running check: %v", err)
-				return fmt.Errorf("failed to run checks for action: %w", err)
+				return fmt.Errorf("failed to run checks for action: %v", err)
 			}
 			err = action.Run(path, c)
 			if err != nil {
 				c.Logf(ERROR, "action failed: %v", err)
-				return fmt.Errorf("action failed: %w", err)
+				return fmt.Errorf("action failed: %v", err)
 			}
 			c.Logf(INFO, "path %q sync'ed succesfully", path)
 
@@ -159,7 +159,7 @@ func parseCheck(checkType string, rawParams json.RawMessage) (Check, error) {
 	if len(rawParams) > 0 {
 		err := json.Unmarshal(rawParams, params)
 		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal params for %s: %w", checkType, err)
+			return nil, fmt.Errorf("failed to unmarshal params for %s: %v", checkType, err)
 		}
 	}
 	return c, nil
@@ -188,7 +188,7 @@ func parseAction(actionType string, rawParams json.RawMessage, checks []Check) (
 	if len(rawParams) > 0 {
 		err := json.Unmarshal(rawParams, params)
 		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal params for %s: %w", actionType, err)
+			return nil, fmt.Errorf("failed to unmarshal params for %s: %v", actionType, err)
 		}
 	}
 	return a, nil
