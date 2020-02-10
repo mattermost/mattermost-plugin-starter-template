@@ -6,7 +6,7 @@ import (
 	"os"
 	"sort"
 
-	"github.com/mattermost/mattermost-plugin-starter-template/build/sync/git"
+	"github.com/mattermost/mattermost-plugin-starter-template/build/sync/plan/git"
 )
 
 // checkFail is a custom error type used to indicate a

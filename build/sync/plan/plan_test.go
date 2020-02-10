@@ -181,7 +181,7 @@ func TestRunPlanNoFallbacks(t *testing.T) {
 		},
 	}
 	err := p.Execute(setup)
-	assert.EqualError(err, "path \"somepath\" not handled - no more fallbacks")
+	assert.Nil(err)
 
 	// both actions were not executed.
 	assert.Equal("", action1.calledWith)

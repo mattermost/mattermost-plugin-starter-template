@@ -68,7 +68,7 @@ func (p *Plan) Execute(c Setup) error {
 			return fmt.Errorf("failed check: %w", err)
 		}
 	}
-	c.Logf(INFO, "running actions %d", len(p.Paths))
+	c.Logf(INFO, "running actions")
 PATHS_LOOP:
 	for path, actions := range p.Paths {
 		c.Logf(INFO, "syncing path %q", path)
@@ -81,7 +81,7 @@ PATHS_LOOP:
 				// If a check for an action fails, we switch to
 				// the next action associated with the path.
 				if i == len(actions)-1 { // no actions to fallback to.
-					return fmt.Errorf("path %q not handled - no more fallbacks", path)
+					c.Logf(ERROR, "path %q not handled - no more fallbacks", path)
 				}
 				continue ACTIONS_LOOP
 			} else if err != nil {
