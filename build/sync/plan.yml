@@ -24,3 +24,181 @@ paths:
       - type: overwrite_directory
         params:
           create: true
+  - path: Makefile
+    actions:
+      - type: overwrite_file
+        params:
+          create: true
+        conditions:
+          - type: file_unaltered
+            params:
+              repo: plugin
+              reference-repo: template
+  - path: .editorconfig
+    actions:
+      - type: overwrite_file
+        params:
+          create: true
+        conditions:
+          - type: file_unaltered
+            params:
+              repo: plugin
+              reference-repo: template
+  - path: webapp/.babelrc
+    actions:
+      - type: overwrite_file
+        params:
+          create: true
+        conditions:
+          - type: exists
+            params:
+              repo: plugin
+          - type: file_unaltered
+            params:
+              repo: plugin
+              reference-repo: template
+  - path: webapp/webpack.config.js
+    actions:
+      - type: overwrite_file
+        params:
+          create: true
+        conditions:
+          - type: exists
+            params:
+              repo: plugin
+          - type: file_unaltered
+            params:
+              repo: plugin
+              reference-repo: template
+  - path: webapp/tsconfig.json
+    actions:
+      - type: overwrite_file
+        params:
+          create: true
+        conditions:
+          - type: exists
+            params:
+              repo: plugin
+          - type: file_unaltered
+            params:
+              repo: plugin
+              reference-repo: template
+  - path: webapp/.eslintrc.json
+    actions:
+      - type: overwrite_file
+        params:
+          create: true
+        conditions:
+          - type: exists
+            params:
+              repo: plugin
+          - type: file_unaltered
+            params:
+              repo: plugin
+              reference-repo: template
+  - path: webapp/src/index.js
+    actions:
+      - type: overwrite_file
+        params:
+          create: true
+        conditions:
+          - type: exists
+            params:
+              repo: plugin
+          - type: file_unaltered
+            params:
+              repo: plugin
+              reference-repo: template
+  - path: server/configuration.go
+    actions:
+      - type: overwrite_file
+        params:
+          create: true
+        conditions:
+          - type: exists
+            params:
+              repo: plugin
+          - type: file_unaltered
+            params:
+              repo: plugin
+              reference-repo: template
+  - path: server/plugin.go
+    actions:
+      - type: overwrite_file
+        params:
+          create: true
+        conditions:
+          - type: exists
+            params:
+              repo: plugin
+          - type: file_unaltered
+            params:
+              repo: plugin
+              reference-repo: template
+  - path: server/plugin_test.go
+    actions:
+      - type: overwrite_file
+        params:
+          create: true
+        conditions:
+          - type: exists
+            params:
+              repo: plugin
+          - type: file_unaltered
+            params:
+              repo: plugin
+              reference-repo: template
+  - path: public/hello.html
+    actions:
+      - type: overwrite_file
+        params:
+          create: true
+        conditions:
+          - type: exists
+            params:
+              repo: plugin
+          - type: file_unaltered
+            params:
+              repo: plugin
+              reference-repo: template
+  - path: .circleci/config.yml
+    actions:
+      - type: overwrite_file
+        params:
+          create: true
+        conditions:
+          - type: exists
+            params:
+              repo: plugin
+          - type: file_unaltered
+            params:
+              repo: plugin
+              reference-repo: template
+  - path: webapp/i18n/en.json
+    actions:
+      - type: overwrite_file
+        params:
+          create: true
+        conditions:
+          - type: exists
+            params:
+              repo: plugin
+          - type: file_unaltered
+            params:
+              repo: plugin
+              reference-repo: template
+      # TODO: add action to merge en.json
+  - path: webapp/package.json
+    actions:
+      - type: overwrite_file
+        params:
+          create: true
+        conditions:
+          - type: exists
+            params:
+              repo: plugin
+          - type: file_unaltered
+            params:
+              repo: plugin
+              reference-repo: template
+      # TODO: add action to merge package.json
