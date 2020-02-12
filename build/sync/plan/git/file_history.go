@@ -34,7 +34,10 @@ func FileHistory(path string, repo *git.Repository) ([]string, error) {
 			return fmt.Errorf("failed to get commit tree: %v", err)
 		}
 		f, err := traverseTree(root, path)
-		if err != nil {
+		if err == object.ErrFileNotFound || err == object.ErrDirectoryNotFound {
+			// Ignoring file not found errors.
+			return nil
+		} else if err != nil {
 			return err
 		}
 		sum, err := getReaderHash(f)
@@ -61,12 +64,16 @@ func traverseTree(root *object.Tree, path string) (io.ReadCloser, error) {
 	t := root
 	if dirName != "" {
 		t, err = root.Tree(filepath.Clean(dirName))
-		if err != nil {
+		if err == object.ErrDirectoryNotFound {
+			return nil, err
+		} else if err != nil {
 			return nil, fmt.Errorf("failed to traverse tree to %q: %v", dirName, err)
 		}
 	}
 	f, err := t.File(fileName)
-	if err != nil {
+	if err == object.ErrFileNotFound {
+		return nil, err
+	} else if err != nil {
 		return nil, fmt.Errorf("failed to lookup file %q: %v", fileName, err)
 	}
 	reader, err := f.Reader()

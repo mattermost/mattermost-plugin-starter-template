@@ -104,7 +104,9 @@ func (f FileUnalteredChecker) Check(path string, setup Setup) error {
 	absPath := setup.PathInRepo(f.Params.Repo, path)
 
 	info, err := os.Stat(absPath)
-	if err != nil {
+	if os.IsNotExist(err) {
+		return CheckFailf("file %q has been deleted")
+	} else if err != nil {
 		return fmt.Errorf("failed to get stat for %q: %v", absPath, err)
 	}
 	if info.IsDir() {
