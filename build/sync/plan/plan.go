@@ -61,39 +61,39 @@ func (p *Plan) UnmarshalJSON(raw []byte) error {
 
 // Execute executes the synchronization plan.
 func (p *Plan) Execute(c Setup) error {
-	c.Logf(INFO, "running pre-checks")
+	c.Logf("running pre-checks")
 	for _, check := range p.Checks {
 		err := check.Check("", c) // For pre-sync checks, the path is ignored.
 		if err != nil {
 			return fmt.Errorf("failed check: %v", err)
 		}
 	}
-	c.Logf(INFO, "running actions")
+	c.Logf("running actions")
 PATHS_LOOP:
 	for path, actions := range p.Paths {
-		c.Logf(INFO, "syncing path %q", path)
+		c.Logf("syncing path %q", path)
 	ACTIONS_LOOP:
 		for i, action := range actions {
-			c.Logf(INFO, "running action for path %q", path)
+			c.Logf("running action for path %q", path)
 			err := action.Check(path, c)
 			if IsCheckFail(err) {
-				c.Logf(WARN, "check failed, not running action: %v", err)
+				c.Logf("check failed, not running action: %v", err)
 				// If a check for an action fails, we switch to
 				// the next action associated with the path.
 				if i == len(actions)-1 { // no actions to fallback to.
-					c.Logf(ERROR, "path %q not handled - no more fallbacks", path)
+					c.LogErrorf("path %q not handled - no more fallbacks", path)
 				}
 				continue ACTIONS_LOOP
 			} else if err != nil {
-				c.Logf(ERROR, "unexpected error when running check: %v", err)
+				c.LogErrorf("unexpected error when running check: %v", err)
 				return fmt.Errorf("failed to run checks for action: %v", err)
 			}
 			err = action.Run(path, c)
 			if err != nil {
-				c.Logf(ERROR, "action failed: %v", err)
+				c.LogErrorf("action failed: %v", err)
 				return fmt.Errorf("action failed: %v", err)
 			}
-			c.Logf(INFO, "path %q sync'ed succesfully", path)
+			c.Logf("path %q sync'ed succesfully", path)
 
 			continue PATHS_LOOP
 		}

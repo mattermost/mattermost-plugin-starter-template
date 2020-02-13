@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -12,6 +13,8 @@ import (
 )
 
 func main() {
+	verbose := flag.Bool("verbose", false, "enable verbose output")
+	flag.Parse()
 	// TODO: implement proper command line parameter parsing.
 	if len(os.Args) != 3 {
 		fmt.Fprintf(os.Stderr, "running: \n $ sync [plan.yaml] [plugin path]\n")
@@ -48,8 +51,9 @@ func main() {
 	}
 
 	planSetup := plan.Setup{
-		Template: tplRepo,
-		Plugin:   pluginRepo,
+		Template:       tplRepo,
+		Plugin:         pluginRepo,
+		VerboseLogging: *verbose,
 	}
 	err = syncPlan.Execute(planSetup)
 	if err != nil {

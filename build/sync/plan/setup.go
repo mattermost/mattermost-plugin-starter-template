@@ -18,44 +18,26 @@ const (
 	PluginRepo RepoID = "plugin"
 )
 
-// LogLevel sets the level of the log mesage.
-type LogLevel int
-
-// LogLevel constants.
-const (
-	DEBUG LogLevel = iota
-	INFO
-	WARN
-	ERROR
-)
-
-// String implements the Stringer interface.
-func (l LogLevel) String() string {
-	switch l {
-	case DEBUG:
-		return "DEBUG"
-	case INFO:
-		return "INFO"
-	case WARN:
-		return "WARN"
-	case ERROR:
-		return "ERROR"
-	default:
-		return "<unknown log level>"
-	}
-}
-
 // Setup contains information about both parties
 // in the sync: the plugin repository being updated
 // and the source of the update - the template repo.
 type Setup struct {
-	Template RepoSetup
-	Plugin   RepoSetup
+	Template       RepoSetup
+	Plugin         RepoSetup
+	VerboseLogging bool
 }
 
-// Logf logs the provided message with the set level.
-func (c Setup) Logf(lvl LogLevel, tpl string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, lvl.String()+": "+tpl+"\n", args...)
+// Logf logs the provided message.
+// If verbose output is not enabled, the message will not be printed.
+func (c Setup) Logf(tpl string, args ...interface{}) {
+	if c.VerboseLogging {
+		fmt.Fprintf(os.Stderr, tpl+"\n", args...)
+	}
+}
+
+// LogErrorf logs the provided error message.
+func (c Setup) LogErrorf(tpl string, args ...interface{}) {
+	fmt.Fprintf(os.Stderr, tpl+"\n", args...)
 }
 
 // GetRepo is a helper to get the required repo setup.

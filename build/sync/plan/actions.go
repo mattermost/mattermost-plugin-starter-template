@@ -20,7 +20,7 @@ type ActionConditions struct {
 // the first error (if any).
 func (c ActionConditions) Check(path string, setup Setup) error {
 	if len(c.Conditions) > 0 {
-		setup.Logf(DEBUG, "checking action conditions")
+		setup.Logf("checking action conditions")
 	}
 	for _, condition := range c.Conditions {
 		err := condition.Check(path, setup)
@@ -43,7 +43,7 @@ type OverwriteFileAction struct {
 
 // Run implements plan.Action.Run.
 func (a OverwriteFileAction) Run(path string, setup Setup) error {
-	setup.Logf(DEBUG, "overwriting file %q", path)
+	setup.Logf("overwriting file %q", path)
 	src := setup.PathInRepo(TemplateRepo, path)
 	dst := setup.PathInRepo(PluginRepo, path)
 
@@ -100,7 +100,7 @@ type OverwriteDirectoryAction struct {
 
 // Run implements plan.Action.Run.
 func (a OverwriteDirectoryAction) Run(path string, setup Setup) error {
-	setup.Logf(DEBUG, "overwriting directory %q", path)
+	setup.Logf("overwriting directory %q", path)
 	src := setup.PathInRepo(TemplateRepo, path)
 	dst := setup.PathInRepo(PluginRepo, path)
 
