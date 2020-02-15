@@ -116,5 +116,5 @@ func TestUnalteredChecker(t *testing.T) {
 
 	err = checker.Check(hashPath, ctx)
 	assert.True(plan.IsCheckFail(err))
-	assert.EqualError(err, fmt.Sprintf("file %q has been altered", hashPath))
+	assert.EqualError(err, fmt.Sprintf("file %q has been altered", filepath.Join(tmpDir, hashPath)))
 }

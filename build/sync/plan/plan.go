@@ -7,6 +7,8 @@ package plan
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"sort"
 )
 
 // Plan defines the plan for synchronizing a plugin and a template directory.
@@ -68,6 +70,7 @@ func (p *Plan) Execute(c Setup) error {
 			return fmt.Errorf("failed check: %v", err)
 		}
 	}
+	result := make([]pathResult, 0, len(p.Paths))
 	c.Logf("running actions")
 PATHS_LOOP:
 	for path, actions := range p.Paths {
@@ -81,7 +84,13 @@ PATHS_LOOP:
 				// If a check for an action fails, we switch to
 				// the next action associated with the path.
 				if i == len(actions)-1 { // no actions to fallback to.
-					c.LogErrorf("path %q not handled - no more fallbacks", path)
+					c.Logf("path %q not handled - no more fallbacks", path)
+					result = append(result,
+						pathResult{
+							Path:    path,
+							Status:  statusFailed,
+							Message: fmt.Sprintf("check failed, %s", err.Error()),
+						})
 				}
 				continue ACTIONS_LOOP
 			} else if err != nil {
@@ -94,8 +103,23 @@ PATHS_LOOP:
 				return fmt.Errorf("action failed: %v", err)
 			}
 			c.Logf("path %q sync'ed succesfully", path)
+			result = append(result,
+				pathResult{
+					Path:   path,
+					Status: statusUpdated,
+				})
 
 			continue PATHS_LOOP
+		}
+	}
+
+	// Print execution result.
+	sort.SliceStable(result, func(i, j int) bool { return result[i].Path < result[j].Path })
+	for _, res := range result {
+		if res.Message != "" {
+			fmt.Fprintf(os.Stdout, "%s\t%s: %s\n", res.Status, res.Path, res.Message)
+		} else {
+			fmt.Fprintf(os.Stdout, "%s\t%s\n", res.Status, res.Path)
 		}
 	}
 	return nil
@@ -193,3 +217,18 @@ func parseAction(actionType string, rawParams json.RawMessage, checks []Check) (
 	}
 	return a, nil
 }
+
+// pathResult contains the result of synchronizing a path.
+type pathResult struct {
+	Path    string
+	Status  status
+	Message string
+}
+
+type status string
+
+const (
+	statusUpdated status = "UPDATED"
+	statusFailed  status = "FAILED"
+	statusInSync  status = "UP-TO-DATE"
+)
