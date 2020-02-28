@@ -2,7 +2,7 @@ version: 2.1
 executors:
   default:
     docker:
-      - image: circleci/golang:1.12-node
+      - image: circleci/golang:1.14-node
 
 jobs:
   lint:
