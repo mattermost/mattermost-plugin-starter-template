@@ -103,8 +103,5 @@
       "<rootDir>/tests/setup.js"
     ],
     "testURL": "http://localhost:8065"
-  },
-  "jest-junit": {
-    "output": "build/test-results.xml"
   }
 }
