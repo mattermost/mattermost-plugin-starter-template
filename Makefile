@@ -185,10 +185,12 @@ endif
 clean:
 	rm -fr dist/
 ifneq ($(HAS_SERVER),)
+	rm -fr server/coverage.txt
 	rm -fr server/dist
 endif
 ifneq ($(HAS_WEBAPP),)
 	rm -fr webapp/.npminstall
+	rm -fr webapp/junit.xml
 	rm -fr webapp/dist
 	rm -fr webapp/node_modules
 endif
