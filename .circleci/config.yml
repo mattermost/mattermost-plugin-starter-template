@@ -7,26 +7,6 @@ workflows:
   version: 2
   ci:
     jobs:
-      - plugin-ci/lint:
-          filters:
-            tags:
-              only: /^v.*/
-      - plugin-ci/coverage:
-          filters:
-            tags:
-              only: /^v.*/
-      - plugin-ci/build:
-          filters:
-            tags:
-              only: /^v.*/
-      - plugin-ci/deploy-release-github:
-          filters:
-            tags:
-              only: /^v.*/
-            branches:
-              ignore: /.*/
-          context: matterbuild-github-token
-          requires:
-            - plugin-ci/lint
-            - plugin-ci/coverage
-            - plugin-ci/build
+      - plugin-ci/lint
+      - plugin-ci/test
+      - plugin-ci/build
