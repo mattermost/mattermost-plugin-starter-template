@@ -34,7 +34,6 @@ linters:
     - govet
     - ineffassign
     - interfacer
-    - maligned
     - misspell
     - nakedret
     - staticcheck
