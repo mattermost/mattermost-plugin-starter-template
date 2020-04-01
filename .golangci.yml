@@ -50,6 +50,7 @@ issues:
     - path: server/manifest.go
       linters:
         - unused
+        - varcheck
     - path: server/configuration.go
       linters:
         - unused
