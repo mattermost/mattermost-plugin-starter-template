@@ -19,6 +19,7 @@ func TestServeHTTP(t *testing.T) {
 
 	result := w.Result()
 	assert.NotNil(result)
+	defer result.Body.Close()
 	bodyBytes, err := ioutil.ReadAll(result.Body)
 	assert.Nil(err)
 	bodyString := string(bodyBytes)

@@ -85,13 +85,13 @@ func uploadPlugin(client *model.Client4, pluginID, bundlePath string) error {
 	log.Print("Uploading plugin via API.")
 	_, resp := client.UploadPluginForced(pluginBundle)
 	if resp.Error != nil {
-		return fmt.Errorf("Failed to upload plugin bundle: %s", resp.Error.Error())
+		return errors.Wrap(resp.Error, "failed to upload plugin bundle")
 	}
 
 	log.Print("Enabling plugin.")
 	_, resp = client.EnablePlugin(pluginID)
 	if resp.Error != nil {
-		return fmt.Errorf("Failed to enable plugin: %s", resp.Error.Error())
+		return errors.Wrap(resp.Error, "Failed to enable plugin")
 	}
 
 	return nil

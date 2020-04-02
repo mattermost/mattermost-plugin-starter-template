@@ -1,27 +1,12 @@
 version: 2.1
-executors:
-  default:
-    docker:
-      - image: circleci/golang:1.14-node
 
-jobs:
-  lint:
-    executor:
-      name: default
-    steps:
-      - checkout
-      - run: make check-style
-
-  test:
-    executor:
-      name: default
-    steps:
-      - checkout
-      - run: make test
+orbs:
+  plugin-ci: mattermost/plugin-ci@0.1.0
 
 workflows:
   version: 2
-  untagged-build:
+  ci:
     jobs:
-      - lint
-      - test
+      - plugin-ci/lint
+      - plugin-ci/test
+      - plugin-ci/build
