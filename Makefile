@@ -64,7 +64,7 @@ endif
 .PHONY: npminstall
 npminstall:
 ifneq ($(HAS_WEBAPP),)
-	./build/bin/webapp check ./webapp || (pushd webapp && $(NPM) install && popd && ./build/bin/webapp update ./webapp)
+	./build/bin/webapp check ./webapp || (cd webapp && $(NPM) install && cd - && ./build/bin/webapp update ./webapp)
 endif
 
 ## Builds the webapp, if it exists.
