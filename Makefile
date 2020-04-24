@@ -32,7 +32,7 @@ apply:
 
 ## Runs golangci-lint and eslint.
 .PHONY: check-style
-check-style: webapp/.npminstall golangci-lint
+check-style: npminstall golangci-lint
 	@echo Checking for style guide compliance
 
 ifneq ($(HAS_WEBAPP),)
@@ -61,22 +61,22 @@ ifneq ($(HAS_SERVER),)
 endif
 
 ## Ensures NPM dependencies are installed without having to run this all the time.
-webapp/.npminstall:
+.PHONY: npminstall
+npminstall:
 ifneq ($(HAS_WEBAPP),)
-	cd webapp && $(NPM) install
-	touch $@
+	./build/bin/webapp check ./webapp || (pushd webapp && $(NPM) install && popd && ./build/bin/webapp update ./webapp)
 endif
 
 ## Builds the webapp, if it exists.
 .PHONY: webapp
-webapp: webapp/.npminstall
+webapp: npminstall
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run build;
 endif
 
 ## Builds the webapp in debug mode, if it exists.
 .PHONY: webapp-debug
-webapp-debug: webapp/.npminstall
+webapp-debug: npminstall
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && \
 	$(NPM) run debug;
@@ -125,7 +125,7 @@ debug-dist: apply server webapp-debug bundle
 
 ## Runs any lints and unit tests defined for the server and webapp, if they exist.
 .PHONY: test
-test: webapp/.npminstall
+test: npminstall
 ifneq ($(HAS_SERVER),)
 	$(GO) test -v $(GO_TEST_FLAGS) ./server/...
 endif
@@ -135,7 +135,7 @@ endif
 
 ## Creates a coverage report for the server code.
 .PHONY: coverage
-coverage: webapp/.npminstall
+coverage: npminstall
 ifneq ($(HAS_SERVER),)
 	$(GO) test $(GO_TEST_FLAGS) -coverprofile=server/coverage.txt ./server/...
 	$(GO) tool cover -html=server/coverage.txt
