@@ -28,7 +28,8 @@ func main() {
 
 	cmd := os.Args[1]
 	webappPath := os.Args[2]
-	if cmd == "check" {
+	switch cmd {
+	case "check":
 		matches, err := check(webappPath)
 		if err != nil {
 			fmt.Printf("Failed to check if .npminstall contains package.json hash: %s\n", err.Error())
@@ -38,14 +39,14 @@ func main() {
 			os.Exit(2)
 		}
 
-	} else if cmd == "update" {
+	case "update":
 		err := update(webappPath)
 		if err != nil {
 			fmt.Printf("Failed to update .npminstall with hash of package.json: %s\n", err.Error())
 			os.Exit(1)
 		}
 
-	} else {
+	default:
 		fmt.Printf("Unexpected command %s\n\n", cmd)
 		help()
 
@@ -63,8 +64,8 @@ func help() {
 
 // check checks if .npminstall contains the sha256 of package.json.
 func check(webappPath string) (bool, error) {
-	packageJsonPath := filepath.Join(webappPath, "package.json")
-	packageJsonHash, err := hashFile(packageJsonPath)
+	packageJSONPath := filepath.Join(webappPath, "package.json")
+	packageJSONHash, err := hashFile(packageJSONPath)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to hash")
 	}
@@ -76,29 +77,29 @@ func check(webappPath string) (bool, error) {
 	}
 
 	if len(npmInstallHash) == 0 {
-		fmt.Printf("no previously recorded hash of %s (%x) in %s\n", packageJsonPath, packageJsonHash, npmInstallPath)
+		fmt.Printf("no previously recorded hash of %s (%x) in %s\n", packageJSONPath, packageJSONHash, npmInstallPath)
 		return false, nil
 	}
 
-	if bytes.Equal(packageJsonHash, npmInstallHash) {
+	if bytes.Equal(packageJSONHash, npmInstallHash) {
 		return true, nil
 	}
 
-	fmt.Printf("hash of %s (%x) different from value recorded in %s (%x)\n", packageJsonPath, packageJsonHash, npmInstallPath, npmInstallHash)
+	fmt.Printf("hash of %s (%x) different from value recorded in %s (%x)\n", packageJSONPath, packageJSONHash, npmInstallPath, npmInstallHash)
 
 	return false, nil
 }
 
 // update updates .npminstall with the sha256 of package.json.
 func update(webappPath string) error {
-	packageJsonPath := filepath.Join(webappPath, "package.json")
-	packageJsonHash, err := hashFile(packageJsonPath)
+	packageJSONPath := filepath.Join(webappPath, "package.json")
+	packageJSONHash, err := hashFile(packageJSONPath)
 	if err != nil {
 		return errors.Wrap(err, "failed to hash")
 	}
 
 	npmInstallPath := filepath.Join(webappPath, ".npminstall")
-	err = ioutil.WriteFile(npmInstallPath, []byte(hex.EncodeToString(packageJsonHash)), 0644)
+	err = ioutil.WriteFile(npmInstallPath, []byte(hex.EncodeToString(packageJSONHash)), 0644)
 	if err != nil {
 		return errors.Wrapf(err, "failed to write hash to %s", npmInstallPath)
 	}
