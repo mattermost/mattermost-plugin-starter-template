@@ -6,6 +6,7 @@ GOPATH ?= $(shell go env GOPATH)
 GO_TEST_FLAGS ?= -race
 GO_BUILD_FLAGS ?=
 MM_UTILITIES_DIR ?= ../mattermost-utilities
+DLV_DEBUG_PORT := 2346
 
 export GO111MODULE=on
 
@@ -23,25 +24,24 @@ ifneq ($(wildcard build/custom.mk),)
 endif
 
 ## Checks the code style, tests, builds and bundles the plugin.
+.PHONY: all
 all: check-style test dist
 
-## Propagates plugin manifest information into the server/ and webapp/ folders as required.
+## Propagates plugin manifest information into the server/ and webapp/ folders.
 .PHONY: apply
 apply:
 	./build/bin/manifest apply
 
 ## Runs golangci-lint and eslint.
 .PHONY: check-style
-check-style: webapp/.npminstall golangci-lint
+check-style: webapp/.npminstall
 	@echo Checking for style guide compliance
 
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && npm run lint
 endif
 
-## Run golangci-lint on codebase.
-.PHONY: golangci-lint
-golangci-lint:
+ifneq ($(HAS_SERVER),)
 	@if ! [ -x "$$(command -v golangci-lint)" ]; then \
 		echo "golangci-lint is not installed. Please see https://github.com/golangci/golangci-lint#install for installation instructions."; \
 		exit 1; \
@@ -49,8 +49,9 @@ golangci-lint:
 
 	@echo Running golangci-lint
 	golangci-lint run ./...
+endif
 
-## Builds the server, if it exists, including support for multiple architectures.
+## Builds the server, if it exists, for all supported architectures.
 .PHONY: server
 server:
 ifneq ($(HAS_SERVER),)
@@ -58,6 +59,16 @@ ifneq ($(HAS_SERVER),)
 	cd server && env GOOS=linux GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -o dist/plugin-linux-amd64;
 	cd server && env GOOS=darwin GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -o dist/plugin-darwin-amd64;
 	cd server && env GOOS=windows GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -o dist/plugin-windows-amd64.exe;
+endif
+
+## Builds the server, if it exists, in debug mode for all supported architectures.
+.PHONY: server-debug
+server-debug:
+ifneq ($(HAS_SERVER),)
+	mkdir -p server/dist
+	cd server && env GOOS=darwin GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -gcflags "all=-N -l" -o dist/plugin-darwin-amd64;
+	cd server && env GOOS=linux GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -gcflags "all=-N -l" -o dist/plugin-linux-amd64;
+	cd server && env GOOS=windows GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -gcflags "all=-N -l" -o dist/plugin-windows-amd64.exe;
 endif
 
 ## Ensures NPM dependencies are installed without having to run this all the time.
@@ -74,7 +85,7 @@ ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run build;
 endif
 
-## Builds the webapp in debug mode, if it exists.
+## Builds the webapp, in debug mode, if it exists.
 .PHONY: webapp-debug
 webapp-debug: webapp/.npminstall
 ifneq ($(HAS_WEBAPP),)
@@ -110,18 +121,55 @@ endif
 .PHONY: dist
 dist:	apply server webapp bundle
 
-## Installs the plugin to a (development) server.
-## It uses the API if appropriate environment variables are defined,
-## and otherwise falls back to trying to copy the plugin to a sibling mattermost-server directory.
+## Builds and bundles the plugin, in debug mode.
+.PHONY: dist-debug
+dist-debug: apply server-debug webapp-debug bundle
+
+## Builds and installs the plugin to a server.
 .PHONY: deploy
 deploy: dist
-	./build/bin/deploy $(PLUGIN_ID) dist/$(BUNDLE_NAME)
+	./build/bin/pluginctl deploy $(PLUGIN_ID) dist/$(BUNDLE_NAME)
 
-.PHONY: debug-deploy
-debug-deploy: debug-dist deploy
+## Builds and installs the debug version of the plugin to a server.
+.PHONY: deploy-debug
+deploy-debug: dist-debug deploy
 
-.PHONY: debug-dist
-debug-dist: apply server webapp-debug bundle
+# Setup dlv for attaching, identifying the plugin PID for other targets.
+.PHONY: setup-attach
+setup-attach:
+	$(eval PLUGIN_PID := $(shell ps aux | grep "plugins/${PLUGIN_ID}" | grep -v "grep" | awk -F " " '{print $$2}'))
+	$(eval NUM_PID := $(shell echo -n ${PLUGIN_PID} | wc -w))
+
+	@if [ ${NUM_PID} -gt 2 ]; then \
+		echo "** There is more than 1 plugin process running. Run 'make kill reset' to restart just one."; \
+		exit 1; \
+	fi
+
+	@if [ -z ${PLUGIN_PID} ]; then \
+		echo "Could not find plugin PID; the plugin is not running. Exiting."; \
+		exit 1; \
+	fi
+
+	@echo "Located Plugin running with PID: ${PLUGIN_PID}"
+
+## Attach dlv to an existing plugin instance.
+.PHONY: attach
+attach: setup-attach
+	dlv attach ${PLUGIN_PID}
+
+## Attach dlv to an existing plugin instance, exposing a headless instance on :$DLV_DEBUG_PORT.
+.PHONY: attach-headless
+attach-headless: setup-attach
+	dlv attach ${PLUGIN_PID} --listen :$(DLV_DEBUG_PORT) --headless=true --api-version=2 --accept-multiclient
+
+## Detach dlv from an existing plugin instance, if previously attached.
+.PHONY: detach
+detach: setup-attach
+	@DELVE_PID=$(shell ps aux | grep "dlv attach ${PLUGIN_PID}" | grep -v "grep" | awk -F " " '{print $$2}') && \
+	if [ "$$DELVE_PID" -gt 0 ] > /dev/null 2>&1 ; then \
+		echo "Located existing delve process running with PID: $$DELVE_PID. Killing." ; \
+		kill -9 $$DELVE_PID ; \
+	fi
 
 ## Runs any lints and unit tests defined for the server and webapp, if they exist.
 .PHONY: test
@@ -130,7 +178,7 @@ ifneq ($(HAS_SERVER),)
 	$(GO) test -v $(GO_TEST_FLAGS) ./server/...
 endif
 ifneq ($(HAS_WEBAPP),)
-	cd webapp && $(NPM) run fix && $(NPM) run test;
+	cd webapp && $(NPM) run test;
 endif
 
 ## Creates a coverage report for the server code.
@@ -151,6 +199,21 @@ else
 	cd $(MM_UTILITIES_DIR) && npm install && npm run babel && node mmjstool/build/index.js i18n extract-webapp --webapp-dir $(PWD)/webapp
 endif
 endif
+
+## Reset the plugin, effectively disabling and re-enabling it on the server.
+.PHONY: reset
+reset: detach
+	./build/bin/pluginctl reset $(PLUGIN_ID)
+
+## Kill all instances of the plugin, detaching any existing dlv instance.
+.PHONY: kill
+kill: detach
+	$(eval PLUGIN_PID := $(shell ps aux | grep "plugins/${PLUGIN_ID}" | grep -v "grep" | awk -F " " '{print $$2}'))
+
+	@for PID in ${PLUGIN_PID}; do \
+		echo "Killing plugin pid $$PID"; \
+		kill -9 $$PID; \
+	done; \
 
 ## Clean removes all build artifacts.
 .PHONY: clean
