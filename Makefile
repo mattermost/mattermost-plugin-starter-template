@@ -103,15 +103,15 @@ ifneq ($(wildcard $(ASSETS_DIR)/.),)
 	cp -r $(ASSETS_DIR) dist/$(PLUGIN_ID)/
 endif
 ifneq ($(HAS_PUBLIC),)
-	cp -r public/ dist/$(PLUGIN_ID)/
+	cp -r public dist/$(PLUGIN_ID)/
 endif
 ifneq ($(HAS_SERVER),)
-	mkdir -p dist/$(PLUGIN_ID)/server/dist;
-	cp -r server/dist/* dist/$(PLUGIN_ID)/server/dist/;
+	mkdir -p dist/$(PLUGIN_ID)/server
+	cp -r server/dist dist/$(PLUGIN_ID)/server/
 endif
 ifneq ($(HAS_WEBAPP),)
-	mkdir -p dist/$(PLUGIN_ID)/webapp/dist;
-	cp -r webapp/dist/* dist/$(PLUGIN_ID)/webapp/dist/;
+	mkdir -p dist/$(PLUGIN_ID)/webapp
+	cp -r webapp/dist dist/$(PLUGIN_ID)/webapp/
 endif
 	cd dist && tar -cvzf $(BUNDLE_NAME) $(PLUGIN_ID)
 
