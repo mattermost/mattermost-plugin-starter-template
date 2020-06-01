@@ -1,4 +1,5 @@
 const exec = require('child_process').exec;
+
 const path = require('path');
 
 const PLUGIN_ID = require('../plugin.json').id;
