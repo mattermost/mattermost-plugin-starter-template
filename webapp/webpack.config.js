@@ -33,6 +33,7 @@ module.exports = {
         'react-redux': 'ReactRedux',
         'prop-types': 'PropTypes',
         'react-bootstrap': 'ReactBootstrap',
+        'react-router-dom': 'ReactRouterDom',
     },
     output: {
         path: path.join(__dirname, '/dist'),
