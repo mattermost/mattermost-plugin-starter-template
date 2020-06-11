@@ -138,7 +138,7 @@ deploy: dist
 .PHONY: deploy-debug
 deploy-debug: dist-debug deploy
 
-# Setup dlv for attaching, identifying the plugin PID for other targets.
+## Setup dlv for attaching, identifying the plugin PID for other targets.
 .PHONY: setup-attach
 setup-attach:
 	$(eval PLUGIN_PID := $(shell ps aux | grep "plugins/${PLUGIN_ID}" | grep -v "grep" | awk -F " " '{print $$2}'))
@@ -161,7 +161,7 @@ setup-attach:
 attach: setup-attach
 	dlv attach ${PLUGIN_PID}
 
-## Attach dlv to an existing plugin instance, exposing a headless instance on :$DLV_DEBUG_PORT.
+## Attach dlv to an existing plugin instance, exposing a headless instance on $DLV_DEBUG_PORT.
 .PHONY: attach-headless
 attach-headless: setup-attach
 	dlv attach ${PLUGIN_PID} --listen :$(DLV_DEBUG_PORT) --headless=true --api-version=2 --accept-multiclient
