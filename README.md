@@ -5,14 +5,14 @@ This plugin serves as a starting point for writing a Mattermost plugin. Feel fre
 To learn more about plugins, see [our plugin documentation](https://developers.mattermost.com/extend/plugins/).
 
 ## Getting Started
-Use GitHub's template feature to make a copy of this repository by clicking the "Use this template" button then clone outside of `$GOPATH`.
+Use GitHub's template feature to make a copy of this repository by clicking the "Use this template" button.
 
-Alternatively shallow clone the repository to a directory outside of `$GOPATH` matching your plugin name:
+Alternatively shallow clone the repository matching your plugin name:
 ```
 git clone --depth 1 https://github.com/mattermost/mattermost-plugin-starter-template com.example.my-plugin
 ```
 
-Note that this project uses [Go modules](https://github.com/golang/go/wiki/Modules). Be sure to locate the project outside of `$GOPATH`, or allow the use of Go modules within your `$GOPATH` with an `export GO111MODULE=on`.
+Note that this project uses [Go modules](https://github.com/golang/go/wiki/Modules). Be sure to locate the project outside of `$GOPATH`.
 
 Edit `plugin.json` with your `id`, `name`, and `description`:
 ```
