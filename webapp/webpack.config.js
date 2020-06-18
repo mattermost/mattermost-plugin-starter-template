@@ -16,6 +16,10 @@ const plugins = [];
 if (NPM_TARGET === 'build:watch' || NPM_TARGET === 'debug:watch') {
     plugins.push({
         apply: (compiler) => {
+            compiler.hooks.watchRun.tap('WatchStartPlugin', () => {
+                // eslint-disable-next-line no-console
+                console.log('Change detected. Rebuilding webapp.');
+            });
             compiler.hooks.afterEmit.tap('AfterEmitPlugin', () => {
                 exec('cd .. && make deploy-from-watch', (err, stdout, stderr) => {
                     if (stdout) {
