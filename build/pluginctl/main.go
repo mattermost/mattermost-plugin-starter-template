@@ -13,6 +13,8 @@ import (
 const helpText = `
 Usage:
     pluginctl deploy <plugin id> <bundle path>
+    pluginctl disable <plugin id>
+    pluginctl enable <plugin id>
     pluginctl reset <plugin id>
 `
 
@@ -41,6 +43,10 @@ func pluginctl() error {
 			return errors.New("invalid number of arguments")
 		}
 		return deploy(client, os.Args[2], os.Args[3])
+	case "disable":
+		return disablePlugin(client, os.Args[2])
+	case "enable":
+		return enablePlugin(client, os.Args[2])
 	case "reset":
 		return resetPlugin(client, os.Args[2])
 	default:
@@ -103,18 +109,38 @@ func deploy(client *model.Client4, pluginID, bundlePath string) error {
 	return nil
 }
 
-// resetPlugin attempts to reset the plugin via the Client4 API.
-func resetPlugin(client *model.Client4, pluginID string) error {
+// disablePlugin attempts to disable the plugin via the Client4 API.
+func disablePlugin(client *model.Client4, pluginID string) error {
 	log.Print("Disabling plugin.")
 	_, resp := client.DisablePlugin(pluginID)
 	if resp.Error != nil {
 		return fmt.Errorf("failed to disable plugin: %w", resp.Error)
 	}
 
+	return nil
+}
+
+// enablePlugin attempts to enable the plugin via the Client4 API.
+func enablePlugin(client *model.Client4, pluginID string) error {
 	log.Print("Enabling plugin.")
-	_, resp = client.EnablePlugin(pluginID)
+	_, resp := client.EnablePlugin(pluginID)
 	if resp.Error != nil {
 		return fmt.Errorf("failed to enable plugin: %w", resp.Error)
+	}
+
+	return nil
+}
+
+// resetPlugin attempts to reset the plugin via the Client4 API.
+func resetPlugin(client *model.Client4, pluginID string) error {
+	err := disablePlugin(client, pluginID)
+	if err != nil {
+		return err
+	}
+
+	err = enablePlugin(client, pluginID)
+	if err != nil {
+		return err
 	}
 
 	return nil

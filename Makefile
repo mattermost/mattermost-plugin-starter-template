@@ -150,21 +150,24 @@ setup-attach:
 		exit 1; \
 	fi
 
+## Check if setup-attach succeeded.
+.PHONY: check-attach
+check-attach:
 	@if [ -z ${PLUGIN_PID} ]; then \
 		echo "Could not find plugin PID; the plugin is not running. Exiting."; \
 		exit 1; \
+	else \
+		echo "Located Plugin running with PID: ${PLUGIN_PID}"; \
 	fi
-
-	@echo "Located Plugin running with PID: ${PLUGIN_PID}"
 
 ## Attach dlv to an existing plugin instance.
 .PHONY: attach
-attach: setup-attach
+attach: setup-attach check-attach
 	dlv attach ${PLUGIN_PID}
 
 ## Attach dlv to an existing plugin instance, exposing a headless instance on $DLV_DEBUG_PORT.
 .PHONY: attach-headless
-attach-headless: setup-attach
+attach-headless: setup-attach check-attach
 	dlv attach ${PLUGIN_PID} --listen :$(DLV_DEBUG_PORT) --headless=true --api-version=2 --accept-multiclient
 
 ## Detach dlv from an existing plugin instance, if previously attached.
@@ -204,6 +207,16 @@ else
 	cd $(MM_UTILITIES_DIR) && npm install && npm run babel && node mmjstool/build/index.js i18n extract-webapp --webapp-dir $(PWD)/webapp
 endif
 endif
+
+## Disable the plugin.
+.PHONY: disable
+disable: detach
+	./build/bin/pluginctl disable $(PLUGIN_ID)
+
+## Enable the plugin.
+.PHONY: enable
+enable:
+	./build/bin/pluginctl enable $(PLUGIN_ID)
 
 ## Reset the plugin, effectively disabling and re-enabling it on the server.
 .PHONY: reset
