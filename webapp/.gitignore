@@ -1,3 +1,3 @@
-node_modules
-.npminstall
+.eslintcache
 junit.xml
+node_modules
