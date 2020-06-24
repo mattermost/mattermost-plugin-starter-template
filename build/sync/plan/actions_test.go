@@ -104,5 +104,4 @@ func compareDirectories(assert *assert.Assertions, pathA, pathB string) {
 		assert.Equal(aFInfo.Mode(), bFInfo.Mode())
 		assert.Equal(aFInfo.IsDir(), bFInfo.IsDir())
 	}
-
 }

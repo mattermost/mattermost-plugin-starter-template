@@ -48,16 +48,15 @@ func (a OverwriteFileAction) Run(path string, setup Setup) error {
 	dst := setup.PathInRepo(PluginRepo, path)
 
 	dstInfo, err := os.Stat(dst)
-	if os.IsNotExist(err) {
+	switch {
+	case os.IsNotExist(err):
 		if !a.Params.Create {
 			return fmt.Errorf("path %q does not exist, not creating", dst)
 		}
-	} else if err != nil {
+	case err != nil:
 		return fmt.Errorf("failed to check path %q: %v", dst, err)
-	} else {
-		if dstInfo.IsDir() {
-			return fmt.Errorf("path %q is a directory", dst)
-		}
+	case dstInfo.IsDir():
+		return fmt.Errorf("path %q is a directory", dst)
 	}
 
 	srcInfo, err := os.Stat(src)
@@ -105,13 +104,14 @@ func (a OverwriteDirectoryAction) Run(path string, setup Setup) error {
 	dst := setup.PathInRepo(PluginRepo, path)
 
 	dstInfo, err := os.Stat(dst)
-	if os.IsNotExist(err) {
+	switch {
+	case os.IsNotExist(err):
 		if !a.Params.Create {
 			return fmt.Errorf("path %q does not exist, not creating", dst)
 		}
-	} else if err != nil {
+	case err != nil:
 		return fmt.Errorf("failed to check path %q: %v", dst, err)
-	} else {
+	default:
 		if !dstInfo.IsDir() {
 			return fmt.Errorf("path %q is not a directory", dst)
 		}
@@ -139,7 +139,7 @@ func (a OverwriteDirectoryAction) Run(path string, setup Setup) error {
 }
 
 // CopyDirectory copies the directory src to dst so that after
-// a succesful operation the contents of src and dst are equal.
+// a successful operation the contents of src and dst are equal.
 func CopyDirectory(src, dst string) error {
 	copier := dirCopier{dst: dst, src: src}
 	return filepath.Walk(src, copier.Copy)

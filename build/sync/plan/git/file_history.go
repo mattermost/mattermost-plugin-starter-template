@@ -55,7 +55,6 @@ func FileHistory(path string, repo *git.Repository) ([]string, error) {
 		return nil, ErrNotFound
 	}
 	return hashHistory, nil
-
 }
 
 func traverseTree(root *object.Tree, path string) (io.ReadCloser, error) {

@@ -106,7 +106,7 @@ func (p *Plan) Execute(c Setup) error {
 					c.LogErrorf("action failed: %v", err)
 					return fmt.Errorf("action failed: %v", err)
 				}
-				c.Logf("path %q sync'ed succesfully", path)
+				c.Logf("path %q sync'ed successfully", path)
 				result = append(result,
 					pathResult{
 						Path:   path,
@@ -242,5 +242,4 @@ type status string
 const (
 	statusUpdated status = "UPDATED"
 	statusFailed  status = "FAILED"
-	statusInSync  status = "UP-TO-DATE"
 )

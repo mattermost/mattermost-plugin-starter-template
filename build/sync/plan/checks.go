@@ -61,7 +61,6 @@ func (r RepoIsCleanChecker) Check(_ string, ctx Setup) error {
 		return CheckFailf("%q repository is not clean", r.Params.Repo)
 	}
 	return nil
-
 }
 
 // PathExistsChecker checks whether the fle or directory with the

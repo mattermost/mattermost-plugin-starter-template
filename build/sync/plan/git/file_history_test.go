@@ -20,7 +20,7 @@ func TestFileHistory(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal([]string{"ba7192052d7cf77c55d3b7bf40b350b8431b208b"}, sums)
 
-	// Calling with a non-existant file returns error.
+	// Calling with a non-existent file returns error.
 	sums, err = gitutil.FileHistory("build/sync/plan/git/testdata/nosuch_testfile.txt", repo)
 	assert.Equal(gitutil.ErrNotFound, err)
 	assert.Nil(sums)

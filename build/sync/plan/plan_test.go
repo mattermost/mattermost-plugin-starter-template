@@ -12,7 +12,7 @@ import (
 
 func TestUnmarshalPlan(t *testing.T) {
 	assert := assert.New(t)
-	rawJson := []byte(`
+	rawJSON := []byte(`
 {
   "checks": [
     {"type": "repo_is_clean", "params": {"repo": "template"}}
@@ -32,7 +32,7 @@ func TestUnmarshalPlan(t *testing.T) {
   ]
 }`)
 	var p plan.Plan
-	err := json.Unmarshal(rawJson, &p)
+	err := json.Unmarshal(rawJSON, &p)
 	assert.Nil(err)
 	expectedCheck := plan.RepoIsCleanChecker{}
 	expectedCheck.Params.Repo = "template"
@@ -82,8 +82,8 @@ func (m *mockAction) Run(path string, c plan.Setup) error {
 	return m.runErr
 }
 
-// TestRunPlanSuccesfully tests a succesful execution of a sync plan.
-func TestRunPlanSuccesfully(t *testing.T) {
+// TestRunPlanSuccessfully tests a successful execution of a sync plan.
+func TestRunPlanSuccessfully(t *testing.T) {
 	assert := assert.New(t)
 
 	setup := plan.Setup{} // mocked actions and checks won't be accessing the setup.
@@ -200,7 +200,7 @@ func TestRunPlanCheckError(t *testing.T) {
 
 	setup := plan.Setup{} // mocked actions and checks won't be accessing the setup.
 
-	preCheck := &mockCheck{returnErr: fmt.Errorf("fail!")}
+	preCheck := &mockCheck{returnErr: fmt.Errorf("fail")}
 	action1 := &mockAction{}
 	action2 := &mockAction{}
 
@@ -215,7 +215,7 @@ func TestRunPlanCheckError(t *testing.T) {
 		}},
 	}
 	err := p.Execute(setup)
-	assert.EqualError(err, "failed check: fail!")
+	assert.EqualError(err, "failed check: fail")
 
 	assert.Equal("", preCheck.calledWith)
 	// Actions were not run.
@@ -231,7 +231,7 @@ func TestRunPlanActionError(t *testing.T) {
 	setup := plan.Setup{} // mocked actions and checks won't be accessing the setup.
 
 	preCheck := &mockCheck{}
-	action1 := &mockAction{runErr: fmt.Errorf("fail!")}
+	action1 := &mockAction{runErr: fmt.Errorf("fail")}
 	action2 := &mockAction{}
 
 	p := &plan.Plan{
@@ -245,7 +245,7 @@ func TestRunPlanActionError(t *testing.T) {
 		}},
 	}
 	err := p.Execute(setup)
-	assert.EqualError(err, "action failed: fail!")
+	assert.EqualError(err, "action failed: fail")
 
 	assert.Equal("", preCheck.calledWith)
 	assert.Equal("somepath", action1.calledWith)
