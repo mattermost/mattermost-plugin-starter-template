@@ -106,7 +106,8 @@ func (f FileUnalteredChecker) Check(path string, setup Setup) error {
 	info, err := os.Stat(absPath)
 	if os.IsNotExist(err) {
 		return CheckFailf("file %q has been deleted", absPath)
-	} else if err != nil {
+	}
+	if err != nil {
 		return fmt.Errorf("failed to get stat for %q: %v", absPath, err)
 	}
 	if info.IsDir() {

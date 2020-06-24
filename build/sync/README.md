@@ -8,7 +8,8 @@ Overview
 --------
 
 At its core the tool is just a collection of checks and actions that are executed according to a
-synchronization plan (see `./build/sync/plan.yml` for an example). The plan defines a set of files
+synchronization plan (see [./build/sync/plan.yml](https://github.com/mattermost/mattermost-plugin-starter-template/blob/sync/build/sync/plan.yml)
+for an example). The plan defines a set of files
 and/or directories that need to be kept in sync between the plugin repository and the template (this
 repo).
 
