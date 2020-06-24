@@ -1,7 +1,7 @@
 package git
 
 import (
-	"crypto/sha1"
+	"crypto/sha1" //nolint
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -83,7 +83,7 @@ func traverseTree(root *object.Tree, path string) (io.ReadCloser, error) {
 }
 
 func getReaderHash(r io.Reader) (string, error) {
-	h := sha1.New()
+	h := sha1.New() // nolint
 	_, err := io.Copy(h, r)
 	if err != nil {
 		return "", err
