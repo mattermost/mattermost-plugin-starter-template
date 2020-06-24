@@ -17,9 +17,9 @@ func TestUnmarshalPlan(t *testing.T) {
   "checks": [
     {"type": "repo_is_clean", "params": {"repo": "template"}}
   ],
-  "paths": [
+  "actions": [
     {
-      "path": "abc",
+      "paths": ["abc"],
       "actions": [{
         "type": "overwrite_file",
         "params": {"create": true},
@@ -44,11 +44,12 @@ func TestUnmarshalPlan(t *testing.T) {
 	expectedAction.Conditions = []plan.Check{&expectedActionCheck}
 	expected := plan.Plan{
 		Checks: []plan.Check{&expectedCheck},
-		Paths: map[string][]plan.Action{
-			"abc": []plan.Action{
+		Actions: []plan.ActionSet{{
+			Paths: []string{"abc"},
+			Actions: []plan.Action{
 				&expectedAction,
 			},
-		},
+		}},
 	}
 	assert.Equal(expected, p)
 }
@@ -93,12 +94,13 @@ func TestRunPlanSuccesfully(t *testing.T) {
 
 	p := &plan.Plan{
 		Checks: []plan.Check{preCheck},
-		Paths: map[string][]plan.Action{
-			"somepath": []plan.Action{
+		Actions: []plan.ActionSet{{
+			Paths: []string{"somepath"},
+			Actions: []plan.Action{
 				action1,
 				action2,
 			},
-		},
+		}},
 	}
 	err := p.Execute(setup)
 	assert.Nil(err)
@@ -121,12 +123,13 @@ func TestRunPlanPreCheckFail(t *testing.T) {
 
 	p := &plan.Plan{
 		Checks: []plan.Check{preCheck},
-		Paths: map[string][]plan.Action{
-			"somepath": []plan.Action{
+		Actions: []plan.ActionSet{{
+			Paths: []string{"somepath"},
+			Actions: []plan.Action{
 				action1,
 				action2,
 			},
-		},
+		}},
 	}
 	err := p.Execute(setup)
 	assert.EqualError(err, "failed check: check failed")
@@ -148,12 +151,13 @@ func TestRunPlanActionCheckFails(t *testing.T) {
 	action2 := &mockAction{}
 
 	p := &plan.Plan{
-		Paths: map[string][]plan.Action{
-			"somepath": []plan.Action{
+		Actions: []plan.ActionSet{{
+			Paths: []string{"somepath"},
+			Actions: []plan.Action{
 				action1,
 				action2,
 			},
-		},
+		}},
 	}
 	err := p.Execute(setup)
 	assert.Nil(err)
@@ -173,12 +177,13 @@ func TestRunPlanNoFallbacks(t *testing.T) {
 	action2 := &mockAction{checkErr: plan.CheckFailf("fail")}
 
 	p := &plan.Plan{
-		Paths: map[string][]plan.Action{
-			"somepath": []plan.Action{
+		Actions: []plan.ActionSet{{
+			Paths: []string{"somepath"},
+			Actions: []plan.Action{
 				action1,
 				action2,
 			},
-		},
+		}},
 	}
 	err := p.Execute(setup)
 	assert.Nil(err)
@@ -201,12 +206,13 @@ func TestRunPlanCheckError(t *testing.T) {
 
 	p := &plan.Plan{
 		Checks: []plan.Check{preCheck},
-		Paths: map[string][]plan.Action{
-			"somepath": []plan.Action{
+		Actions: []plan.ActionSet{{
+			Paths: []string{"somepath"},
+			Actions: []plan.Action{
 				action1,
 				action2,
 			},
-		},
+		}},
 	}
 	err := p.Execute(setup)
 	assert.EqualError(err, "failed check: fail!")
@@ -230,12 +236,13 @@ func TestRunPlanActionError(t *testing.T) {
 
 	p := &plan.Plan{
 		Checks: []plan.Check{preCheck},
-		Paths: map[string][]plan.Action{
-			"somepath": []plan.Action{
+		Actions: []plan.ActionSet{{
+			Paths: []string{"somepath"},
+			Actions: []plan.Action{
 				action1,
 				action2,
 			},
-		},
+		}},
 	}
 	err := p.Execute(setup)
 	assert.EqualError(err, "action failed: fail!")

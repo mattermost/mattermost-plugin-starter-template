@@ -13,7 +13,7 @@ for an example). The plan defines a set of files
 and/or directories that need to be kept in sync between the plugin repository and the template (this
 repo).
 
-For each path, a set of actions to be performed is outlined. No more than one action of that set
+For each set of paths, a set of actions to be performed is outlined. No more than one action of that set
 will be executed - the first one whose checks pass. Other actions are meant to act as fallbacks.
 The idea is to be able to e.g. overwrite a file if it has no local changes or apply a format-specific
 merge algorithm otherwise.

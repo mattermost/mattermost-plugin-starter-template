@@ -14,9 +14,9 @@ import (
 // Plan defines the plan for synchronizing a plugin and a template directory.
 type Plan struct {
 	Checks []Check `json:"checks"`
-	// Each path has multiple actions associated, each a fallback for the one
+	// Each set of paths has multiple actions associated, each a fallback for the one
 	// previous to it.
-	Paths map[string][]Action
+	Actions []ActionSet
 }
 
 // UnmarshalJSON implements the `json.Unmarshaler` interface.
@@ -34,13 +34,13 @@ func (p *Plan) UnmarshalJSON(raw []byte) error {
 		p.Checks[i] = c
 	}
 
-	if len(t.Paths) > 0 {
-		p.Paths = make(map[string][]Action)
+	if len(t.Actions) > 0 {
+		p.Actions = make([]ActionSet, len(t.Actions))
 	}
-	for _, path := range t.Paths {
+	for i, actionSet := range t.Actions {
 		var err error
-		pathActions := make([]Action, len(path.Actions))
-		for i, action := range path.Actions {
+		pathActions := make([]Action, len(actionSet.Actions))
+		for i, action := range actionSet.Actions {
 			var actionConditions []Check
 			if len(action.Conditions) > 0 {
 				actionConditions = make([]Check, len(action.Conditions))
@@ -56,7 +56,10 @@ func (p *Plan) UnmarshalJSON(raw []byte) error {
 				return err
 			}
 		}
-		p.Paths[path.Path] = pathActions
+		p.Actions[i] = ActionSet{
+			Paths:   actionSet.Paths,
+			Actions: pathActions,
+		}
 	}
 	return nil
 }
@@ -70,46 +73,48 @@ func (p *Plan) Execute(c Setup) error {
 			return fmt.Errorf("failed check: %v", err)
 		}
 	}
-	result := make([]pathResult, 0, len(p.Paths))
+	result := []pathResult{}
 	c.Logf("running actions")
-PATHS_LOOP:
-	for path, actions := range p.Paths {
-		c.Logf("syncing path %q", path)
-	ACTIONS_LOOP:
-		for i, action := range actions {
-			c.Logf("running action for path %q", path)
-			err := action.Check(path, c)
-			if IsCheckFail(err) {
-				c.Logf("check failed, not running action: %v", err)
-				// If a check for an action fails, we switch to
-				// the next action associated with the path.
-				if i == len(actions)-1 { // no actions to fallback to.
-					c.Logf("path %q not handled - no more fallbacks", path)
-					result = append(result,
-						pathResult{
-							Path:    path,
-							Status:  statusFailed,
-							Message: fmt.Sprintf("check failed, %s", err.Error()),
-						})
+	for _, actions := range p.Actions {
+	PATHS_LOOP:
+		for _, path := range actions.Paths {
+			c.Logf("syncing path %q", path)
+		ACTIONS_LOOP:
+			for i, action := range actions.Actions {
+				c.Logf("running action for path %q", path)
+				err := action.Check(path, c)
+				if IsCheckFail(err) {
+					c.Logf("check failed, not running action: %v", err)
+					// If a check for an action fails, we switch to
+					// the next action associated with the path.
+					if i == len(actions.Actions)-1 { // no actions to fallback to.
+						c.Logf("path %q not handled - no more fallbacks", path)
+						result = append(result,
+							pathResult{
+								Path:    path,
+								Status:  statusFailed,
+								Message: fmt.Sprintf("check failed, %s", err.Error()),
+							})
+					}
+					continue ACTIONS_LOOP
+				} else if err != nil {
+					c.LogErrorf("unexpected error when running check: %v", err)
+					return fmt.Errorf("failed to run checks for action: %v", err)
 				}
-				continue ACTIONS_LOOP
-			} else if err != nil {
-				c.LogErrorf("unexpected error when running check: %v", err)
-				return fmt.Errorf("failed to run checks for action: %v", err)
-			}
-			err = action.Run(path, c)
-			if err != nil {
-				c.LogErrorf("action failed: %v", err)
-				return fmt.Errorf("action failed: %v", err)
-			}
-			c.Logf("path %q sync'ed succesfully", path)
-			result = append(result,
-				pathResult{
-					Path:   path,
-					Status: statusUpdated,
-				})
+				err = action.Run(path, c)
+				if err != nil {
+					c.LogErrorf("action failed: %v", err)
+					return fmt.Errorf("action failed: %v", err)
+				}
+				c.Logf("path %q sync'ed succesfully", path)
+				result = append(result,
+					pathResult{
+						Path:   path,
+						Status: statusUpdated,
+					})
 
-			continue PATHS_LOOP
+				continue PATHS_LOOP
+			}
 		}
 	}
 
@@ -130,6 +135,13 @@ type Check interface {
 	Check(string, Setup) error
 }
 
+// ActionSet is a set of actions along with a set of paths to
+// perform those actions on.
+type ActionSet struct {
+	Paths   []string
+	Actions []Action
+}
+
 // Action runs the defined action.
 type Action interface {
 	// Run performs the action on the specified path.
@@ -145,8 +157,8 @@ type jsonPlan struct {
 		Type   string          `json:"type"`
 		Params json.RawMessage `json:"params,omitempty"`
 	}
-	Paths []struct {
-		Path    string `json:"path"`
+	Actions []struct {
+		Paths   []string `json:"paths"`
 		Actions []struct {
 			Type       string          `json:"type"`
 			Params     json.RawMessage `json:"params,omitempty"`
