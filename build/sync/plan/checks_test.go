@@ -74,6 +74,7 @@ func TestPathExistsChecker(t *testing.T) {
 func TestUnalteredChecker(t *testing.T) {
 	assert := assert.New(t)
 
+	// Path to the root of the repo.
 	wd, err := filepath.Abs("../../../")
 	assert.Nil(err)
 
