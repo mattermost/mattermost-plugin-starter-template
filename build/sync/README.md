@@ -36,6 +36,66 @@ $ go run ./build/sync/main.go ./build/sync/plan.yml ../mattermost-plugin-github
 
 (assuming `mattermost-plugin-github` is the plugin repository we want to synchronize with the template).
 
+plan.yml
+---------
+
+The `plan.yml` file (located in `build/sync/plan.yml`) consists of two parts:
+  - checks
+  - actions
+
+The `checks` section defines tests to run before executing the plan itself. Currently the only available such check is `repo_is_clean` defined as:
+```
+type: repo_is_clean
+params:
+  repo: template
+```
+The `repo` parameter takes one of two values:
+- `template` - the `mattermost-plugin-starter-template` repository
+- `plugin` - the repository of the plugin being updated.
+
+The `actions` section defines actions to be run as part of the synchronization.
+Each entry in this section has the form:
+```
+paths:
+  - path1
+  - path2
+actions:
+  - type: action_type
+    params:
+      action_parameter: value
+    conditions:
+      - type: check_type
+        params:
+          check_parameter: value
+```
+
+`paths` is a list of file or directory paths (relative to the root of the repository)
+synchronization should be performed on.
+
+Each action in the `actions` section is defined by its type. Currently supported action types are:
+  - `overwrite_file` - overwrite the specified file in the /plugin/ repository with the file in the /template/ repository.
+  - `overwrite_directory` - overwrite a directory.
+
+Both actions accept a parameter called `create` which determines if the file or directory should be created if it does not exist in the plugin repository.
+
+The `conditions` part of an action definition defines tests that need to pass for the
+action to be run. Available tests are:
+  - `exists`
+  - `file_unaltered`
+
+The `exists` check takes a single parameter - `repo` (referencing either the plugin or template repository) and it passes only if the file or directory the action is about to be run on exists.
+
+The `file_unaltered` check is only applicable to file paths. It passes if the file
+has not been altered - i.e. it is identical to some version of that same file in the reference repository (usually `template`). This check takes two parameters:
+  - `repo` - repository to check the file in, usually `plugin`
+  - `reference_repo` - repository to check the file against, usually `template`.
+
+When multiple actions are specified for a set of paths, the /sync/ tool will only
+execute a single action for each path. The first action in the list, whose conditions
+are all satisfied will be executed.
+
+If an acton fails due to an error, the synchronization run will be aborted.
+
 Caveat emptor
 -------------
 
