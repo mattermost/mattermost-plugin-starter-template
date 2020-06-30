@@ -26,7 +26,6 @@ actions:
               reference-repo: template
   - paths:
       - go.mod
-      - webapp/.babelrc
       - webapp/webpack.config.js
       - webapp/tsconfig.json
       - webapp/.eslintrc.json
