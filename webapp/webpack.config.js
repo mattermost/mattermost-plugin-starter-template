@@ -42,6 +42,7 @@ module.exports = {
         modules: [
             'src',
             'node_modules',
+            path.resolve(__dirname),
         ],
         extensions: ['*', '.js', '.jsx', '.ts', '.tsx'],
     },
