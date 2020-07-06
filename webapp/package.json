@@ -1,8 +1,5 @@
 {
-  "name": "plugin-starter",
-  "version": "0.0.1",
-  "description": "This plugin serves as a starting point for writing a Mattermost plugin.",
-  "main": "src/index.js",
+  "private": true,
   "scripts": {
     "build": "webpack --mode=production",
     "build:watch": "webpack --mode=production --watch",
@@ -14,8 +11,6 @@
     "test:watch": "jest --watch",
     "test-ci": "jest --forceExit --detectOpenHandles --maxWorkers=2"
   },
-  "author": "",
-  "license": "Apache-2.0",
   "devDependencies": {
     "@babel/cli": "7.4.4",
     "@babel/core": "7.4.5",
