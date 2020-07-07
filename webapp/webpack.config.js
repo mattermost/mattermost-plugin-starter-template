@@ -42,6 +42,7 @@ module.exports = {
         modules: [
             'src',
             'node_modules',
+            path.resolve(__dirname),
         ],
         extensions: ['*', '.js', '.jsx', '.ts', '.tsx'],
     },
@@ -69,7 +70,9 @@ module.exports = {
                     {
                         loader: 'sass-loader',
                         options: {
-                            includePaths: ['node_modules/compass-mixins/lib', 'sass'],
+                            sassOptions: {
+                                includePaths: ['node_modules/compass-mixins/lib', 'sass'],
+                            },
                         },
                     },
                 ],
