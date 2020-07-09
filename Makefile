@@ -44,6 +44,7 @@ check-style: webapp/node_modules
 
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && npm run lint
+	cd webapp && npm run check-types
 endif
 
 ifneq ($(HAS_SERVER),)
