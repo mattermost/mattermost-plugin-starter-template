@@ -36,7 +36,27 @@ dist/com.example.my-plugin.tar.gz
 
 ## Development
 
-To avoid having to manually install your plugin, build and deploy your plugin with login credentials:
+To avoid having to manually install your plugin, build and deploy your plugin using one of the following options.
+
+### Deploying with Local Mode
+
+If your Mattermost server is running locally, you can configure the server to listen on a unix socket. The plugin deploy scripts can then interact directly with the server without requiring authentication credentials. In order to do this, you need to edit the server's `ServiceSettings` in `mattermost-server/config/config.json` to support [local mode](https://docs.mattermost.com/administration/mmctl-cli-tool.html#local-mode).
+
+```json
+{
+    "ServiceSettings": {
+        ...
+        "EnableLocalMode": true,
+        "LocalModeSocketLocation": "/var/tmp/mattermost_local.socket"
+    }
+}
+```
+
+If you'd like to use a different path than `/var/tmp/mattermost_local.socket`, assign the intended path to the environment variable `MM_LOCALSOCKETPATH` in your terminal being used to deploy the plugin.
+
+### Deploying with credentials
+
+Alternatively, you can authenticate with the server's API with credentials:
 ```
 export MM_SERVICESETTINGS_SITEURL=http://localhost:8065
 export MM_ADMIN_USERNAME=admin
