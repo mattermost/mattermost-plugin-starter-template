@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
+	"net/http"
 	"os"
 
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -17,6 +19,8 @@ Usage:
     pluginctl enable <plugin id>
     pluginctl reset <plugin id>
 `
+
+const unixSocketPath = "/var/tmp/mattermost_local.socket"
 
 func main() {
 	err := pluginctl()
@@ -55,6 +59,11 @@ func pluginctl() error {
 }
 
 func getClient() (*model.Client4, error) {
+	client, err := getUnixClient(unixSocketPath)
+	if err == nil {
+		return client, nil
+	}
+
 	siteURL := os.Getenv("MM_SERVICESETTINGS_SITEURL")
 	adminToken := os.Getenv("MM_ADMIN_TOKEN")
 	adminUsername := os.Getenv("MM_ADMIN_USERNAME")
@@ -64,7 +73,7 @@ func getClient() (*model.Client4, error) {
 		return nil, errors.New("MM_SERVICESETTINGS_SITEURL is not set")
 	}
 
-	client := model.NewAPIv4Client(siteURL)
+	client = model.NewAPIv4Client(siteURL)
 
 	if adminToken != "" {
 		log.Printf("Authenticating using token against %s.", siteURL)
@@ -83,6 +92,23 @@ func getClient() (*model.Client4, error) {
 	}
 
 	return nil, errors.New("one of MM_ADMIN_TOKEN or MM_ADMIN_USERNAME/MM_ADMIN_PASSWORD must be defined")
+}
+
+func getUnixClient(socketPath string) (*model.Client4, error) {
+	_, err := net.Dial("unix", socketPath)
+	if err != nil {
+		return nil, err
+	}
+
+	tr := &http.Transport{
+		Dial: func(network, addr string) (net.Conn, error) {
+			return net.Dial("unix", socketPath)
+		},
+	}
+	client := model.NewAPIv4Client("http://_")
+	client.HttpClient = &http.Client{Transport: tr}
+
+	return client, nil
 }
 
 // deploy attempts to upload and enable a plugin via the Client4 API.
