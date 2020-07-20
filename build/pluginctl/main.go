@@ -20,7 +20,7 @@ Usage:
     pluginctl reset <plugin id>
 `
 
-const unixSocketPath = "/var/tmp/mattermost_local.socket"
+const defaultSocketPath = "/var/tmp/mattermost_local.socket"
 
 func main() {
 	err := pluginctl()
@@ -59,7 +59,12 @@ func pluginctl() error {
 }
 
 func getClient() (*model.Client4, error) {
-	client, err := getUnixClient(unixSocketPath)
+	socketPath := os.Getenv("MM_LOCALSOCKETPATH")
+	if socketPath == "" {
+		socketPath = defaultSocketPath
+	}
+
+	client, err := getUnixClient(socketPath)
 	if err == nil {
 		return client, nil
 	}
