@@ -64,8 +64,9 @@ func getClient() (*model.Client4, error) {
 		socketPath = defaultSocketPath
 	}
 
-	client, err := getUnixClient(socketPath)
-	if err == nil {
+	client, connected := getUnixClient(socketPath)
+	if connected {
+		log.Printf("Connecting using local mode over %s", socketPath)
 		return client, nil
 	}
 
@@ -99,10 +100,10 @@ func getClient() (*model.Client4, error) {
 	return nil, errors.New("one of MM_ADMIN_TOKEN or MM_ADMIN_USERNAME/MM_ADMIN_PASSWORD must be defined")
 }
 
-func getUnixClient(socketPath string) (*model.Client4, error) {
+func getUnixClient(socketPath string) (*model.Client4, bool) {
 	_, err := net.Dial("unix", socketPath)
 	if err != nil {
-		return nil, err
+		return nil, false
 	}
 
 	tr := &http.Transport{
@@ -113,7 +114,7 @@ func getUnixClient(socketPath string) (*model.Client4, error) {
 	client := model.NewAPIv4Client("http://_")
 	client.HttpClient = &http.Client{Transport: tr}
 
-	return client, nil
+	return client, true
 }
 
 // deploy attempts to upload and enable a plugin via the Client4 API.
