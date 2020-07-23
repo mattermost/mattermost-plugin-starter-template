@@ -40,7 +40,7 @@ To avoid having to manually install your plugin, build and deploy your plugin us
 
 ### Deploying with Local Mode
 
-If your Mattermost server is running locally, you can configure the server to listen on a unix socket. The plugin deploy scripts can then interact directly with the server without requiring authentication credentials. In order to do this, you need to edit the server's `ServiceSettings` in `mattermost-server/config/config.json` to support [local mode](https://docs.mattermost.com/administration/mmctl-cli-tool.html#local-mode).
+If your Mattermost server is running locally, you can enable [local mode](https://docs.mattermost.com/administration/mmctl-cli-tool.html#local-mode) to streamline deploying your plugin. Edit your server configuration as follows:
 
 ```json
 {
@@ -52,7 +52,23 @@ If your Mattermost server is running locally, you can configure the server to li
 }
 ```
 
-If you'd like to use a different path than `/var/tmp/mattermost_local.socket`, assign the intended path to the environment variable `MM_LOCALSOCKETPATH` in your terminal being used to deploy the plugin.
+and then deploy your plugin:
+```
+make deploy
+```
+
+You may also customize the Unix socket path:
+```
+export MM_LOCALSOCKETPATH=/var/tmp/alternate_local.socket
+make deploy
+```
+
+If developing a plugin with a webapp, watch for changes and deploy those automatically:
+```
+export MM_SERVICESETTINGS_SITEURL=http://localhost:8065
+export MM_ADMIN_TOKEN=j44acwd8obn78cdcx7koid4jkr
+make watch
+```
 
 ### Deploying with credentials
 
@@ -69,13 +85,6 @@ or with a [personal access token](https://docs.mattermost.com/developer/personal
 export MM_SERVICESETTINGS_SITEURL=http://localhost:8065
 export MM_ADMIN_TOKEN=j44acwd8obn78cdcx7koid4jkr
 make deploy
-```
-
-If developing a plugin with a webapp, watch for changes and deploy those automatically:
-```
-export MM_SERVICESETTINGS_SITEURL=http://localhost:8065
-export MM_ADMIN_TOKEN=j44acwd8obn78cdcx7koid4jkr
-make watch
 ```
 
 ## Q&A
