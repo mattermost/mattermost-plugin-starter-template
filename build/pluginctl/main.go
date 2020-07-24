@@ -67,7 +67,9 @@ func getClient() (*model.Client4, error) {
 		return client, nil
 	}
 
-	log.Printf("No socket found at %s for local mode deployment. Attempting to authenticate with credentials.", socketPath)
+	if os.Getenv("MM_LOCALSOCKETPATH") != "" {
+		log.Printf("No socket found at %s for local mode deployment. Attempting to authenticate with credentials.", socketPath)
+	}
 
 	siteURL := os.Getenv("MM_SERVICESETTINGS_SITEURL")
 	adminToken := os.Getenv("MM_ADMIN_TOKEN")
