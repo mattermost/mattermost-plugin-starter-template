@@ -1,7 +1,7 @@
 GO ?= $(shell command -v go 2> /dev/null)
 NPM ?= $(shell command -v npm 2> /dev/null)
 CURL ?= $(shell command -v curl 2> /dev/null)
-DEBUG ?=
+MM_DEBUG ?=
 MANIFEST_FILE ?= plugin.json
 GOPATH ?= $(shell go env GOPATH)
 GO_TEST_FLAGS ?= -race
@@ -44,6 +44,7 @@ check-style: webapp/node_modules
 
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && npm run lint
+	cd webapp && npm run check-types
 endif
 
 ifneq ($(HAS_SERVER),)
@@ -61,12 +62,12 @@ endif
 server:
 ifneq ($(HAS_SERVER),)
 	mkdir -p server/dist;
-ifeq ($(DEBUG),)
+ifeq ($(MM_DEBUG),)
 	cd server && env GOOS=linux GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -o dist/plugin-linux-amd64;
 	cd server && env GOOS=darwin GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -o dist/plugin-darwin-amd64;
 	cd server && env GOOS=windows GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -o dist/plugin-windows-amd64.exe;
 else
-	$(info DEBUG mode is on; to disable, unset DEBUG)
+	$(info DEBUG mode is on; to disable, unset MM_DEBUG)
 
 	cd server && env GOOS=darwin GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -gcflags "all=-N -l" -o dist/plugin-darwin-amd64;
 	cd server && env GOOS=linux GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -gcflags "all=-N -l" -o dist/plugin-linux-amd64;
@@ -85,7 +86,7 @@ endif
 .PHONY: webapp
 webapp: webapp/node_modules
 ifneq ($(HAS_WEBAPP),)
-ifeq ($(DEBUG),)
+ifeq ($(MM_DEBUG),)
 	cd webapp && $(NPM) run build;
 else
 	cd webapp && $(NPM) run debug;
@@ -128,7 +129,7 @@ deploy: dist
 ## Builds and installs the plugin to a server, updating the webapp automatically when changed.
 .PHONY: watch
 watch: apply server bundle
-ifeq ($(DEBUG),)
+ifeq ($(MM_DEBUG),)
 	cd webapp && $(NPM) run build:watch
 else
 	cd webapp && $(NPM) run debug:watch
