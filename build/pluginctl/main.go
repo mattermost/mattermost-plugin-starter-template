@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"os"
 
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -55,6 +56,21 @@ func pluginctl() error {
 }
 
 func getClient() (*model.Client4, error) {
+	socketPath := os.Getenv("MM_LOCALSOCKETPATH")
+	if socketPath == "" {
+		socketPath = model.LOCAL_MODE_SOCKET_PATH
+	}
+
+	client, connected := getUnixClient(socketPath)
+	if connected {
+		log.Printf("Connecting using local mode over %s", socketPath)
+		return client, nil
+	}
+
+	if os.Getenv("MM_LOCALSOCKETPATH") != "" {
+		log.Printf("No socket found at %s for local mode deployment. Attempting to authenticate with credentials.", socketPath)
+	}
+
 	siteURL := os.Getenv("MM_SERVICESETTINGS_SITEURL")
 	adminToken := os.Getenv("MM_ADMIN_TOKEN")
 	adminUsername := os.Getenv("MM_ADMIN_USERNAME")
@@ -64,7 +80,7 @@ func getClient() (*model.Client4, error) {
 		return nil, errors.New("MM_SERVICESETTINGS_SITEURL is not set")
 	}
 
-	client := model.NewAPIv4Client(siteURL)
+	client = model.NewAPIv4Client(siteURL)
 
 	if adminToken != "" {
 		log.Printf("Authenticating using token against %s.", siteURL)
@@ -83,6 +99,15 @@ func getClient() (*model.Client4, error) {
 	}
 
 	return nil, errors.New("one of MM_ADMIN_TOKEN or MM_ADMIN_USERNAME/MM_ADMIN_PASSWORD must be defined")
+}
+
+func getUnixClient(socketPath string) (*model.Client4, bool) {
+	_, err := net.Dial("unix", socketPath)
+	if err != nil {
+		return nil, false
+	}
+
+	return model.NewAPIv4SocketClient(socketPath), true
 }
 
 // deploy attempts to upload and enable a plugin via the Client4 API.
