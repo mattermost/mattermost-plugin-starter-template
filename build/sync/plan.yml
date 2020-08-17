@@ -13,7 +13,6 @@ actions:
         params:
           create: true
   - paths:
-      - Makefile
       - .editorconfig
     actions:
       - type: overwrite_file
@@ -31,17 +30,17 @@ actions:
         params:
           create: true
   - paths:
+      - .circleci/config.yml
       - go.mod
-      - webapp/webpack.config.js
-      - webapp/tsconfig.json
-      - webapp/.eslintrc.json
-      - webapp/src/index.js
       - server/configuration.go
       - server/plugin.go
       - server/plugin_test.go
-      - .circleci/config.yml
+      - webapp/.eslintrc.json
       - webapp/i18n/en.json
       - webapp/package.json
+      - webapp/src/index.js
+      - webapp/tsconfig.json
+      - webapp/webpack.config.js
     actions:
       - type: overwrite_file
         conditions:
