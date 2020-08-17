@@ -31,12 +31,10 @@ actions:
           create: true
   - paths:
       - .circleci/config.yml
-      - go.mod
       - server/configuration.go
       - server/plugin.go
       - server/plugin_test.go
       - webapp/.eslintrc.json
-      - webapp/i18n/en.json
       - webapp/package.json
       - webapp/src/index.js
       - webapp/tsconfig.json
