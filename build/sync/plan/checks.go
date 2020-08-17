@@ -73,8 +73,12 @@ type PathExistsChecker struct {
 
 // Check implements the Checker interface.
 func (r PathExistsChecker) Check(path string, ctx Setup) error {
-	ctx.Logf("checking if path %q exists in repo %q", path, r.Params.Repo)
-	absPath := ctx.PathInRepo(r.Params.Repo, path)
+	repo := r.Params.Repo
+	if repo == "" {
+		repo = TargetRepo
+	}
+	ctx.Logf("checking if path %q exists in repo %q", path, repo)
+	absPath := ctx.PathInRepo(repo, path)
 	_, err := os.Stat(absPath)
 	if os.IsNotExist(err) {
 		return CheckFailf("path %q does not exist", path)
@@ -90,17 +94,28 @@ func (r PathExistsChecker) Check(path string, ctx Setup) error {
 // Its purpose is to check that a file has not been changed after forking a repository.
 // It could be an old unaltered version, so the git history of the file is traversed
 // until a matching version is found.
+//
+// If the repositories in the parameters are not specified,
+// reference will default to the source repository and repo - to the target.
 type FileUnalteredChecker struct {
 	Params struct {
-		ReferenceRepo RepoID `json:"reference-repo"`
-		Repo          RepoID `json:"repo"`
+		ReferenceRepo RepoID `json:"compared-to"`
+		Repo          RepoID `json:"in"`
 	}
 }
 
 // Check implements the Checker interface.
 func (f FileUnalteredChecker) Check(path string, setup Setup) error {
 	setup.Logf("checking if file %q has not been altered", path)
-	absPath := setup.PathInRepo(f.Params.Repo, path)
+	repo := f.Params.Repo
+	if repo == "" {
+		repo = TargetRepo
+	}
+	reference := f.Params.ReferenceRepo
+	if reference == "" {
+		reference = SourceRepo
+	}
+	absPath := setup.PathInRepo(repo, path)
 
 	info, err := os.Stat(absPath)
 	if os.IsNotExist(err) {
@@ -113,7 +128,7 @@ func (f FileUnalteredChecker) Check(path string, setup Setup) error {
 		return fmt.Errorf("%q is a directory", absPath)
 	}
 
-	fileHashes, err := git.FileHistory(path, setup.GetRepo(f.Params.ReferenceRepo).Git)
+	fileHashes, err := git.FileHistory(path, setup.GetRepo(reference).Git)
 	if err != nil {
 		return err
 	}

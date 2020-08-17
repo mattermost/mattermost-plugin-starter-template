@@ -83,12 +83,12 @@ action to be run. Available tests are:
   - `exists`
   - `file_unaltered`
 
-The `exists` check takes a single parameter - `repo` (referencing either the source or target repository) and it passes only if the file or directory the action is about to be run on exists.
+The `exists` check takes a single parameter - `repo` (referencing either the source or target repository) and it passes only if the file or directory the action is about to be run on exists. If the repo parameter is not specified, it will default to `target`.
 
 The `file_unaltered` check is only applicable to file paths. It passes if the file
 has not been altered - i.e. it is identical to some version of that same file in the reference repository (usually `source`). This check takes two parameters:
-  - `repo` - repository to check the file in, usually `target`
-  - `reference_repo` - repository to check the file against, usually `source`.
+  - `in` - repository to check the file in, default `target`
+  - `compared-to` - repository to check the file against, default `source`.
 
 When multiple actions are specified for a set of paths, the `sync` tool will only
 execute a single action for each path. The first action in the list, whose conditions

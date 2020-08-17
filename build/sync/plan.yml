@@ -20,9 +20,6 @@ actions:
           create: true
         conditions:
           - type: file_unaltered
-            params:
-              repo: target
-              reference-repo: source
   - paths:
       - Makefile
     actions:
@@ -44,9 +41,4 @@ actions:
       - type: overwrite_file
         conditions:
           - type: exists
-            params:
-              repo: target
           - type: file_unaltered
-            params:
-              repo: target
-              reference-repo: source
