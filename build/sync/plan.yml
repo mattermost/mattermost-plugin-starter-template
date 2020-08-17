@@ -25,6 +25,12 @@ actions:
               repo: plugin
               reference-repo: template
   - paths:
+      - Makefile
+    actions:
+      - type: overwrite_file
+        params:
+          create: true
+  - paths:
       - go.mod
       - webapp/webpack.config.js
       - webapp/tsconfig.json
