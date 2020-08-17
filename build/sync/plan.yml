@@ -35,6 +35,7 @@ actions:
       - server/plugin.go
       - server/plugin_test.go
       - webapp/.eslintrc.json
+      - webapp/babel.config.js
       - webapp/package.json
       - webapp/src/index.js
       - webapp/tsconfig.json
