@@ -33,7 +33,6 @@ actions:
       - server/configuration.go
       - server/plugin.go
       - server/plugin_test.go
-      - public/hello.html
       - .circleci/config.yml
       - webapp/i18n/en.json
       - webapp/package.json
