@@ -79,7 +79,7 @@ Each action in the `actions` section is defined by its type. Currently supported
 Both actions accept a parameter called `create` which determines if the file or directory should be created if it does not exist in the target repository.
 
 The `conditions` part of an action definition defines tests that need to pass for the
-action to be run. Available tests are:
+action to be run. Available checks are:
   - `exists`
   - `file_unaltered`
 
