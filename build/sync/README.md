@@ -73,7 +73,7 @@ actions:
 synchronization should be performed on.
 
 Each action in the `actions` section is defined by its type. Currently supported action types are:
-  - `overwrite_file` - overwrite the specified file in the /plugin/ repository with the file in the /template/ repository.
+  - `overwrite_file` - overwrite the specified file in the `plugin` repository with the file in the `template` repository.
   - `overwrite_directory` - overwrite a directory.
 
 Both actions accept a parameter called `create` which determines if the file or directory should be created if it does not exist in the plugin repository.
@@ -90,7 +90,7 @@ has not been altered - i.e. it is identical to some version of that same file in
   - `repo` - repository to check the file in, usually `plugin`
   - `reference_repo` - repository to check the file against, usually `template`.
 
-When multiple actions are specified for a set of paths, the /sync/ tool will only
+When multiple actions are specified for a set of paths, the `sync` tool will only
 execute a single action for each path. The first action in the list, whose conditions
 are all satisfied will be executed.
 
