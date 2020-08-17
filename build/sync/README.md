@@ -23,8 +23,8 @@ are any, they will be executed and their results examined. If all checks pass, t
 If there is a check failure, the tool will locate the next applicable action according to the plan and
 start over with it.
 
-The synchronization plan can also run checks before running any actions, e.g. to check if the plugin and
-template worktrees are clean.
+The synchronization plan can also run checks before running any actions, e.g. to check if the source and
+target worktrees are clean.
 
 Running
 -------
@@ -34,7 +34,7 @@ The tool can be executed from the root of this repository with a command:
 $ go run ./build/sync/main.go ./build/sync/plan.yml ../mattermost-plugin-github
 ```
 
-(assuming `mattermost-plugin-github` is the plugin repository we want to synchronize with the template).
+(assuming `mattermost-plugin-github` is the target repository we want to synchronize with the source).
 
 plan.yml
 ---------
@@ -47,11 +47,11 @@ The `checks` section defines tests to run before executing the plan itself. Curr
 ```
 type: repo_is_clean
 params:
-  repo: template
+  repo: source
 ```
 The `repo` parameter takes one of two values:
-- `template` - the `mattermost-plugin-starter-template` repository
-- `plugin` - the repository of the plugin being updated.
+- `source` - the `mattermost-plugin-starter-template` repository
+- `target` - the repository of the plugin being updated.
 
 The `actions` section defines actions to be run as part of the synchronization.
 Each entry in this section has the form:
@@ -73,22 +73,22 @@ actions:
 synchronization should be performed on.
 
 Each action in the `actions` section is defined by its type. Currently supported action types are:
-  - `overwrite_file` - overwrite the specified file in the `plugin` repository with the file in the `template` repository.
+  - `overwrite_file` - overwrite the specified file in the `target` repository with the file in the `source` repository.
   - `overwrite_directory` - overwrite a directory.
 
-Both actions accept a parameter called `create` which determines if the file or directory should be created if it does not exist in the plugin repository.
+Both actions accept a parameter called `create` which determines if the file or directory should be created if it does not exist in the target repository.
 
 The `conditions` part of an action definition defines tests that need to pass for the
 action to be run. Available tests are:
   - `exists`
   - `file_unaltered`
 
-The `exists` check takes a single parameter - `repo` (referencing either the plugin or template repository) and it passes only if the file or directory the action is about to be run on exists.
+The `exists` check takes a single parameter - `repo` (referencing either the source or target repository) and it passes only if the file or directory the action is about to be run on exists.
 
 The `file_unaltered` check is only applicable to file paths. It passes if the file
-has not been altered - i.e. it is identical to some version of that same file in the reference repository (usually `template`). This check takes two parameters:
-  - `repo` - repository to check the file in, usually `plugin`
-  - `reference_repo` - repository to check the file against, usually `template`.
+has not been altered - i.e. it is identical to some version of that same file in the reference repository (usually `source`). This check takes two parameters:
+  - `repo` - repository to check the file in, usually `target`
+  - `reference_repo` - repository to check the file against, usually `source`.
 
 When multiple actions are specified for a set of paths, the `sync` tool will only
 execute a single action for each path. The first action in the list, whose conditions

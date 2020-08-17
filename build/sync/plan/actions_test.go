@@ -41,11 +41,11 @@ func TestOverwriteFileAction(t *testing.T) {
 	assert.Nil(err)
 
 	setup := plan.Setup{
-		Template: plan.RepoSetup{
+		Source: plan.RepoSetup{
 			Git:  nil,
 			Path: filepath.Join(wd, "testdata", "b"),
 		},
-		Plugin: plan.RepoSetup{
+		Target: plan.RepoSetup{
 			Git:  nil,
 			Path: dir,
 		},
@@ -70,11 +70,11 @@ func TestOverwriteDirectoryAction(t *testing.T) {
 	assert.Nil(err)
 
 	setup := plan.Setup{
-		Template: plan.RepoSetup{
+		Source: plan.RepoSetup{
 			Git:  nil,
 			Path: wd,
 		},
-		Plugin: plan.RepoSetup{
+		Target: plan.RepoSetup{
 			Git:  nil,
 			Path: dir,
 		},

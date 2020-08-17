@@ -11,7 +11,7 @@ import (
 	"sort"
 )
 
-// Plan defines the plan for synchronizing a plugin and a template directory.
+// Plan defines the plan for synchronizing a target and a source directory.
 type Plan struct {
 	Checks []Check `json:"checks"`
 	// Each set of paths has multiple actions associated, each a fallback for the one

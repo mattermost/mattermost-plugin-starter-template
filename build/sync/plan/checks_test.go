@@ -27,10 +27,10 @@ func TestRepoIsCleanChecker(t *testing.T) {
 
 	// Repo should be clean.
 	checker := plan.RepoIsCleanChecker{}
-	checker.Params.Repo = plan.PluginRepo
+	checker.Params.Repo = plan.TargetRepo
 
 	ctx := plan.Setup{
-		Plugin: plan.RepoSetup{
+		Target: plan.RepoSetup{
 			Path: dir,
 			Git:  repo,
 		},
@@ -41,7 +41,7 @@ func TestRepoIsCleanChecker(t *testing.T) {
 	err = ioutil.WriteFile(path.Join(dir, "data.txt"), []byte("lorem ipsum"), 0666)
 	assert.Nil(err)
 	err = checker.Check("", ctx)
-	assert.EqualError(err, "\"plugin\" repository is not clean")
+	assert.EqualError(err, "\"target\" repository is not clean")
 	assert.True(plan.IsCheckFail(err))
 }
 
@@ -52,10 +52,10 @@ func TestPathExistsChecker(t *testing.T) {
 	assert.Nil(err)
 
 	checker := plan.PathExistsChecker{}
-	checker.Params.Repo = plan.TemplateRepo
+	checker.Params.Repo = plan.SourceRepo
 
 	ctx := plan.Setup{
-		Template: plan.RepoSetup{
+		Source: plan.RepoSetup{
 			Path: wd,
 		},
 	}
@@ -82,18 +82,18 @@ func TestUnalteredChecker(t *testing.T) {
 	assert.Nil(err)
 
 	ctx := plan.Setup{
-		Template: plan.RepoSetup{
+		Source: plan.RepoSetup{
 			Path: wd,
 			Git:  gitRepo,
 		},
-		Plugin: plan.RepoSetup{
+		Target: plan.RepoSetup{
 			Path: wd,
 		},
 	}
 
 	checker := plan.FileUnalteredChecker{}
-	checker.Params.ReferenceRepo = plan.TemplateRepo
-	checker.Params.Repo = plan.PluginRepo
+	checker.Params.ReferenceRepo = plan.SourceRepo
+	checker.Params.Repo = plan.TargetRepo
 
 	// Check with the same file - check should succeed
 	hashPath := "build/sync/plan/testdata/a"
@@ -114,7 +114,7 @@ func TestUnalteredChecker(t *testing.T) {
 	assert.Nil(file.Close())
 
 	// Set the plugin path to the temporary directory.
-	ctx.Plugin.Path = tmpDir
+	ctx.Target.Path = tmpDir
 
 	err = checker.Check(hashPath, ctx)
 	assert.True(plan.IsCheckFail(err))

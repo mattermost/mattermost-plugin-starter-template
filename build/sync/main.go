@@ -34,32 +34,32 @@ func main() {
 		os.Exit(1)
 	}
 
-	tplDir, err := os.Getwd()
+	srcDir, err := os.Getwd()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to get current directory: %s\n", err)
 		os.Exit(1)
 	}
 
-	pluginDir, err := filepath.Abs(os.Args[2])
+	trgDir, err := filepath.Abs(os.Args[2])
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "could not determine plugin directory: %s\n", err)
+		fmt.Fprintf(os.Stderr, "could not determine target directory: %s\n", err)
 		os.Exit(1)
 	}
 
-	tplRepo, err := plan.GetRepoSetup(tplDir)
+	srcRepo, err := plan.GetRepoSetup(srcDir)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
 	}
-	pluginRepo, err := plan.GetRepoSetup(pluginDir)
+	trgRepo, err := plan.GetRepoSetup(trgDir)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
 	}
 
 	planSetup := plan.Setup{
-		Template:       tplRepo,
-		Plugin:         pluginRepo,
+		Source:         srcRepo,
+		Target:         trgRepo,
 		VerboseLogging: *verbose,
 	}
 	err = syncPlan.Execute(planSetup)

@@ -12,18 +12,18 @@ import (
 type RepoID string
 
 const (
-	// TemplateRepo is the id of the template repository (source).
-	TemplateRepo RepoID = "template"
-	// PluginRepo is the id of the plugin repository (target).
-	PluginRepo RepoID = "plugin"
+	// SourceRepo is the id of the template repository (source).
+	SourceRepo RepoID = "source"
+	// TargetRepo is the id of the plugin repository (target).
+	TargetRepo RepoID = "target"
 )
 
 // Setup contains information about both parties
 // in the sync: the plugin repository being updated
 // and the source of the update - the template repo.
 type Setup struct {
-	Template       RepoSetup
-	Plugin         RepoSetup
+	Source         RepoSetup
+	Target         RepoSetup
 	VerboseLogging bool
 }
 
@@ -45,10 +45,10 @@ func (c Setup) LogErrorf(tpl string, args ...interface{}) {
 // the function panics.
 func (c Setup) GetRepo(r RepoID) RepoSetup {
 	switch r {
-	case PluginRepo:
-		return c.Plugin
-	case TemplateRepo:
-		return c.Template
+	case TargetRepo:
+		return c.Target
+	case SourceRepo:
+		return c.Source
 	default:
 		panic(fmt.Sprintf("cannot get repository setup %q", r))
 	}
@@ -61,7 +61,7 @@ func (c Setup) PathInRepo(repo RepoID, path string) string {
 }
 
 // RepoSetup contains relevant information
-// about a single repository (either template or plugin).
+// about a single repository (either source or target).
 type RepoSetup struct {
 	Git  *git.Repository
 	Path string

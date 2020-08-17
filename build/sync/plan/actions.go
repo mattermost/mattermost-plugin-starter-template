@@ -44,8 +44,8 @@ type OverwriteFileAction struct {
 // Run implements plan.Action.Run.
 func (a OverwriteFileAction) Run(path string, setup Setup) error {
 	setup.Logf("overwriting file %q", path)
-	src := setup.PathInRepo(TemplateRepo, path)
-	dst := setup.PathInRepo(PluginRepo, path)
+	src := setup.PathInRepo(SourceRepo, path)
+	dst := setup.PathInRepo(TargetRepo, path)
 
 	dstInfo, err := os.Stat(dst)
 	switch {
@@ -100,8 +100,8 @@ type OverwriteDirectoryAction struct {
 // Run implements plan.Action.Run.
 func (a OverwriteDirectoryAction) Run(path string, setup Setup) error {
 	setup.Logf("overwriting directory %q", path)
-	src := setup.PathInRepo(TemplateRepo, path)
-	dst := setup.PathInRepo(PluginRepo, path)
+	src := setup.PathInRepo(SourceRepo, path)
+	dst := setup.PathInRepo(TargetRepo, path)
 
 	dstInfo, err := os.Stat(dst)
 	switch {
