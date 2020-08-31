@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 
 	"github.com/mattermost/mattermost-server/v5/model"
 )
@@ -79,6 +80,8 @@ func getClient() (*model.Client4, error) {
 	if siteURL == "" {
 		return nil, errors.New("MM_SERVICESETTINGS_SITEURL is not set")
 	}
+
+	siteURL = strings.TrimSuffix(siteURL, "/")
 
 	client = model.NewAPIv4Client(siteURL)
 
