@@ -38,7 +38,7 @@ func TestRepoIsCleanChecker(t *testing.T) {
 	assert.Nil(checker.Check("", ctx))
 
 	// Create a file in the repository.
-	err = ioutil.WriteFile(path.Join(dir, "data.txt"), []byte("lorem ipsum"), 0666)
+	err = ioutil.WriteFile(path.Join(dir, "data.txt"), []byte("lorem ipsum"), 0600)
 	assert.Nil(err)
 	err = checker.Check("", ctx)
 	assert.EqualError(err, "\"target\" repository is not clean")
