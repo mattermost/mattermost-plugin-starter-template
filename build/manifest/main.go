@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
@@ -122,6 +123,7 @@ func applyManifest(manifest *model.Manifest) error {
 			return err
 		}
 		manifestStr := string(manifestBytes)
+		manifestStr = strings.ReplaceAll(manifestStr, "\\n", "\\\n")
 
 		// write generated code to file by using Go file template.
 		if err := ioutil.WriteFile(
