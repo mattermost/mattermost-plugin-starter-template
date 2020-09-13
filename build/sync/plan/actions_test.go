@@ -103,8 +103,10 @@ func compareDirectories(t *testing.T, pathA, pathB string) {
 	for i, aFInfo := range aContents {
 		bFInfo := bContents[i]
 		assert.Equal(aFInfo.Name(), bFInfo.Name())
-		assert.Equal(aFInfo.Size(), bFInfo.Size())
 		assert.Equal(aFInfo.Mode(), bFInfo.Mode())
 		assert.Equal(aFInfo.IsDir(), bFInfo.IsDir())
+		if !aFInfo.IsDir() {
+			assert.Equal(aFInfo.Size(), bFInfo.Size())
+		}
 	}
 }
