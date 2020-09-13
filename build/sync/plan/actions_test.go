@@ -26,7 +26,7 @@ func TestCopyDirectory(t *testing.T) {
 	err = plan.CopyDirectory(srcDir, dir)
 	assert.Nil(err)
 
-	compareDirectories(assert, dir, srcDir)
+	compareDirectories(t, dir, srcDir)
 }
 
 func TestOverwriteFileAction(t *testing.T) {
@@ -55,7 +55,7 @@ func TestOverwriteFileAction(t *testing.T) {
 	err = action.Run("c", setup)
 	assert.Nil(err)
 
-	compareDirectories(assert, dir, filepath.Join(wd, "testdata", "b"))
+	compareDirectories(t, dir, filepath.Join(wd, "testdata", "b"))
 }
 
 func TestOverwriteDirectoryAction(t *testing.T) {
@@ -86,10 +86,13 @@ func TestOverwriteDirectoryAction(t *testing.T) {
 
 	destDir := filepath.Join(dir, "testdata")
 	srcDir := filepath.Join(wd, "testdata")
-	compareDirectories(assert, destDir, srcDir)
+	compareDirectories(t, destDir, srcDir)
 }
 
-func compareDirectories(assert *assert.Assertions, pathA, pathB string) {
+func compareDirectories(t *testing.T, pathA, pathB string) {
+	assert := assert.New(t)
+	t.Helper()
+
 	aContents, err := ioutil.ReadDir(pathA)
 	assert.Nil(err)
 	bContents, err := ioutil.ReadDir(pathB)
