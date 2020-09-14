@@ -7,19 +7,12 @@ checks:
       repo: target
 actions:
   - paths:
-      - build
+      - build/pluginctl
+      - build/manifest
     actions:
       - type: overwrite_directory
         params:
           create: true
-  - paths:
-      - .editorconfig
-    actions:
-      - type: overwrite_file
-        params:
-          create: true
-        conditions:
-          - type: file_unaltered
   - paths:
       - Makefile
     actions:
@@ -27,18 +20,25 @@ actions:
         params:
           create: true
   - paths:
-      - .circleci/config.yml
-      - server/configuration.go
-      - server/plugin.go
-      - server/plugin_test.go
+      - .editorconfig
+      - .gitattributes
+      - .gitignore
+      - build/.gitignore
+      - build/go.mod
+      - build/go.sum
+      - build/setup.mk
+      - server/.gitignore
       - webapp/.eslintrc.json
+      - webapp/.npmrc
       - webapp/babel.config.js
       - webapp/package.json
-      - webapp/src/index.tsx
       - webapp/tsconfig.json
       - webapp/webpack.config.js
+      - webapp/src/manifest.test.tsx
+      - webapp/tests/setup.tsx
     actions:
       - type: overwrite_file
+        params:
+          create: true
         conditions:
-          - type: exists
           - type: file_unaltered
