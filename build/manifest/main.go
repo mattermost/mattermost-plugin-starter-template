@@ -147,7 +147,7 @@ func applyManifest(manifest *model.Manifest) error {
 
 		// write generated code to file by using JS file template.
 		if err := ioutil.WriteFile(
-			"webapp/src/manifest.js",
+			"webapp/src/manifest.ts",
 			[]byte(fmt.Sprintf(pluginIDJSFileTemplate, manifestStr)),
 			0600,
 		); err != nil {
