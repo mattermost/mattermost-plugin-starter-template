@@ -123,7 +123,6 @@ func applyManifest(manifest *model.Manifest) error {
 			return err
 		}
 		manifestStr := string(manifestBytes)
-		manifestStr = strings.ReplaceAll(manifestStr, "\\n", "\\\n")
 
 		// write generated code to file by using Go file template.
 		if err := ioutil.WriteFile(
@@ -144,6 +143,9 @@ func applyManifest(manifest *model.Manifest) error {
 			return err
 		}
 		manifestStr := string(manifestBytes)
+
+		// Escape newlines
+		manifestStr = strings.ReplaceAll(manifestStr, `\n`, `\\n`)
 
 		// write generated code to file by using JS file template.
 		if err := ioutil.WriteFile(
