@@ -1,6 +1,8 @@
 package git_test
 
 import (
+	"io/ioutil"
+	"path/filepath"
 	"testing"
 
 	git "github.com/go-git/go-git/v5"
@@ -9,20 +11,59 @@ import (
 	gitutil "github.com/mattermost/mattermost-plugin-starter-template/build/sync/plan/git"
 )
 
+var fileContents = []byte("abcdefg")
+
 func TestFileHistory(t *testing.T) {
 	assert := assert.New(t)
 
-	repo, err := git.PlainOpenWithOptions("./", &git.PlainOpenOptions{
-		DetectDotGit: true,
-	})
+	dir, err := ioutil.TempDir("", "repo")
+	assert.Nil(err)
+	//defer os.RemoveAll(dir)
+
+	// Initialize a repository.
+	repo, err := git.PlainInit(dir, false)
+	assert.Nil(err)
+	w, err := repo.Worktree()
+	assert.Nil(err)
+	// Create repository files.
+	err = ioutil.WriteFile(filepath.Join(dir, "test"), fileContents, 0644)
+	assert.Nil(err)
+	_, err = w.Add("test")
+	assert.Nil(err)
+	_, err = w.Commit("initial commit", &git.CommitOptions{})
+	assert.Nil(err)
+	pathA := "a.txt"
+	err = ioutil.WriteFile(filepath.Join(dir, pathA), fileContents, 0644)
+	assert.Nil(err)
+	pathB := "b.txt"
+	err = ioutil.WriteFile(filepath.Join(dir, pathB), fileContents, 0644)
+	assert.Nil(err)
+	_, err = w.Add(pathA)
+	assert.Nil(err)
+	_, err = w.Add(pathB)
+	assert.Nil(err)
+	_, err = w.Commit("add files", &git.CommitOptions{})
+	assert.Nil(err)
+	// Delete one of the files.
+	_, err = w.Remove(pathB)
+	assert.Nil(err)
+	_, err = w.Commit("remove file b.txt", &git.CommitOptions{All: true})
 	assert.Nil(err)
 
-	sums, err := gitutil.FileHistory("build/sync/plan/git/testdata/testfile.txt", repo)
+	repo, err = git.PlainOpen(dir)
 	assert.Nil(err)
-	assert.Contains(sums, "ba7192052d7cf77c55d3b7bf40b350b8431b208b")
+
+	// Call file history on an existing file.
+	sums, err := gitutil.FileHistory("a.txt", repo)
+	assert.Nil(err)
+	assert.Equal([]string{"2fb5e13419fc89246865e7a324f476ec624e8740"}, sums)
 
 	// Calling with a non-existent file returns error.
-	sums, err = gitutil.FileHistory("build/sync/plan/git/testdata/nosuch_testfile.txt", repo)
+	sums, err = gitutil.FileHistory(filepath.Join(dir, "nosuch_testfile.txt"), repo)
 	assert.Equal(gitutil.ErrNotFound, err)
 	assert.Nil(sums)
+
+	// Calling with a non-existent file that was in git history returns no error.
+	_, err = gitutil.FileHistory(pathB, repo)
+	assert.Nil(err)
 }

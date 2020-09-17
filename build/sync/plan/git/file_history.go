@@ -22,6 +22,7 @@ var ErrNotFound = fmt.Errorf("not found")
 func FileHistory(path string, repo *git.Repository) ([]string, error) {
 	logOpts := git.LogOptions{
 		FileName: &path,
+		All:      true,
 	}
 	commits, err := repo.Log(&logOpts)
 	if errors.Is(err, plumbing.ErrReferenceNotFound) {
@@ -31,7 +32,6 @@ func FileHistory(path string, repo *git.Repository) ([]string, error) {
 		return nil, fmt.Errorf("failed to get commits for path %q: %v", path, err)
 	}
 	defer commits.Close()
-
 	hashHistory := []string{}
 	cerr := commits.ForEach(func(c *object.Commit) error {
 		root, err := repo.TreeObject(c.TreeHash)
