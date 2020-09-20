@@ -99,19 +99,19 @@ func (r PathExistsChecker) Check(path string, ctx Setup) error {
 // reference will default to the source repository and repo - to the target.
 type FileUnalteredChecker struct {
 	Params struct {
-		ReferenceRepo RepoID `json:"compared-to"`
-		Repo          RepoID `json:"in"`
+		SourceRepo RepoID `json:"compared-to"`
+		TargetRepo RepoID `json:"in"`
 	}
 }
 
 // Check implements the Checker interface.
 func (f FileUnalteredChecker) Check(path string, setup Setup) error {
 	setup.Logf("checking if file %q has not been altered", path)
-	repo := f.Params.Repo
+	repo := f.Params.TargetRepo
 	if repo == "" {
 		repo = TargetRepo
 	}
-	source := f.Params.ReferenceRepo
+	source := f.Params.SourceRepo
 	if source == "" {
 		source = SourceRepo
 	}

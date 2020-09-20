@@ -92,8 +92,8 @@ func TestUnalteredCheckerSameFile(t *testing.T) {
 	}
 
 	checker := plan.FileUnalteredChecker{}
-	checker.Params.ReferenceRepo = plan.SourceRepo
-	checker.Params.Repo = plan.TargetRepo
+	checker.Params.SourceRepo = plan.SourceRepo
+	checker.Params.TargetRepo = plan.TargetRepo
 
 	// Check with the same file - check should succeed
 	hashPath := "build/sync/plan/testdata/a"
@@ -122,8 +122,8 @@ func TestUnalteredCheckerDifferentContents(t *testing.T) {
 	}
 
 	checker := plan.FileUnalteredChecker{}
-	checker.Params.ReferenceRepo = plan.SourceRepo
-	checker.Params.Repo = plan.TargetRepo
+	checker.Params.SourceRepo = plan.SourceRepo
+	checker.Params.TargetRepo = plan.TargetRepo
 
 	// Create a file with the same suffix path, but different contents.
 	hashPath := "build/sync/plan/testdata/a"
@@ -181,8 +181,8 @@ func TestUnalteredCheckerNonExistant(t *testing.T) {
 	}
 
 	checker := plan.FileUnalteredChecker{}
-	checker.Params.ReferenceRepo = plan.SourceRepo
-	checker.Params.Repo = plan.TargetRepo
+	checker.Params.SourceRepo = plan.SourceRepo
+	checker.Params.TargetRepo = plan.TargetRepo
 
 	err = checker.Check(hashPath, ctx)
 	assert.Nil(err)
