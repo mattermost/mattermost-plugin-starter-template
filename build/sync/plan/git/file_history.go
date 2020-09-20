@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	git "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
@@ -22,6 +23,9 @@ func FileHistory(path string, repo *git.Repository) ([]string, error) {
 		FileName: &path,
 	}
 	commits, err := repo.Log(&logOpts)
+	if err == plumbing.ErrReferenceNotFound {
+		return nil, ErrNotFound
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get commits for path %q: %v", path, err)
 	}
