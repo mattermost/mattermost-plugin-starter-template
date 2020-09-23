@@ -34,7 +34,7 @@ actions:
       - webapp/.eslintrc.json
       - webapp/babel.config.js
       - webapp/package.json
-      - webapp/src/index.js
+      - webapp/src/index.tsx
       - webapp/tsconfig.json
       - webapp/webpack.config.js
     actions:
