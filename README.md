@@ -14,13 +14,27 @@ git clone --depth 1 https://github.com/mattermost/mattermost-plugin-starter-temp
 
 Note that this project uses [Go modules](https://github.com/golang/go/wiki/Modules). Be sure to locate the project outside of `$GOPATH`.
 
-Edit `plugin.json` with your `id`, `name`, and `description`:
+Edit the following files:
+1. `plugin.json` with your `id`, `name`, and `description`:
 ```
 {
     "id": "com.example.my-plugin",
     "name": "My Plugin",
     "description": "A plugin to enhance Mattermost."
 }
+```
+
+2. `go.mod` with your Go module path:
+```
+module com/example/my-plugin
+```
+
+3. `.golangci.yml` with your Go module path:
+```yml
+linters-settings:
+  // [...]
+  goimports:
+    local-prefixes: com/example/my-plugin
 ```
 
 Build your plugin:
