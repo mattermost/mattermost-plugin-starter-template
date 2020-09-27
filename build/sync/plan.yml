@@ -1,0 +1,44 @@
+checks:
+  - type: repo_is_clean
+    params:
+      repo: source
+  - type: repo_is_clean
+    params:
+      repo: target
+actions:
+  - paths:
+      - build
+    actions:
+      - type: overwrite_directory
+        params:
+          create: true
+  - paths:
+      - .editorconfig
+    actions:
+      - type: overwrite_file
+        params:
+          create: true
+        conditions:
+          - type: file_unaltered
+  - paths:
+      - Makefile
+    actions:
+      - type: overwrite_file
+        params:
+          create: true
+  - paths:
+      - .circleci/config.yml
+      - server/configuration.go
+      - server/plugin.go
+      - server/plugin_test.go
+      - webapp/.eslintrc.json
+      - webapp/babel.config.js
+      - webapp/package.json
+      - webapp/src/index.tsx
+      - webapp/tsconfig.json
+      - webapp/webpack.config.js
+    actions:
+      - type: overwrite_file
+        conditions:
+          - type: exists
+          - type: file_unaltered
