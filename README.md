@@ -24,17 +24,17 @@ Edit the following files:
 }
 ```
 
-2. `go.mod` with your Go module path:
+2. `go.mod` with your Go module path, following the `<hosting-site>/<repository>/<module>` convention:
 ```
-module com/example/my-plugin
+module github.com/mattermost/mattermost-plugin-starter-template
 ```
 
 3. `.golangci.yml` with your Go module path:
 ```yml
 linters-settings:
-  // [...]
+  # [...]
   goimports:
-    local-prefixes: com/example/my-plugin
+    local-prefixes: github.com/mattermost/mattermost-plugin-starter-template 
 ```
 
 Build your plugin:
