@@ -5,6 +5,8 @@ import (
 	"os"
 	"sort"
 
+	"github.com/pkg/errors"
+
 	"github.com/mattermost/mattermost-plugin-starter-template/build/sync/plan/git"
 )
 
@@ -125,10 +127,12 @@ func (f FileUnalteredChecker) Check(path string, setup Setup) error {
 
 	var srcDeleted bool
 	srcInfo, err := os.Stat(srcPath)
-	if os.IsNotExist(err) {
-		srcDeleted = true
-	} else if err != nil {
-		return fmt.Errorf("failed to get stat for %q: %v", trgPath, err)
+	if err != nil {
+		if os.IsNotExist(err) {
+			srcDeleted = true
+		} else {
+			return fmt.Errorf("failed to get stat for %q: %v", trgPath, err)
+		}
 	}
 	if srcInfo.IsDir() {
 		return fmt.Errorf("%q is a directory in source repository", path)
@@ -143,7 +147,7 @@ func (f FileUnalteredChecker) Check(path string, setup Setup) error {
 		}
 		// Check if the file was ever in git history.
 		_, err := git.FileHistory(path, setup.GetRepo(repo).Git)
-		if err == git.ErrNotFound {
+		if errors.Is(err, git.ErrNotFound) {
 			// This is a new file being introduced to the target repo.
 			// Consider it unaltered.
 			return nil

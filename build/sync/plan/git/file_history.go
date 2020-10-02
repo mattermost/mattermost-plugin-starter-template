@@ -11,6 +11,7 @@ import (
 	git "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/pkg/errors"
 )
 
 // ErrNotFound signifies the file was not found.
@@ -23,7 +24,7 @@ func FileHistory(path string, repo *git.Repository) ([]string, error) {
 		FileName: &path,
 	}
 	commits, err := repo.Log(&logOpts)
-	if err == plumbing.ErrReferenceNotFound {
+	if errors.Is(err, plumbing.ErrReferenceNotFound) {
 		return nil, ErrNotFound
 	}
 	if err != nil {
