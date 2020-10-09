@@ -8,8 +8,10 @@ import (
 	"os"
 	"path/filepath"
 
-	git "gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
+	git "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/pkg/errors"
 )
 
 // ErrNotFound signifies the file was not found.
@@ -22,6 +24,9 @@ func FileHistory(path string, repo *git.Repository) ([]string, error) {
 		FileName: &path,
 	}
 	commits, err := repo.Log(&logOpts)
+	if errors.Is(err, plumbing.ErrReferenceNotFound) {
+		return nil, ErrNotFound
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get commits for path %q: %v", path, err)
 	}

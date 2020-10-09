@@ -5,6 +5,8 @@ import (
 	"os"
 	"sort"
 
+	"github.com/pkg/errors"
+
 	"github.com/mattermost/mattermost-plugin-starter-template/build/sync/plan/git"
 )
 
@@ -99,41 +101,69 @@ func (r PathExistsChecker) Check(path string, ctx Setup) error {
 // reference will default to the source repository and repo - to the target.
 type FileUnalteredChecker struct {
 	Params struct {
-		ReferenceRepo RepoID `json:"compared-to"`
-		Repo          RepoID `json:"in"`
+		SourceRepo RepoID `json:"compared-to"`
+		TargetRepo RepoID `json:"in"`
 	}
 }
 
 // Check implements the Checker interface.
 func (f FileUnalteredChecker) Check(path string, setup Setup) error {
 	setup.Logf("checking if file %q has not been altered", path)
-	repo := f.Params.Repo
+	repo := f.Params.TargetRepo
 	if repo == "" {
 		repo = TargetRepo
 	}
-	reference := f.Params.ReferenceRepo
-	if reference == "" {
-		reference = SourceRepo
+	source := f.Params.SourceRepo
+	if source == "" {
+		source = SourceRepo
 	}
-	absPath := setup.PathInRepo(repo, path)
+	trgPath := setup.PathInRepo(repo, path)
+	srcPath := setup.PathInRepo(source, path)
 
-	info, err := os.Stat(absPath)
-	if os.IsNotExist(err) {
-		return CheckFailf("file %q has been deleted", absPath)
-	}
-	if err != nil {
-		return fmt.Errorf("failed to get stat for %q: %v", absPath, err)
-	}
-	if info.IsDir() {
-		return fmt.Errorf("%q is a directory", absPath)
-	}
-
-	fileHashes, err := git.FileHistory(path, setup.GetRepo(reference).Git)
+	fileHashes, err := git.FileHistory(path, setup.GetRepo(source).Git)
 	if err != nil {
 		return err
 	}
 
-	currentHash, err := git.GetFileHash(absPath)
+	var srcDeleted bool
+	srcInfo, err := os.Stat(srcPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			srcDeleted = true
+		} else {
+			return fmt.Errorf("failed to get stat for %q: %v", trgPath, err)
+		}
+	}
+	if srcInfo.IsDir() {
+		return fmt.Errorf("%q is a directory in source repository", path)
+	}
+
+	trgInfo, err := os.Stat(trgPath)
+	if os.IsNotExist(err) {
+		if srcDeleted {
+			// File has been deleted in target and source repositories.
+			// Consider it unaltered.
+			return nil
+		}
+		// Check if the file was ever in git history.
+		_, err := git.FileHistory(path, setup.GetRepo(repo).Git)
+		if errors.Is(err, git.ErrNotFound) {
+			// This is a new file being introduced to the target repo.
+			// Consider it unaltered.
+			return nil
+		} else if err != nil {
+			return err
+		}
+		return CheckFailf("file %q has been deleted", trgPath)
+	}
+	if err != nil {
+		return fmt.Errorf("failed to get stat for %q: %v", trgPath, err)
+	}
+	if trgInfo.IsDir() {
+		return fmt.Errorf("%q is a directory", trgPath)
+	}
+
+	currentHash, err := git.GetFileHash(trgPath)
 	if err != nil {
 		return err
 	}
@@ -143,5 +173,5 @@ func (f FileUnalteredChecker) Check(path string, setup Setup) error {
 	if idx < len(fileHashes) && fileHashes[idx] == currentHash {
 		return nil
 	}
-	return CheckFailf("file %q has been altered", absPath)
+	return CheckFailf("file %q has been altered", trgPath)
 }

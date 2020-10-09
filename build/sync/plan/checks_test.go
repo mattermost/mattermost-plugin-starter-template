@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	git "github.com/go-git/go-git/v5"
 	"github.com/stretchr/testify/assert"
-	git "gopkg.in/src-d/go-git.v4"
 
 	"github.com/mattermost/mattermost-plugin-starter-template/build/sync/plan"
 )
@@ -71,7 +71,7 @@ func TestPathExistsChecker(t *testing.T) {
 	assert.True(plan.IsCheckFail(err))
 }
 
-func TestUnalteredChecker(t *testing.T) {
+func TestUnalteredCheckerSameFile(t *testing.T) {
 	assert := assert.New(t)
 
 	// Path to the root of the repo.
@@ -92,18 +92,44 @@ func TestUnalteredChecker(t *testing.T) {
 	}
 
 	checker := plan.FileUnalteredChecker{}
-	checker.Params.ReferenceRepo = plan.SourceRepo
-	checker.Params.Repo = plan.TargetRepo
+	checker.Params.SourceRepo = plan.SourceRepo
+	checker.Params.TargetRepo = plan.TargetRepo
 
 	// Check with the same file - check should succeed
 	hashPath := "build/sync/plan/testdata/a"
 	err = checker.Check(hashPath, ctx)
 	assert.Nil(err)
+}
+
+func TestUnalteredCheckerDifferentContents(t *testing.T) {
+	assert := assert.New(t)
+
+	// Path to the root of the repo.
+	wd, err := filepath.Abs("../../../")
+	assert.Nil(err)
+
+	gitRepo, err := git.PlainOpen(wd)
+	assert.Nil(err)
+
+	ctx := plan.Setup{
+		Source: plan.RepoSetup{
+			Path: wd,
+			Git:  gitRepo,
+		},
+		Target: plan.RepoSetup{
+			Path: wd,
+		},
+	}
+
+	checker := plan.FileUnalteredChecker{}
+	checker.Params.SourceRepo = plan.SourceRepo
+	checker.Params.TargetRepo = plan.TargetRepo
 
 	// Create a file with the same suffix path, but different contents.
+	hashPath := "build/sync/plan/testdata/a"
 	tmpDir, err := ioutil.TempDir("", "test")
 	assert.Nil(err)
-	//defer os.RemoveAll(tmpDir)
+	defer os.RemoveAll(tmpDir)
 	fullPath := filepath.Join(tmpDir, "build/sync/plan/testdata")
 	err = os.MkdirAll(fullPath, 0777)
 	assert.Nil(err)
@@ -119,4 +145,45 @@ func TestUnalteredChecker(t *testing.T) {
 	err = checker.Check(hashPath, ctx)
 	assert.True(plan.IsCheckFail(err))
 	assert.EqualError(err, fmt.Sprintf("file %q has been altered", filepath.Join(tmpDir, hashPath)))
+
+}
+
+// TestUnalteredCheckerNonExistant tests running the unaltered file checker
+// in the case where the target file does not exist. If the files has no history,
+// the checker should pass.
+func TestUnalteredCheckerNonExistant(t *testing.T) {
+	assert := assert.New(t)
+	hashPath := "build/sync/plan/testdata/a"
+
+	// Path to the root of the repo.
+	wd, err := filepath.Abs("../../../")
+	assert.Nil(err)
+	gitRepo, err := git.PlainOpen(wd)
+	assert.Nil(err)
+
+	// Temporary repo.
+	tmpDir, err := ioutil.TempDir("", "test")
+	assert.Nil(err)
+	defer os.RemoveAll(tmpDir)
+
+	trgRepo, err := git.PlainInit(tmpDir, false)
+	assert.Nil(err)
+
+	ctx := plan.Setup{
+		Source: plan.RepoSetup{
+			Path: wd,
+			Git:  gitRepo,
+		},
+		Target: plan.RepoSetup{
+			Path: tmpDir,
+			Git:  trgRepo,
+		},
+	}
+
+	checker := plan.FileUnalteredChecker{}
+	checker.Params.SourceRepo = plan.SourceRepo
+	checker.Params.TargetRepo = plan.TargetRepo
+
+	err = checker.Check(hashPath, ctx)
+	assert.Nil(err)
 }
