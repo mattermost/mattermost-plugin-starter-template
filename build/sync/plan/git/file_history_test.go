@@ -5,8 +5,10 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	git "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/stretchr/testify/assert"
 
 	gitutil "github.com/mattermost/mattermost-plugin-starter-template/build/sync/plan/git"
@@ -31,7 +33,7 @@ func TestFileHistory(t *testing.T) {
 	assert.Nil(err)
 	_, err = w.Add("test")
 	assert.Nil(err)
-	sig := git.Signature{
+	sig := &object.Signature{
 		Name:  "test",
 		Email: "test@example.com",
 		When:  time.Now(),

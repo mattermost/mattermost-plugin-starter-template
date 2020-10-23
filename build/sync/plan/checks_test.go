@@ -7,8 +7,10 @@ import (
 	"path"
 	"path/filepath"
 	"testing"
+	"time"
 
 	git "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/mattermost/mattermost-plugin-starter-template/build/sync/plan"
@@ -91,7 +93,7 @@ func tempGitRepo(assert *assert.Assertions) (string, *git.Repository, func()) {
 	err = ioutil.WriteFile(filepath.Join(wd, "test"),
 		[]byte("lorem ipsum"), 0644)
 	assert.Nil(err)
-	sig := git.Signature{
+	sig := &object.Signature{
 		Name:  "test",
 		Email: "test@example.com",
 		When:  time.Now(),
