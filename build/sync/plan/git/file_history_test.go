@@ -31,7 +31,12 @@ func TestFileHistory(t *testing.T) {
 	assert.Nil(err)
 	_, err = w.Add("test")
 	assert.Nil(err)
-	_, err = w.Commit("initial commit", &git.CommitOptions{})
+	sig := git.Signature{
+		Name:  "test",
+		Email: "test@example.com",
+		When:  time.Now(),
+	}
+	_, err = w.Commit("initial commit", &git.CommitOptions{Author: sig})
 	assert.Nil(err)
 	pathA := "a.txt"
 	err = ioutil.WriteFile(filepath.Join(dir, pathA), fileContents, 0644)
@@ -43,12 +48,15 @@ func TestFileHistory(t *testing.T) {
 	assert.Nil(err)
 	_, err = w.Add(pathB)
 	assert.Nil(err)
-	_, err = w.Commit("add files", &git.CommitOptions{})
+	_, err = w.Commit("add files", &git.CommitOptions{Author: sig})
 	assert.Nil(err)
 	// Delete one of the files.
 	_, err = w.Remove(pathB)
 	assert.Nil(err)
-	_, err = w.Commit("remove file b.txt", &git.CommitOptions{All: true})
+	_, err = w.Commit("remove file b.txt", &git.CommitOptions{
+		Author: sig,
+		All:    true,
+	})
 	assert.Nil(err)
 
 	repo, err = git.PlainOpen(dir)

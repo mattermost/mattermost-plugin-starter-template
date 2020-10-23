@@ -91,7 +91,12 @@ func tempGitRepo(assert *assert.Assertions) (string, *git.Repository, func()) {
 	err = ioutil.WriteFile(filepath.Join(wd, "test"),
 		[]byte("lorem ipsum"), 0644)
 	assert.Nil(err)
-	_, err = w.Commit("initial commit", &git.CommitOptions{})
+	sig := git.Signature{
+		Name:  "test",
+		Email: "test@example.com",
+		When:  time.Now(),
+	}
+	_, err = w.Commit("initial commit", &git.CommitOptions{Author: sig})
 	assert.Nil(err)
 	pathA := "a.txt"
 	err = ioutil.WriteFile(filepath.Join(wd, pathA),
@@ -99,7 +104,7 @@ func tempGitRepo(assert *assert.Assertions) (string, *git.Repository, func()) {
 	assert.Nil(err)
 	_, err = w.Add(pathA)
 	assert.Nil(err)
-	_, err = w.Commit("add files", &git.CommitOptions{})
+	_, err = w.Commit("add files", &git.CommitOptions{Author: sig})
 	assert.Nil(err)
 
 	return wd, repo, func() { os.RemoveAll(wd) }
