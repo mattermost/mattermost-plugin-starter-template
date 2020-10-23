@@ -2,6 +2,7 @@ package git_test
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -18,7 +19,7 @@ func TestFileHistory(t *testing.T) {
 
 	dir, err := ioutil.TempDir("", "repo")
 	assert.Nil(err)
-	//defer os.RemoveAll(dir)
+	defer os.RemoveAll(dir)
 
 	// Initialize a repository.
 	repo, err := git.PlainInit(dir, false)
