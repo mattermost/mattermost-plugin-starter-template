@@ -133,8 +133,7 @@ func (f FileUnalteredChecker) Check(path string, setup Setup) error {
 		} else {
 			return fmt.Errorf("failed to get stat for %q: %v", trgPath, err)
 		}
-	}
-	if srcInfo.IsDir() {
+	} else if srcInfo.IsDir() {
 		return fmt.Errorf("%q is a directory in source repository", path)
 	}
 
