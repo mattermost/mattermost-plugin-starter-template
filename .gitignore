@@ -8,3 +8,6 @@ dist/
 
 # Jetbrains
 .idea/
+
+webapp/src/manifest.js
+server/manifest.go
