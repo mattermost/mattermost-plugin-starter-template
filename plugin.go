@@ -2,6 +2,7 @@ package root
 
 import (
 	_ "embed" // Need to embed manifest file
+	"encoding/json"
 	"strings"
 
 	"github.com/mattermost/mattermost-server/v6/model"
@@ -13,5 +14,5 @@ var manifestString string
 var Manifest model.Manifest
 
 func init() {
-	Manifest = *model.ManifestFromJson(strings.NewReader(manifestString))
+	_ = json.NewDecoder(strings.NewReader(manifestString)).Decode(&Manifest)
 }
