@@ -62,6 +62,10 @@ If your Mattermost server is running locally, you can enable [local mode](https:
         ...
         "EnableLocalMode": true,
         "LocalModeSocketLocation": "/var/tmp/mattermost_local.socket"
+    },
+    "PluginSettings" : {
+        ...
+        "EnableUploads" : true
     }
 }
 ```
