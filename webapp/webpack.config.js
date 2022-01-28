@@ -29,7 +29,7 @@ if (NPM_TARGET === 'build:watch' || NPM_TARGET === 'debug:watch') {
     });
 }
 
-module.exports = {
+const config = {
     entry: [
         './src/index.tsx',
     ],
@@ -88,7 +88,12 @@ module.exports = {
         publicPath: '/',
         filename: 'main.js',
     },
-    devtool: (isDev) ? 'eval-source-map' : '',
     mode: (isDev) ? 'eval-source-map' : 'production',
     plugins,
 };
+
+if (isDev) {
+    Object.assign(config, {devtool: 'eval-source-map'});
+}
+
+module.exports = config;

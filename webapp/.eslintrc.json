@@ -40,7 +40,10 @@
     "beforeEach": true
   },
   "settings": {
-    "import/resolver": "webpack"
+    "import/resolver": "webpack",
+    "react": {
+      "version": "16.14.0"
+    }
   },
   "rules": {
     "array-bracket-spacing": [
