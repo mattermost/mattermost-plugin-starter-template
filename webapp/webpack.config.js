@@ -56,7 +56,7 @@ export default {
                 },
             },
             {
-                test: /\.scss$/,
+                test: /\.(scss|css)$/,
                 use: [
                     'style-loader',
                     {
@@ -66,7 +66,7 @@ export default {
                         loader: 'sass-loader',
                         options: {
                             sassOptions: {
-                                includePaths: ['sass'],
+                                includePaths: ['node_modules/compass-mixins/lib', 'sass'],
                             },
                         },
                     },
