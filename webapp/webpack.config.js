@@ -29,7 +29,7 @@ if (NPM_TARGET === 'build:watch' || NPM_TARGET === 'debug:watch') {
     });
 }
 
-export default {
+module.exports = {
     entry: [
         './src/index.tsx',
     ],
@@ -88,7 +88,7 @@ export default {
         publicPath: '/',
         filename: 'main.js',
     },
-    devtool: (isDev) ? 'eval-source-map' : undefined,
-    mode : (isDev) ? 'eval-source-map' : 'production',
+    devtool: (isDev) ? 'eval-source-map' : '',
+    mode: (isDev) ? 'eval-source-map' : 'production',
     plugins,
 };

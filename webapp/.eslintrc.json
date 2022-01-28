@@ -13,11 +13,15 @@
       "experimentalObjectRestSpread": true
     }
   },
-  "parser": "babel-eslint",
+  "parser": "@typescript-eslint/parser",
   "plugins": [
     "react",
     "import",
-    "babel"
+    "mattermost",
+    "babel",
+    "cypress",
+    "no-only-tests",
+    "@typescript-eslint"
   ],
   "env": {
     "browser": true,
