@@ -1,3 +1,7 @@
+/**
+ * @jest-environment jsdom
+ */
+
 import manifest, {id, version} from './manifest';
 
 test('Plugin manifest, id and version are defined', () => {
