@@ -4,6 +4,7 @@ This plugin serves as a starting point for writing a Mattermost plugin. Feel fre
 
 To learn more about plugins, see [our plugin documentation](https://developers.mattermost.com/extend/plugins/).
 
+This template requires node v17+ and npm v7+.
 ## Getting Started
 Use GitHub's template feature to make a copy of this repository by clicking the "Use this template" button.
 
