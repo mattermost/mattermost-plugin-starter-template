@@ -1,6 +1,6 @@
 import {Store, Action} from 'redux';
 
-import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState} from 'mattermost-webapp/packages/mattermost-redux/src/types/store';
 
 import manifest from './manifest';
 
