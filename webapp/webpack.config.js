@@ -5,12 +5,7 @@ const path = require('path');
 const PLUGIN_ID = require('../plugin.json').id;
 
 const NPM_TARGET = process.env.npm_lifecycle_event; //eslint-disable-line no-process-env
-let mode = 'production';
-let devtool = '';
-if (NPM_TARGET === 'debug' || NPM_TARGET === 'debug:watch') {
-    mode = 'development';
-    devtool = 'source-map';
-}
+const isDev = NPM_TARGET === 'debug' || NPM_TARGET === 'debug:watch';
 
 const plugins = [];
 if (NPM_TARGET === 'build:watch' || NPM_TARGET === 'debug:watch') {
@@ -34,7 +29,7 @@ if (NPM_TARGET === 'build:watch' || NPM_TARGET === 'debug:watch') {
     });
 }
 
-module.exports = {
+export default {
     entry: [
         './src/index.tsx',
     ],
@@ -61,7 +56,7 @@ module.exports = {
                 },
             },
             {
-                test: /\.(scss|css)$/,
+                test: /\.scss$/,
                 use: [
                     'style-loader',
                     {
@@ -71,7 +66,7 @@ module.exports = {
                         loader: 'sass-loader',
                         options: {
                             sassOptions: {
-                                includePaths: ['node_modules/compass-mixins/lib', 'sass'],
+                                includePaths: ['sass'],
                             },
                         },
                     },
@@ -93,7 +88,7 @@ module.exports = {
         publicPath: '/',
         filename: 'main.js',
     },
-    devtool,
-    mode,
+    devtool: (isDev) ? 'eval-source-map' : undefined,
+    mode : (isDev) ? 'eval-source-map' : 'production',
     plugins,
 };

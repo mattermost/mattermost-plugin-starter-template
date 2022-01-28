@@ -16,7 +16,8 @@
   "parser": "babel-eslint",
   "plugins": [
     "react",
-    "import"
+    "import",
+    "babel"
   ],
   "env": {
     "browser": true,
