@@ -17,7 +17,6 @@
   "plugins": [
     "react",
     "import",
-    "mattermost",
     "babel",
     "cypress",
     "no-only-tests",
