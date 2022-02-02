@@ -1,6 +1,5 @@
 {
   "private": true,
-  "type": "commonjs",
   "scripts": {
     "build": "webpack --mode=production",
     "build:watch": "webpack --mode=production --watch",
