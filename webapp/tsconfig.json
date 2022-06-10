@@ -3,7 +3,7 @@
     "target": "esnext",
     "paths": {
       "@/*": ["./*"],
-      "mattermost-redux/*": ["../node_modules/mattermost-webapp/packages/mattermost-redux/src/*"],
+      "mattermost-redux/*": ["../node_modules/@mattermost/webapp/packages/mattermost-redux/src/*"],
     },
     "lib": [
       "dom",

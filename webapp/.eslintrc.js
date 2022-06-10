@@ -48,7 +48,7 @@ const config = {
             alias: {
                 map: [
                     ['@', path.resolve(__dirname, 'src')],
-                    ['mattermost-redux', path.resolve(__dirname, 'node_modules/mattermost-webapp/packages/mattermost-redux/src/')],
+                    ['mattermost-redux', path.resolve(__dirname, 'node_modules/@mattermost/webapp/packages/mattermost-redux/src/')],
                 ],
                 extensions: ['*', '.js', '.jsx', '.ts', '.tsx'],
             },
