@@ -52,7 +52,14 @@ dist/com.example.my-plugin.tar.gz
 
 ## Development
 
-To avoid having to manually install your plugin, build and deploy your plugin using one of the following options.
+To avoid having to manually install your plugin, build and deploy your plugin using one of the following options. In order for the below options to work, you must first enable plugin uploads via your config.json or API and restart Mattermost.
+
+```json
+    "PluginSettings" : {
+        ...
+        "EnableUploads" : true
+    }
+```
 
 ### Deploying with Local Mode
 
@@ -64,7 +71,7 @@ If your Mattermost server is running locally, you can enable [local mode](https:
         ...
         "EnableLocalMode": true,
         "LocalModeSocketLocation": "/var/tmp/mattermost_local.socket"
-    }
+    },
 }
 ```
 
