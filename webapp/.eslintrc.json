@@ -2,7 +2,7 @@
    "settings": {
       "import/resolver": {
          "typescript": {
-            "project": "./webapp/tsconfig.json"
+            "project": "./tsconfig.json"
          }
        },
       "react": {
