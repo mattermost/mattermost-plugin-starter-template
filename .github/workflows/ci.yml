@@ -14,5 +14,6 @@ permissions:
 
 jobs:
   plugin-ci:
+    if: ${{ github.event_name != 'schedule' || github.repository_owner == 'mattermost' }}
     uses: mattermost/actions-workflows/.github/workflows/plugin-ci.yml@main
     secrets: inherit
