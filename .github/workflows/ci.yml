@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   plugin-ci:
-    # This if condition is here to avoid running nightly CI jobs on forked repositories
+    # Avoid running nightly CI jobs on forked repositories. This is so the job doesn't consume lots of credits for GitHub Actions.
     if: ${{ github.event_name != 'schedule' || github.repository_owner == 'mattermost' }}
     uses: mattermost/actions-workflows/.github/workflows/plugin-ci.yml@main
     secrets: inherit
