@@ -1,5 +1,5 @@
 {
-    "id": "com.mattermost.plugin-starter-template",
+    "id": "template-test",
     "name": "Plugin Starter Template",
     "description": "This plugin serves as a starting point for writing a Mattermost plugin.",
     "homepage_url": "https://github.com/mattermost/mattermost-plugin-starter-template",
