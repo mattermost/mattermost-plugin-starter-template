@@ -1,6 +1,6 @@
 {
-    "id": "com.mattermost.plugin-starter-template",
-    "name": "Plugin Starter Template",
+    "id": "com.mattermost.test-config-hook",
+    "name": "Test ConfigurationWillBeSavedHook",
     "description": "This plugin serves as a starting point for writing a Mattermost plugin.",
     "homepage_url": "https://github.com/mattermost/mattermost-plugin-starter-template",
     "support_url": "https://github.com/mattermost/mattermost-plugin-starter-template/issues",
@@ -11,18 +11,20 @@
     "server": {
         "executables": {
             "linux-amd64": "server/dist/plugin-linux-amd64",
-            "linux-arm64": "server/dist/plugin-linux-arm64",
-            "darwin-amd64": "server/dist/plugin-darwin-amd64",
-            "darwin-arm64": "server/dist/plugin-darwin-arm64",
-            "windows-amd64": "server/dist/plugin-windows-amd64.exe"
+            "darwin-arm64": "server/dist/plugin-darwin-arm64"
         }
-    },
-    "webapp": {
-        "bundle_path": "webapp/dist/main.js"
     },
     "settings_schema": {
         "header": "",
         "footer": "",
-        "settings": []
+        "settings": [
+            {
+                "key": "TestConfigurationWillBeSavedHook",
+                "display_name": "Test ConfigurationWillBeSavedHook",
+                "type": "text",
+                "help_text": "",
+                "default": "test"
+            }
+        ]
     }
 }

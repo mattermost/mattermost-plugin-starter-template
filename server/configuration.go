@@ -1,7 +1,11 @@
 package main
 
 import (
+	"encoding/json"
+	"net/http"
 	"reflect"
+
+	"github.com/mattermost/mattermost-server/server/public/model"
 
 	"github.com/pkg/errors"
 )
@@ -18,6 +22,7 @@ import (
 // If you add non-reference types to your configuration struct, be sure to rewrite Clone as a deep
 // copy appropriate for your types.
 type configuration struct {
+	TestConfigurationWillBeSavedHook string
 }
 
 // Clone shallow copies the configuration. Your implementation may require a deep copy if
@@ -80,4 +85,55 @@ func (p *Plugin) OnConfigurationChange() error {
 	p.setConfiguration(configuration)
 
 	return nil
+}
+
+// ConfigurationWillBeSaved is invoked before saving the configuration to the
+// backing store.
+// An error can be returned to reject the operation. Additionally, a new
+// config object can be returned to be stored in place of the provided one.
+// Minimum server version: 8.0
+//
+// This demo implementation logs a message to the demo channel whenever config
+// is going to be saved.
+// If the Username config option is set to "invalid" an error will be
+// returned, resulting in the config not getting saved.
+// If the Username config option is set to "replaceme" the config value will be
+// replaced with "replaced".
+func (p *Plugin) ConfigurationWillBeSaved(newCfg *model.Config) (*model.Config, error) {
+	cfg := p.getConfiguration()
+
+	configData := newCfg.PluginSettings.Plugins["com.mattermost.test-config-hook"]
+	js, err := json.Marshal(configData)
+	if err != nil {
+		p.API.LogError(
+			"Failed to marshal config data ConfigurationWillBeSaved",
+			"error", err.Error(),
+		)
+		return nil, nil
+	}
+
+	if err := json.Unmarshal(js, &cfg); err != nil {
+		p.API.LogError(
+			"Failed to unmarshal config data ConfigurationWillBeSaved",
+			"error", err.Error(),
+		)
+		return nil, nil
+	}
+
+	invalidUsernameUsed := cfg.TestConfigurationWillBeSavedHook == "invalid"
+	replaceUsernameUsed := cfg.TestConfigurationWillBeSavedHook == "replaceme"
+
+	if invalidUsernameUsed {
+		appErr := model.NewAppError("saveConfig", "app.save_config.error", nil, "", http.StatusBadRequest)
+		appErr.Message = "invalid value used"
+		appErr.SkipTranslation = true
+		return nil, appErr
+	}
+
+	if replaceUsernameUsed {
+		newCfg.PluginSettings.Plugins["com.mattermost.test-config-hook"]["testconfigurationwillbesavedhook"] = "replaced"
+		return newCfg, nil
+	}
+
+	return nil, nil
 }
