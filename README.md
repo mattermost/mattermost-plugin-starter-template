@@ -18,7 +18,7 @@ Note that this project uses [Go modules](https://github.com/golang/go/wiki/Modul
 
 Edit the following files:
 1. `plugin.json` with your `id`, `name`, and `description`:
-```
+```json
 {
     "id": "com.example.my-plugin",
     "name": "My Plugin",
@@ -81,13 +81,13 @@ make deploy
 ```
 
 You may also customize the Unix socket path:
-```
+```bash
 export MM_LOCALSOCKETPATH=/var/tmp/alternate_local.socket
 make deploy
 ```
 
 If developing a plugin with a webapp, watch for changes and deploy those automatically:
-```
+```bash
 export MM_SERVICESETTINGS_SITEURL=http://localhost:8065
 export MM_ADMIN_TOKEN=j44acwd8obn78cdcx7koid4jkr
 make watch
@@ -96,7 +96,7 @@ make watch
 ### Deploying with credentials
 
 Alternatively, you can authenticate with the server's API with credentials:
-```
+```bash
 export MM_SERVICESETTINGS_SITEURL=http://localhost:8065
 export MM_ADMIN_USERNAME=admin
 export MM_ADMIN_PASSWORD=password
@@ -104,7 +104,7 @@ make deploy
 ```
 
 or with a [personal access token](https://docs.mattermost.com/developer/personal-access-tokens.html):
-```
+```bash
 export MM_SERVICESETTINGS_SITEURL=http://localhost:8065
 export MM_ADMIN_TOKEN=j44acwd8obn78cdcx7koid4jkr
 make deploy
