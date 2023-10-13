@@ -122,5 +122,9 @@
       "<rootDir>/tests/setup.tsx"
     ],
     "testURL": "http://localhost:8065"
+  },
+  "volta": {
+    "node": "16.20.2",
+    "npm": "8.19.4"
   }
 }

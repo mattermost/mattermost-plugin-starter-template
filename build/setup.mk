@@ -37,9 +37,11 @@ HAS_MM_UTILITIES ?= $(wildcard $(MM_UTILITIES_DIR)/.)
 # Store the current path for later use
 PWD ?= $(shell pwd)
 
-# Ensure that npm (and thus node) is installed.
 ifneq ($(HAS_WEBAPP),)
+ifeq ($(VOLTA),)
+    $(info volta is not available. You need to manually manage your npm version.)
 ifeq ($(NPM),)
     $(error "npm is not available: see https://www.npmjs.com/get-npm")
+endif
 endif
 endif
