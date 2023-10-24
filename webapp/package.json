@@ -74,8 +74,8 @@
     "webpack-cli": "5.0.1"
   },
   "dependencies": {
-    "@mattermost/webapp": "github:mattermost/mattermost-webapp",
     "core-js": "3.22.8",
+    "mattermost-redux": "5.33.1",
     "react": "^16.14.0",
     "react-redux": "8.0.2",
     "redux": "4.2.0",
