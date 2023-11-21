@@ -1,6 +1,6 @@
 GO ?= $(shell command -v go 2> /dev/null)
 NPM ?= $(shell command -v npm 2> /dev/null)
-CURL ?= $(shell command -v curl 2> /dev/null)
+VOLTA ?= $(shell command -v volta 2> /dev/null)
 MM_DEBUG ?=
 MANIFEST_FILE ?= plugin.json
 GOPATH ?= $(shell go env GOPATH)
@@ -52,10 +52,7 @@ ifneq ($(HAS_WEBAPP),)
 endif
 
 ifneq ($(HAS_SERVER),)
-	@if ! [ -x "$$(command -v golangci-lint)" ]; then \
-		echo "golangci-lint is not installed. Please see https://github.com/golangci/golangci-lint#install for installation instructions."; \
-		exit 1; \
-	fi; \
+	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.52.2
 
 	@echo Running golangci-lint
 	golangci-lint run ./...

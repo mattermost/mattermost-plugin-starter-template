@@ -4,7 +4,13 @@ This plugin serves as a starting point for writing a Mattermost plugin. Feel fre
 
 To learn more about plugins, see [our plugin documentation](https://developers.mattermost.com/extend/plugins/).
 
-This template requires node v16 and npm v8. You can download and install nvm to manage your node versions by following the instructions [here](https://github.com/nvm-sh/nvm). Once you've setup the project simply run `nvm i` within the root folder to use the suggested version of node.
+This template requires node v16 and npm v8. You can download and install `volta` to manage your node versions by following the instructions [here](https://docs.volta.sh/guide/getting-started).
+
+## Prerequisites
+Ensure you have the following tools installed:
+1. [`go`](https://go.dev/doc/install) with version >= **1.21**
+2. [`volta`](https://docs.volta.sh/guide/getting-started) (If you opt to not use `volta`, you need to install [`npm`](https://www.npmjs.com/get-npm) v8)
+
 
 ## Getting Started
 Use GitHub's template feature to make a copy of this repository by clicking the "Use this template" button.
@@ -13,8 +19,6 @@ Alternatively shallow clone the repository matching your plugin name:
 ```
 git clone --depth 1 https://github.com/mattermost/mattermost-plugin-starter-template com.example.my-plugin
 ```
-
-Note that this project uses [Go modules](https://github.com/golang/go/wiki/Modules). Be sure to locate the project outside of `$GOPATH`.
 
 Edit the following files:
 1. `plugin.json` with your `id`, `name`, and `description`:
