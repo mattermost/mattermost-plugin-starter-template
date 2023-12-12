@@ -13,6 +13,10 @@ DEFAULT_GOARCH := $(shell go env GOARCH)
 
 export GO111MODULE=on
 
+# We need to export GOBIN to allow it to be set
+# for processes spawned from the Makefile
+export GOBIN ?= $(PWD)/bin
+
 # You can include assets this directory into the bundle. This can be e.g. used to include profile pictures.
 ASSETS_DIR ?= assets
 
@@ -45,9 +49,15 @@ all: check-style test dist
 apply:
 	./build/bin/manifest apply
 
+## Install go tools
+install-go-tools:
+	@echo Installing go tools
+	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.1
+	$(GO) install gotest.tools/gotestsum@v1.7.0
+
 ## Runs eslint and golangci-lint
 .PHONY: check-style
-check-style: webapp/node_modules
+check-style: webapp/node_modules install-go-tools
 	@echo Checking for style guide compliance
 
 ifneq ($(HAS_WEBAPP),)
@@ -55,14 +65,13 @@ ifneq ($(HAS_WEBAPP),)
 	cd webapp && npm run check-types
 endif
 
+# It's highly recommended to run go-vet first
+# to find potential compile errors that could introduce
+# weird reports at golangci-lint step
 ifneq ($(HAS_SERVER),)
-	@if ! [ -x "$$(command -v golangci-lint)" ]; then \
-		echo "golangci-lint is not installed. Please see https://github.com/golangci/golangci-lint#install for installation instructions."; \
-		exit 1; \
-	fi; \
-
 	@echo Running golangci-lint
-	golangci-lint run ./...
+	$(GO) vet ./...
+	$(GOBIN)/golangci-lint run ./...
 endif
 
 ## Builds the server, if it exists, for all supported architectures, unless MM_SERVICESETTINGS_ENABLEDEVELOPER is set.
@@ -192,9 +201,20 @@ detach: setup-attach
 
 ## Runs any lints and unit tests defined for the server and webapp, if they exist.
 .PHONY: test
-test: webapp/node_modules
+test: webapp/node_modules install-go-tools
 ifneq ($(HAS_SERVER),)
-	$(GO) test -v $(GO_TEST_FLAGS) ./server/...
+	$(GOBIN)/gotestsum -- -v ./...
+endif
+ifneq ($(HAS_WEBAPP),)
+	cd webapp && $(NPM) run test;
+endif
+
+## Runs any lints and unit tests defined for the server and webapp, if they exist, optimized
+## for a CI environment.
+.PHONY: test-ci
+test-ci: webapp/node_modules install-go-tools
+ifneq ($(HAS_SERVER),)
+	$(GOBIN)/gotestsum --format standard-verbose --junitfile report.xml -- ./...
 endif
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run test;
