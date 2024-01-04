@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func TestCheckOldest(t *testing.T) {
+func TestCheckOldestEntry(t *testing.T) {
 	for name, tc := range map[string]struct {
 		logs           []string
 		oldest         string
@@ -79,7 +79,7 @@ func TestCheckOldest(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			logs, oldest, allNew := checkOldest(tc.logs, tc.oldest)
+			logs, oldest, allNew := checkOldestEntry(tc.logs, tc.oldest)
 
 			if allNew != tc.expectedAllNew {
 				t.Logf("expected allNew: %v, got %v", tc.expectedAllNew, allNew)

@@ -38,7 +38,7 @@ func logs(ctx context.Context, client *model.Client4, pluginID string) error {
 // It will return without an error when ctx is canceled.
 func watchLogs(ctx context.Context, client *model.Client4, pluginID string) error {
 	now := time.Now()
-	var oldest string
+	var oldestEntry string
 
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
@@ -54,7 +54,7 @@ func watchLogs(ctx context.Context, client *model.Client4, pluginID string) erro
 				}
 
 				var allNew bool
-				logs, oldest, allNew = checkOldest(logs, oldest)
+				logs, oldestEntry, allNew = checkOldestEntry(logs, oldestEntry)
 
 				err = printLogEntries(logs)
 				if err != nil {
@@ -70,9 +70,9 @@ func watchLogs(ctx context.Context, client *model.Client4, pluginID string) erro
 	}
 }
 
-// checkOldest check a if logs contains new log entries.
+// checkOldestEntry check a if logs contains new log entries.
 // It returns the filtered slice of log entries, the new oldest entry and whether or not a entries were new.
-func checkOldest(logs []string, oldest string) ([]string, string, bool) {
+func checkOldestEntry(logs []string, oldest string) ([]string, string, bool) {
 	if len(logs) == 0 {
 		return nil, oldest, false
 	}
