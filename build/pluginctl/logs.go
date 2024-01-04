@@ -71,7 +71,7 @@ func watchLogs(ctx context.Context, client *model.Client4, pluginID string) erro
 }
 
 // checkOldestEntry check a if logs contains new log entries.
-// It returns the filtered slice of log entries, the new oldest entry and whether or not a entries were new.
+// It returns the filtered slice of log entries, the new oldest entry and whether or not all entries were new.
 func checkOldestEntry(logs []string, oldest string) ([]string, string, bool) {
 	if len(logs) == 0 {
 		return nil, oldest, false
@@ -131,7 +131,7 @@ func filterLogEntries(logs []string, pluginID string, since time.Time) ([]string
 		if err != nil {
 			return nil, fmt.Errorf("unknown timestamp format: %w", err)
 		}
-		if since.After(let) {
+		if let.Before(since) {
 			continue
 		}
 
@@ -145,7 +145,7 @@ func filterLogEntries(logs []string, pluginID string, since time.Time) ([]string
 	return ret, nil
 }
 
-// printLogEntries print a slice of log entries to stdout.
+// printLogEntries prints a slice of log entries to stdout.
 func printLogEntries(entries []string) error {
 	for _, e := range entries {
 		_, err := io.WriteString(os.Stdout, e+"\n")
