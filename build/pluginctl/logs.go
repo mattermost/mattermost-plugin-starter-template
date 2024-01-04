@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -21,6 +22,14 @@ const (
 // logs fetches the latest 500 log entries from Mattermost,
 // and prints only the ones related to the plugin to stdout.
 func logs(ctx context.Context, client *model.Client4, pluginID string) error {
+	cfg, _, err := client.GetConfig(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to fetch config: %w", err)
+	}
+	if cfg.LogSettings.FileJson == nil || !*cfg.LogSettings.FileJson {
+		return errors.New("JSON output for file logs are disabled. Please enable LogSettings.FileJson via the configration in Mattermost.") //nolint:revive,stylecheck
+	}
+
 	logs, err := fetchLogs(ctx, client, 0, 500, pluginID, time.Unix(0, 0))
 	if err != nil {
 		return fmt.Errorf("failed to fetch log entries: %w", err)
@@ -37,6 +46,14 @@ func logs(ctx context.Context, client *model.Client4, pluginID string) error {
 // watchLogs fetches log entries from Mattermost and print them to stdout.
 // It will return without an error when ctx is canceled.
 func watchLogs(ctx context.Context, client *model.Client4, pluginID string) error {
+	cfg, _, err := client.GetConfig(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to fetch config: %w", err)
+	}
+	if cfg.LogSettings.FileJson == nil || !*cfg.LogSettings.FileJson {
+		return errors.New("JSON output for file logs are disabled. Please enable LogSettings.FileJson via the configration in Mattermost.") //nolint:revive,stylecheck
+	}
+
 	now := time.Now()
 	var oldestEntry string
 
