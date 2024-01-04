@@ -21,16 +21,14 @@ const (
 // logs fetches the latest 500 log entries from Mattermost,
 // and prints only the ones related to the plugin to stdout.
 func logs(ctx context.Context, client *model.Client4, pluginID string) error {
-	for i := 5 - 1; i >= 0; i-- {
-		logs, err := fetchLogs(ctx, client, i, pluginID, time.Unix(0, 0))
-		if err != nil {
-			return fmt.Errorf("failed to fetch log entries: %w", err)
-		}
+	logs, err := fetchLogs(ctx, client, 0, 500, pluginID, time.Unix(0, 0))
+	if err != nil {
+		return fmt.Errorf("failed to fetch log entries: %w", err)
+	}
 
-		err = printLogEntries(logs)
-		if err != nil {
-			return fmt.Errorf("failed to print logs entries: %w", err)
-		}
+	err = printLogEntries(logs)
+	if err != nil {
+		return fmt.Errorf("failed to print logs entries: %w", err)
 	}
 
 	return nil
@@ -50,7 +48,7 @@ func watchLogs(ctx context.Context, client *model.Client4, pluginID string) erro
 			return nil
 		case <-ticker.C:
 			for {
-				logs, err := fetchLogs(ctx, client, 0, pluginID, now)
+				logs, err := fetchLogs(ctx, client, 0, logsPerPage, pluginID, now)
 				if err != nil {
 					return fmt.Errorf("failed to fetch log entries: %w", err)
 				}
@@ -95,8 +93,8 @@ func checkOldest(logs []string, oldest string) ([]string, string, bool) {
 
 // fetchLogs fetches log entries from Mattermost
 // and filters them based on pluginID and timestamp.
-func fetchLogs(ctx context.Context, client *model.Client4, page int, pluginID string, since time.Time) ([]string, error) {
-	logs, _, err := client.GetLogs(ctx, page, logsPerPage)
+func fetchLogs(ctx context.Context, client *model.Client4, page, perPage int, pluginID string, since time.Time) ([]string, error) {
+	logs, _, err := client.GetLogs(ctx, page, perPage)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get logs from Mattermost: %w", err)
 	}
