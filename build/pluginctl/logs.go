@@ -96,17 +96,19 @@ func checkOldestEntry(logs []string, oldest string) ([]string, string, bool) {
 		return nil, oldest, false
 	}
 
+	newOldestEntry := logs[(len(logs) - 1)]
+
 	i := slices.Index(logs, oldest)
 	switch i {
 	case -1:
 		// Every log entry is new
-		return logs, logs[(len(logs) - 1)], true
+		return logs, newOldestEntry, true
 	case len(logs) - 1:
 		// No new log entries
 		return nil, oldest, false
 	default:
 		// Filter out oldest log entry
-		return logs[i+1:], logs[(len(logs) - 1)], false
+		return logs[i+1:], newOldestEntry, false
 	}
 }
 
