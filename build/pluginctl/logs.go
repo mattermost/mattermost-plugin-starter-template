@@ -64,8 +64,9 @@ func watchLogs(ctx context.Context, client *model.Client4, pluginID string) erro
 		case <-ctx.Done():
 			return nil
 		case <-ticker.C:
+			var page int
 			for {
-				logs, err := fetchLogs(ctx, client, 0, logsPerPage, pluginID, now)
+				logs, err := fetchLogs(ctx, client, page, logsPerPage, pluginID, now)
 				if err != nil {
 					return fmt.Errorf("failed to fetch log entries: %w", err)
 				}
@@ -82,6 +83,7 @@ func watchLogs(ctx context.Context, client *model.Client4, pluginID string) erro
 					// No more logs to fetch
 					break
 				}
+				page++
 			}
 		}
 	}
