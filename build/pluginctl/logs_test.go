@@ -11,70 +11,70 @@ func TestCheckOldestEntry(t *testing.T) {
 		logs           []string
 		oldest         string
 		expectedLogs   []string
-		expecetdOldest string
+		expectedOldest string
 		expectedAllNew bool
 	}{
 		"nil logs": {
 			logs:           nil,
 			oldest:         "oldest",
 			expectedLogs:   nil,
-			expecetdOldest: "oldest",
+			expectedOldest: "oldest",
 			expectedAllNew: false,
 		},
 		"empty logs": {
 			logs:           []string{},
 			oldest:         "oldest",
 			expectedLogs:   nil,
-			expecetdOldest: "oldest",
+			expectedOldest: "oldest",
 			expectedAllNew: false,
 		},
 		"no new entries, one old entry": {
 			logs:           []string{"old"},
 			oldest:         "old",
 			expectedLogs:   []string{},
-			expecetdOldest: "old",
+			expectedOldest: "old",
 			expectedAllNew: false,
 		},
 		"no new entries, multipile old entries": {
 			logs:           []string{"old1", "old2", "old3"},
 			oldest:         "old3",
 			expectedLogs:   []string{},
-			expecetdOldest: "old3",
+			expectedOldest: "old3",
 			expectedAllNew: false,
 		},
 		"one new entry, no old entry": {
 			logs:           []string{"new"},
 			oldest:         "old",
 			expectedLogs:   []string{"new"},
-			expecetdOldest: "new",
+			expectedOldest: "new",
 			expectedAllNew: true,
 		},
 		"multipile new entries, no old entry": {
 			logs:           []string{"new1", "new2", "new3"},
 			oldest:         "old",
 			expectedLogs:   []string{"new1", "new2", "new3"},
-			expecetdOldest: "new3",
+			expectedOldest: "new3",
 			expectedAllNew: true,
 		},
 		"one new entry, one old entry": {
 			logs:           []string{"old", "new"},
 			oldest:         "old",
 			expectedLogs:   []string{"new"},
-			expecetdOldest: "new",
+			expectedOldest: "new",
 			expectedAllNew: false,
 		},
 		"one new entry, multipile old entries": {
 			logs:           []string{"old1", "old2", "old3", "new"},
 			oldest:         "old3",
 			expectedLogs:   []string{"new"},
-			expecetdOldest: "new",
+			expectedOldest: "new",
 			expectedAllNew: false,
 		},
 		"multipile new entries, ultipile old entries": {
 			logs:           []string{"old1", "old2", "old3", "new1", "new2", "new3"},
 			oldest:         "old3",
 			expectedLogs:   []string{"new1", "new2", "new3"},
-			expecetdOldest: "new3",
+			expectedOldest: "new3",
 			expectedAllNew: false,
 		},
 	} {
@@ -85,8 +85,8 @@ func TestCheckOldestEntry(t *testing.T) {
 				t.Logf("expected allNew: %v, got %v", tc.expectedAllNew, allNew)
 				t.Fail()
 			}
-			if oldest != tc.expecetdOldest {
-				t.Logf("expected oldest: %v, got %v", tc.expecetdOldest, oldest)
+			if oldest != tc.expectedOldest {
+				t.Logf("expected oldest: %v, got %v", tc.expectedOldest, oldest)
 				t.Fail()
 			}
 
@@ -103,24 +103,24 @@ func TestFilterLogEntries(t *testing.T) {
 		pluginID     string
 		since        time.Time
 		expectedLogs []string
-		expecetdErr  bool
+		expectedErr  bool
 	}{
 		"nil slice": {
 			logs:         nil,
 			expectedLogs: nil,
-			expecetdErr:  false,
+			expectedErr:  false,
 		},
 		"empty slice": {
 			logs:         []string{},
 			expectedLogs: nil,
-			expecetdErr:  false,
+			expectedErr:  false,
 		},
 		"no JSON": {
 			logs: []string{
 				`{"foo"`,
 			},
 			expectedLogs: nil,
-			expecetdErr:  true,
+			expectedErr:  true,
 		},
 		"unknown time format": {
 			logs: []string{
@@ -128,7 +128,7 @@ func TestFilterLogEntries(t *testing.T) {
 			},
 			pluginID:     "some.plugin.id",
 			expectedLogs: nil,
-			expecetdErr:  true,
+			expectedErr:  true,
 		},
 		"one matching entry": {
 			logs: []string{
@@ -138,7 +138,7 @@ func TestFilterLogEntries(t *testing.T) {
 			expectedLogs: []string{
 				`{"message":"foo", "plugin_id": "some.plugin.id", "timestamp": "2023-12-18 10:58:53.091 +01:00"}`,
 			},
-			expecetdErr: false,
+			expectedErr: false,
 		},
 		"filter out non plugin entries": {
 			logs: []string{
@@ -150,7 +150,7 @@ func TestFilterLogEntries(t *testing.T) {
 			expectedLogs: []string{
 				`{"message":"foo", "plugin_id": "some.plugin.id", "timestamp": "2023-12-18 10:58:53.091 +01:00"}`,
 			},
-			expecetdErr: false,
+			expectedErr: false,
 		},
 		"filter out old entries": {
 			logs: []string{
@@ -166,12 +166,12 @@ func TestFilterLogEntries(t *testing.T) {
 				fmt.Sprintf(`{"message":"new1", "plugin_id": "some.plugin.id", "timestamp": "%s"}`, time.Now().Add(1*time.Second).Format(timeStampFormat)),
 				fmt.Sprintf(`{"message":"new2", "plugin_id": "some.plugin.id", "timestamp": "%s"}`, time.Now().Add(2*time.Second).Format(timeStampFormat)),
 			},
-			expecetdErr: false,
+			expectedErr: false,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			logs, err := filterLogEntries(tc.logs, tc.pluginID, tc.since)
-			if tc.expecetdErr {
+			if tc.expectedErr {
 				if err == nil {
 					t.Logf("expected error, got nil")
 					t.Fail()
