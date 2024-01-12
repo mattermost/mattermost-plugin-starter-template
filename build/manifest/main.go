@@ -111,27 +111,29 @@ func findManifest() (*model.Manifest, error) {
 		return nil, errors.Wrap(err, "failed to parse manifest")
 	}
 
-	// Update the manifest based on the state of the current commit
-	// Use the first version we find (to prevent causing errors)
-	var version string
-	tags := strings.Fields(BuildTagCurrent)
-	for _, t := range tags {
-		if strings.HasPrefix(t, "v") {
-			version = t
-			break
+	// If no version is listed in the manifest, generate one based on the state of the current
+	// commit, and use the first version we find (to prevent causing errors)
+	if manifest.Version == "" {
+		var version string
+		tags := strings.Fields(BuildTagCurrent)
+		for _, t := range tags {
+			if strings.HasPrefix(t, "v") {
+				version = t
+				break
+			}
 		}
-	}
-	if version == "" {
-		if BuildTagLatest != "" {
-			version = BuildTagLatest + "+" + BuildHashShort
-		} else {
-			version = "v0.0.0+" + BuildHashShort
+		if version == "" {
+			if BuildTagLatest != "" {
+				version = BuildTagLatest + "+" + BuildHashShort
+			} else {
+				version = "v0.0.0+" + BuildHashShort
+			}
 		}
+		manifest.Version = strings.TrimPrefix(version, "v")
 	}
-	manifest.Version = strings.TrimPrefix(version, "v")
 
-	// Update the release notes url to point at the latest tag, if present.
-	if BuildTagLatest != "" {
+	// If no release notes specified, generate one from the latest tag, if present.
+	if manifest.ReleaseNotesURL == "" && BuildTagLatest != "" {
 		manifest.ReleaseNotesURL = manifest.HomepageURL + "releases/tag/" + BuildTagLatest
 	}
 
