@@ -6,7 +6,7 @@ endif
 
 # Gather build variables to inject into the manifest tool
 BUILD_HASH_SHORT = $(shell git rev-parse --short HEAD)
-BUILD_TAG_LATEST = $(shell git describe --tags --match 'v*' --abbrev=0)
+BUILD_TAG_LATEST = $(shell git describe --tags --match 'v*' --abbrev=0 2>/dev/null)
 BUILD_TAG_CURRENT = $(shell git tag --points-at HEAD)
 
 # Ensure that the build tools are compiled. Go's caching makes this quick.
