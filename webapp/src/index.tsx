@@ -2,7 +2,7 @@ import {Store, Action} from 'redux';
 
 import {GlobalState} from '@mattermost/types/lib/store';
 
-import {manifest} from '@/manifest';
+import manifest from '@/manifest';
 
 import {PluginRegistry} from '@/types/mattermost-webapp';
 
