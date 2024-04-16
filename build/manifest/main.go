@@ -86,6 +86,11 @@ func main() {
 			panic("failed to write manifest to dist directory: " + err.Error())
 		}
 
+	case "check":
+		if err := manifest.IsValid(); err != nil {
+			panic("failed to check manifest: " + err.Error())
+		}
+
 	default:
 		panic("unrecognized command: " + cmd)
 	}
