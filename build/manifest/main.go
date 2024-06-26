@@ -147,7 +147,7 @@ func findManifest() (*model.Manifest, error) {
 
 // dumpPluginId writes the plugin id from the given manifest to standard out
 func dumpPluginID(manifest *model.Manifest) {
-	fmt.Printf("%s", manifest.Id)
+	fmt.Printf("%s", manifest.GetPluginID())
 }
 
 // dumpPluginVersion writes the plugin version from the given manifest to standard out
