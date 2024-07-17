@@ -16,7 +16,7 @@ type NewCVEHandler func(cve nvd.CVE)
 func NewCVEWatcherGroup(ctx context.Context) *CVEWatcherGroup {
 	return &CVEWatcherGroup{
 		ctx:         ctx,
-		pollingRate: 5 * 60 * time.Second,
+		pollingRate: 10 * time.Second,
 		workers:     make(map[string]*CVEWatcher, 64),
 	}
 }
@@ -56,7 +56,7 @@ func (wg *CVEWatcherGroup) Register(
 		pollInterval: &wg.pollingRate,
 		handler:      cb,
 		cveQuery:     query,
-		lastCheck:    time.Time{},
+		lastCheck:    time.Now(),
 	}
 
 	// begin the worker

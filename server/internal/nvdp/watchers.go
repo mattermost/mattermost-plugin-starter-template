@@ -26,6 +26,8 @@ func (p *Plugin) WatcherSubscribe(args *model.CommandArgs) {
 			})
 
 		// notify of subscription success
+		// TODO: this should be an ephemeral message to the user that invoked the
+		//       command.
 		post := p.NewPost("Subscription successful!", args.ChannelId, args.RootId)
 		_, _ = p.API.CreatePost(post)
 	}

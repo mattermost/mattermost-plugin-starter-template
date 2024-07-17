@@ -47,15 +47,10 @@ func (w *CVEWatcher) Run() {
 
 			// iterate CVEs
 			for _, cve := range cves {
-				// avoid an avalanche of messages on first-run
-				//if w.lastCheck.Equal(time.Time{}) {
-				//	break
-				//}
 				// only produce notifications for CVEs published after our last run
 				if cve.Key.Published.After(w.lastCheck) && w.handler != nil {
 					// invoke the handler
 					w.handler(cve)
-					break
 				}
 			}
 
