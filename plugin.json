@@ -1,11 +1,12 @@
 {
-    "id": "com.mattermost.plugin-starter-template",
-    "name": "Plugin Starter Template",
-    "description": "This plugin serves as a starting point for writing a Mattermost plugin.",
+    "id": "so.hades.nvdmon",
+    "name": "Nist Vulnerability Database (NVD) CVE Feed Monitor",
+    "description": "This plugin allows for customizable monitoring and announcement, in channels which the bot has been invited to, of NIST Vulnerability Database (NVD) CVE releases.",
     "homepage_url": "https://github.com/mattermost/mattermost-plugin-starter-template",
     "support_url": "https://github.com/mattermost/mattermost-plugin-starter-template/issues",
     "icon_path": "assets/starter-template-icon.svg",
     "min_server_version": "6.2.1",
+    "version": "0.4.7",
     "server": {
         "executables": {
             "linux-amd64": "server/dist/plugin-linux-amd64",

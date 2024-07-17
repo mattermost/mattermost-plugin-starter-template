@@ -6,7 +6,7 @@ linters-settings:
   gofmt:
     simplify: true
   goimports:
-    local-prefixes: github.com/mattermost/mattermost-starter-template
+    local-prefixes: github.com/illbjorn/mm-nvd
   govet:
     check-shadowing: true
     enable-all: true
