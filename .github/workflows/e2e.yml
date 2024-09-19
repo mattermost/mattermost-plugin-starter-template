@@ -1,0 +1,149 @@
+name: e2e
+on:
+  workflow_run:
+    workflows:
+      - ci
+    types:
+      - completed
+
+env:
+  TERM: xterm
+  GO_VERSION: 1.21
+
+jobs:
+  playwright-run:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    services:
+      postgres:
+        image: mattermostdevelopment/mirrored-postgres:12
+        env:
+          POSTGRES_USER: mmuser
+          POSTGRES_PASSWORD: mostest
+          POSTGRES_DB: mattermost_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      inbucket:
+        image: mattermost/inbucket:release-1.2.0
+        ports:
+          - 10080:10080
+          - 10110:10110
+          - 10025:10025
+      mattermost-server:
+        image: mattermostdevelopment/mattermost-enterprise-edition:master
+        env:
+          DB_HOST: postgres
+          DB_PORT_NUMBER: 5432
+          MM_DBNAME: mattermost_test
+          MM_USERNAME: mmuser
+          MM_PASSWORD: mostest
+          CI_INBUCKET_HOST: inbucket
+          CI_INBUCKET_PORT: 10080
+          IS_CI: true
+          MM_SERVICEENVIRONMENT: test
+          MM_CLUSTERSETTINGS_READONLYCONFIG: false
+          MM_EMAILSETTINGS_SMTPSERVER: inbucket
+          MM_EMAILSETTINGS_SMTPPORT: 10025
+          MM_PLUGINSETTINGS_ENABLEUPLOADS: true
+          MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: false
+          MM_SERVICESETTINGS_SITEURL: http://localhost:8065
+          MM_SQLSETTINGS_DATASOURCE: "postgres://mmuser:mostest@postgres:5432/mattermost_test?sslmode=disable&connect_timeout=10"
+          MM_SQLSETTINGS_DRIVERNAME: postgres
+
+        ports:
+          - 8065:8065
+    env:
+      MM_SERVICESETTINGS_SITEURL: http://localhost:8065
+      MM_ADMIN_EMAIL: sysadmin@sample.mattermost.com
+      MM_ADMIN_USERNAME: sysadmin
+      MM_ADMIN_PASSWORD: Sys@dmin-sample1
+    steps:
+      - name: ci/checkout-repo
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: ci/setup-go
+        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+        with:
+          go-version: "${{ env.GO_VERSION }}"
+          cache: true
+
+      - name: ci/setup-node
+        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+        with:
+          node-version-file: ".nvmrc"
+
+      - name: ci/create-admin-user
+        run: |
+          STATUSCODE=$(curl -X POST -H "Content-Type: application/json" -d '{"email": "'${MM_ADMIN_EMAIL}'", "username": "'${MM_ADMIN_USERNAME}'", "password": "'${MM_ADMIN_PASSWORD}'"}' ${MM_SERVICESETTINGS_SITEURL}/api/v4/users -w "%{http_code}" -o /dev/stderr)
+          if test $STATUSCODE -ne 201; then exit 1; fi
+
+      - name: ci/install-go-dependencies
+        run: go mod tidy
+
+      - name: ci/install-plugin-webapp-deps
+        run: cd webapp && npm ci
+
+      - name: ci/build-and-install-plugin
+        run: make deploy
+
+      - name: ci/checkout-mattermost
+        run: |
+          git clone https://github.com/mattermost/mattermost.git ../mattermost
+
+      - name: ci/setup-node-for-mattermost
+        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+        with:
+          node-version-file: "../mattermost/.nvmrc"
+
+      - name: ci/install-mattermost-webapp-deps
+        run: |
+          cd ../mattermost/webapp
+          npm ci
+
+      - name: ci/install-mattermost-playwright-deps
+        run: |
+          cd ../mattermost/e2e-tests/playwright
+          npm ci
+
+      - name: ci/setup-node-for-plugin-e2e
+        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+        with:
+          node-version-file: "e2e/.nvmrc"
+
+      - name: ci/install-plugin-e2e-deps
+        run: |
+          cd e2e
+          npm ci
+
+      - name: ci/check
+        run: |
+          cd e2e
+          npm run check
+
+      - name: ci/run-e2e-tests
+        run: |
+          cd e2e
+          npm run test-ci
+        env:
+          CI: true
+          NODE_OPTIONS: '--no-experimental-fetch'
+          PW_ENSURE_PLUGINS_INSTALLED: com.mattermost.plugin-starter-template
+
+      - name: ci/move-artifacts
+        if: success() || failure()
+        run: |
+          cd e2e
+          mkdir results
+          mv playwright-report results
+
+      - uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
+        if: success() || failure()
+        with:
+          name: test-results
+          path: e2e/results
