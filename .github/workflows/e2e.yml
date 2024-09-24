@@ -55,7 +55,6 @@ jobs:
           MM_SERVICESETTINGS_SITEURL: http://localhost:8065
           MM_SQLSETTINGS_DATASOURCE: "postgres://mmuser:mostest@postgres:5432/mattermost_test?sslmode=disable&connect_timeout=10"
           MM_SQLSETTINGS_DRIVERNAME: postgres
-
         ports:
           - 8065:8065
     env:
