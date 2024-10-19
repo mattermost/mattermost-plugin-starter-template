@@ -1,0 +1,27 @@
+{
+    "name": "plugin-e2e-tests",
+    "scripts": {
+        "test": "npm run test --prefix ../../mattermost/e2e-tests/playwright -- --config=../../../mattermost-plugin-starter-template/e2e/playwright.config.ts",
+        "test-ci": "PW_HEADLESS=true npm run test",
+        "test-slomo": "npm run test-slomo --prefix ../../mattermost/e2e-tests/playwright -- --config=../../../mattermost-plugin-starter-template/e2e/playwright.config.ts",
+        "debug": "npm run test -- --debug",
+        "show-report": "npx playwright show-report playwright-report",
+        "lint": "eslint --ignore-pattern node_modules --ignore-pattern dist --ext .js  --ext ts . --quiet --cache",
+        "lint:fix": "eslint --ignore-pattern node_modules --ignore-pattern dist --ext .js  --ext ts . --quiet --cache --fix",
+        "tsc": "tsc",
+        "prettier": "prettier . --check",
+        "prettier:fix": "prettier --write .",
+        "check": "npm run tsc && npm run lint && npm run prettier",
+        "codegen": "cross-env npx playwright codegen $PW_BASE_URL",
+        "playwright-ui": "npm run playwright-ui --prefix ../../mattermost/e2e-tests/playwright -- --config=../../../mattermost-plugin-starter-template/e2e/playwright.config.ts"
+    },
+    "devDependencies": {
+        "@typescript-eslint/eslint-plugin": "7.2.0",
+        "@typescript-eslint/parser": "7.2.0",
+        "cross-env": "7.0.3",
+        "dotenv": "16.4.5",
+        "eslint": "8.57.0",
+        "prettier": "3.3.3",
+        "typescript": "5.6.2"
+    }
+}
