@@ -66,7 +66,7 @@ To avoid having to manually install your plugin, build and deploy your plugin us
 
 ### Modifying the server boilerplate
 
-The server code comes with some boilerplate for creating an api, slash commands, kvstore access and job management. 
+The server code comes with some boilerplate for creating an api, using slash commands, accessing the kvstore and managing jobs. 
 
 #### Api
 
