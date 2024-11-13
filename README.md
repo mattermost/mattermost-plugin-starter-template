@@ -64,6 +64,26 @@ To avoid having to manually install your plugin, build and deploy your plugin us
     }
 ```
 
+### Modifying the server boilerplate
+
+The server code comes with some boilerplate for creating an api, slash commands, kvstore access and job management. 
+
+#### Api
+
+api.go implements the ServeHTTP hook which allows the plugin to implement the http.Handler interface. Requests destined for the `/plugins/{id}` path will be routed to the plugin. This file also contains a sample `HelloWorld` endpoint that is tested in plugin_test.go.
+
+#### Command package
+
+This package contains the boilerplate for adding a slash command and an instance of it is created in the `OnActivate` hook in plugin.go. If you don't need it you can delete the package and remove any reference to `commandClient` in plugin.go. The package also contains an example of how to create a mock for testing.
+
+#### KVStore package
+
+This is a central place for you to access the KVStore methods that are available in the `pluginapi.Client`. The package contains an interface for you to define your methods that will wrap the KVStore methods. An instance of the KVStore is created in the `OnActivate` hook.
+
+#### Jobs package
+
+This package contains a jobManager that can be used to manage the lifetime of your jobs. startertemplate_job.go contains some boilerplate of a job implementation. A jobManager instance is created in the `OnActivate` hook and `OnConfigurationChange` contains some commented out code of how to add the `StarterTemplateJob` to the jobManager. If you don't need to create a job in your plugin you can simply delete the `Jobs` package and remove any reference to the `jobManager` in plugin.go.
+
 ### Deploying with Local Mode
 
 If your Mattermost server is running locally, you can enable [local mode](https://docs.mattermost.com/administration/mmctl-cli-tool.html#local-mode) to streamline deploying your plugin. Edit your server configuration as follows:

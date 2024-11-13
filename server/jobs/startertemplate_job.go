@@ -62,7 +62,7 @@ func (j *StarterTemplateJob) OnConfigurationChange(cfg *config.Configuration) er
 	return j.start(settings)
 }
 
-// start schedules a new job with specified settings.
+// Start schedules a new job with specified settings.
 func (j *StarterTemplateJob) start(settings *StarterTemplateJobSettings) error {
 	j.mux.Lock()
 	defer j.mux.Unlock()
