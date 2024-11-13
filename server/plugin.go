@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net/http"
 	"sync"
 	"time"
 
@@ -71,7 +72,11 @@ func (p *Plugin) OnDeactivate() error {
 
 // This will execute the commands that were registered in the NewCommandHandler function.
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	return p.commandClient.Handle(args)
+	response, err := p.commandClient.Handle(args)
+	if err != nil {
+		return nil, model.NewAppError("ExecuteCommand", "plugin.command.execute_command.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+	return response, nil
 }
 
 // See https://developers.mattermost.com/extend/plugins/server/reference/

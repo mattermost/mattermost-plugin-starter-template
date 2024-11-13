@@ -13,7 +13,7 @@ type Handler struct {
 }
 
 type Command interface {
-	Handle(args *model.CommandArgs) (*model.CommandResponse, *model.AppError)
+	Handle(args *model.CommandArgs) (*model.CommandResponse, error)
 	executeHelloCommand(args *model.CommandArgs) *model.CommandResponse
 }
 
@@ -36,7 +36,7 @@ func NewCommandHandler(client *pluginapi.Client) Command {
 }
 
 // ExecuteCommand hook calls this method to execute the commands that were registered in the NewCommandHandler function.
-func (c *Handler) Handle(args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
+func (c *Handler) Handle(args *model.CommandArgs) (*model.CommandResponse, error) {
 	trigger := strings.TrimPrefix(strings.Fields(args.Command)[0], "/")
 	switch trigger {
 	case helloCommandTrigger:
