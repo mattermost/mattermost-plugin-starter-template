@@ -127,10 +127,10 @@ func (p *Plugin) OnConfigurationChange() error {
 	// // Create new job
 	// stj, err := jobs.NewStarterTemplateJob(starterTemplateJobID, p.API, p.client, p.kvstore)
 	// if err != nil {
-	// 	return fmt.Errorf("cannot create legal hold job: %w", err)
+	// 	return fmt.Errorf("cannot create starter template job: %w", err)
 	// }
 	// if err := p.jobManager.AddJob(stj); err != nil {
-	// 	return fmt.Errorf("cannot add legal hold job: %w", err)
+	// 	return fmt.Errorf("cannot add starter template job: %w", err)
 	// }
 	// _ = p.jobManager.OnConfigurationChange(p.getConfiguration())
 
