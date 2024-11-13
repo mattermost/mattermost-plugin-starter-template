@@ -3,14 +3,15 @@ package main
 import (
 	"reflect"
 	"sync"
+	"time"
 
 	"github.com/mattermost/mattermost-plugin-starter-template/server/command"
 	"github.com/mattermost/mattermost-plugin-starter-template/server/config"
-	"github.com/mattermost/mattermost-plugin-starter-template/server/jobs"
 	"github.com/mattermost/mattermost-plugin-starter-template/server/store/kvstore"
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
+	"github.com/mattermost/mattermost/server/public/pluginapi/cluster"
 	"github.com/pkg/errors"
 )
 
@@ -27,7 +28,7 @@ type Plugin struct {
 	// commandClient is the client used to register and execute slash commands.
 	commandClient command.Command
 
-	jobManager *jobs.JobManager
+	backgroundJob *cluster.Job
 
 	// configurationLock synchronizes access to the configuration.
 	configurationLock sync.RWMutex
@@ -49,13 +50,28 @@ func (p *Plugin) OnActivate() error {
 
 	p.commandClient = command.NewCommandHandler(p.client)
 
-	p.jobManager = jobs.NewJobManager(&p.client.Log)
+	job, cronErr := cluster.Schedule(
+		p.API,
+		"BackgroundJob",
+		cluster.MakeWaitForRoundedInterval(1*time.Hour),
+		p.runJob,
+	)
+	if cronErr != nil {
+		return errors.Wrap(cronErr, "failed to schedule background job")
+	}
+
+	p.backgroundJob = job
 
 	return nil
 }
 
 // OnDeactivate is invoked when the plugin is deactivated.
 func (p *Plugin) OnDeactivate() error {
+	if p.backgroundJob != nil {
+		if err := p.backgroundJob.Close(); err != nil {
+			p.API.LogError("Failed to close background job", "err", err)
+		}
+	}
 	return nil
 }
 
@@ -115,24 +131,6 @@ func (p *Plugin) OnConfigurationChange() error {
 	}
 
 	p.setConfiguration(configuration)
-
-	// starterTemplateJobID := "starter_template_job"
-
-	// // Remove old job if exists
-	// if err := p.jobManager.RemoveJob(starterTemplateJobID, 0); err != nil {
-	// 	return err
-	// }
-	// p.client.Log.Info("Stopped old job")
-
-	// // Create new job
-	// stj, err := jobs.NewStarterTemplateJob(starterTemplateJobID, p.API, p.client, p.kvstore)
-	// if err != nil {
-	// 	return fmt.Errorf("cannot create starter template job: %w", err)
-	// }
-	// if err := p.jobManager.AddJob(stj); err != nil {
-	// 	return fmt.Errorf("cannot add starter template job: %w", err)
-	// }
-	// _ = p.jobManager.OnConfigurationChange(p.getConfiguration())
 
 	return nil
 }

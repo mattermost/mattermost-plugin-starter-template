@@ -66,7 +66,7 @@ To avoid having to manually install your plugin, build and deploy your plugin us
 
 ### Modifying the server boilerplate
 
-The server code comes with some boilerplate for creating an api, using slash commands, accessing the kvstore and managing jobs. 
+The server code comes with some boilerplate for creating an api, using slash commands, accessing the kvstore and using the cluster package for jobs. 
 
 #### Api
 
@@ -82,7 +82,7 @@ This is a central place for you to access the KVStore methods that are available
 
 #### Jobs package
 
-This package contains a jobManager that can be used to manage the lifetime of your jobs. startertemplate_job.go contains some boilerplate of a job implementation. A jobManager instance is created in the `OnActivate` hook and `OnConfigurationChange` contains some commented out code of how to add the `StarterTemplateJob` to the jobManager. If you don't need to create a job in your plugin you can simply delete the `Jobs` package and remove any reference to the `jobManager` in plugin.go.
+The cluster package in the pluginapi contains methods to run cluster aware jobs, there is an example of it's usage in plugin.go.
 
 ### Deploying with Local Mode
 
