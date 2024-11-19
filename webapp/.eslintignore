@@ -1,0 +1,4 @@
+node_modules
+webpack.config.js
+dist
+src/manifest.ts
