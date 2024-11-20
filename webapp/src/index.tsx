@@ -1,10 +1,12 @@
-import {Store, Action} from 'redux';
+// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 
-import {GlobalState} from '@mattermost/types/lib/store';
+import type {Store, Action} from 'redux';
+
+import type {GlobalState} from '@mattermost/types/store';
 
 import manifest from '@/manifest';
-
-import {PluginRegistry} from '@/types/mattermost-webapp';
+import type {PluginRegistry} from '@/types/mattermost-webapp';
 
 export default class Plugin {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
@@ -15,7 +17,7 @@ export default class Plugin {
 
 declare global {
     interface Window {
-        registerPlugin(pluginId: string, plugin: Plugin): void
+        registerPlugin(pluginId: string, plugin: Plugin): void;
     }
 }
 
