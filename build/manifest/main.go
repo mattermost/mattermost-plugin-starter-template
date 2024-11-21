@@ -165,6 +165,9 @@ func applyManifest(manifest *model.Manifest) error {
 		}
 		manifestStr := string(manifestBytes)
 
+		// replace any backtiks (`) in manifestStr with suitable replacement for multiline literal
+		manifestStr = strings.ReplaceAll(manifestStr, "`", "` + \"`\" + `")
+
 		// write generated code to file by using Go file template.
 		if err := os.WriteFile(
 			"server/manifest.go",
