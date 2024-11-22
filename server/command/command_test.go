@@ -33,7 +33,8 @@ func TestHelloCommand(t *testing.T) {
 		Trigger:          helloCommandTrigger,
 		AutoComplete:     true,
 		AutoCompleteDesc: "Say hello to someone",
-		AutoCompleteHint: "<username>",
+		AutoCompleteHint: "[@username]",
+		AutocompleteData: model.NewAutocompleteData("hello", "[@username]", "Username to say hello to"),
 	}).Return(nil)
 	cmdHandler := NewCommandHandler(env.client)
 

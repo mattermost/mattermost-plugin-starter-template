@@ -25,7 +25,8 @@ func NewCommandHandler(client *pluginapi.Client) Command {
 		Trigger:          helloCommandTrigger,
 		AutoComplete:     true,
 		AutoCompleteDesc: "Say hello to someone",
-		AutoCompleteHint: "<username>",
+		AutoCompleteHint: "[@username]",
+		AutocompleteData: model.NewAutocompleteData(helloCommandTrigger, "[@username]", "Username to say hello to"),
 	})
 	if err != nil {
 		client.Log.Error("Failed to register command", "error", err)

@@ -45,14 +45,14 @@ func (p *Plugin) OnActivate() error {
 
 	p.commandClient = command.NewCommandHandler(p.client)
 
-	job, cronErr := cluster.Schedule(
+	job, err := cluster.Schedule(
 		p.API,
 		"BackgroundJob",
 		cluster.MakeWaitForRoundedInterval(1*time.Hour),
 		p.runJob,
 	)
-	if cronErr != nil {
-		return errors.Wrap(cronErr, "failed to schedule background job")
+	if err != nil {
+		return errors.Wrap(err, "failed to schedule background job")
 	}
 
 	p.backgroundJob = job
