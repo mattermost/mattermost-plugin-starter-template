@@ -64,6 +64,32 @@ To avoid having to manually install your plugin, build and deploy your plugin us
     }
 ```
 
+### Development guidance 
+
+1. Fewer packages is better: default to the main package unless there's good reason for a new package.
+
+2. Coupling implies same package: don't jump through hoops to break apart code that's naturally coupled.
+
+3. New package for a new interface: a classic example is the sqlstore with layers for monitoring performance, caching and mocking.
+
+4. New package for upstream integration: a discrete client package for interfacing with a 3rd party is often a great place to break out into a new package
+
+### Modifying the server boilerplate
+
+The server code comes with some boilerplate for creating an api, using slash commands, accessing the kvstore and using the cluster package for jobs. 
+
+#### Api
+
+api.go implements the ServeHTTP hook which allows the plugin to implement the http.Handler interface. Requests destined for the `/plugins/{id}` path will be routed to the plugin. This file also contains a sample `HelloWorld` endpoint that is tested in plugin_test.go.
+
+#### Command package
+
+This package contains the boilerplate for adding a slash command and an instance of it is created in the `OnActivate` hook in plugin.go. If you don't need it you can delete the package and remove any reference to `commandClient` in plugin.go. The package also contains an example of how to create a mock for testing.
+
+#### KVStore package
+
+This is a central place for you to access the KVStore methods that are available in the `pluginapi.Client`. The package contains an interface for you to define your methods that will wrap the KVStore methods. An instance of the KVStore is created in the `OnActivate` hook.
+
 ### Deploying with Local Mode
 
 If your Mattermost server is running locally, you can enable [local mode](https://docs.mattermost.com/administration/mmctl-cli-tool.html#local-mode) to streamline deploying your plugin. Edit your server configuration as follows:
