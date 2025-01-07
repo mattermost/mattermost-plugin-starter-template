@@ -64,6 +64,16 @@ To avoid having to manually install your plugin, build and deploy your plugin us
     }
 ```
 
+### Development guidance 
+
+1. Fewer packages is better: default to the main package unless there's good reason for a new package.
+
+2. Coupling implies same package: don't jump through hoops to break apart code that's naturally coupled.
+
+3. New package for a new interface: a classic example is the sqlstore with layers for monitoring performance, caching and mocking.
+
+4. New package for upstream integration: a discrete client package for interfacing with a 3rd party is often a great place to break out into a new package
+
 ### Modifying the server boilerplate
 
 The server code comes with some boilerplate for creating an api, using slash commands, accessing the kvstore and using the cluster package for jobs. 
@@ -79,10 +89,6 @@ This package contains the boilerplate for adding a slash command and an instance
 #### KVStore package
 
 This is a central place for you to access the KVStore methods that are available in the `pluginapi.Client`. The package contains an interface for you to define your methods that will wrap the KVStore methods. An instance of the KVStore is created in the `OnActivate` hook.
-
-#### Jobs package
-
-The cluster package in the pluginapi contains methods to run cluster aware jobs, there is an example of it's usage in plugin.go.
 
 ### Deploying with Local Mode
 
