@@ -1,0 +1,7 @@
+node_modules/
+/playwright/.cache/
+.env
+screenshots
+playwright-report
+test-results
+.eslintcache
