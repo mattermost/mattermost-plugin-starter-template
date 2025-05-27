@@ -36,9 +36,6 @@ const config = {
     resolve: {
         alias: {
             '@': path.resolve(__dirname, 'src'),
-            // temporary fix for `mattermost-redux` v10+
-            // see more: https://github.com/mattermost/mattermost/issues/31060
-            'mattermost-redux': 'node_modules/mattermost-redux/lib',
         },
         modules: [
             'src',
