@@ -35,11 +35,11 @@ func (m *MockCommand) EXPECT() *MockCommandMockRecorder {
 }
 
 // Handle mocks base method.
-func (m *MockCommand) Handle(arg0 *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
+func (m *MockCommand) Handle(arg0 *model.CommandArgs) (*model.CommandResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Handle", arg0)
 	ret0, _ := ret[0].(*model.CommandResponse)
-	ret1, _ := ret[1].(*model.AppError)
+	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
