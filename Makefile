@@ -163,7 +163,7 @@ apply:
 
 ## Runs eslint and golangci-lint
 .PHONY: check-style
-check-style: manifest-check apply webapp/node_modules
+check-style: tidy manifest-check apply webapp/node_modules
 	@echo Checking for style guide compliance
 
 ifneq ($(HAS_WEBAPP),)
@@ -177,8 +177,14 @@ endif
 ifneq ($(HAS_SERVER),)
 	@echo Running golangci-lint
 	$(GO) vet ./...
-	go tool golangci-lint run ./...
+	go tool -modfile=tools.mod golangci-lint run ./...
 endif
+
+## TODO
+.PHONY: tidy
+tidy:
+	go mod tidy
+	go mod tidy -modfile=tools.mod
 
 ## Builds the server, if it exists, for all supported architectures, unless MM_SERVICESETTINGS_ENABLEDEVELOPER is set.
 .PHONY: server
@@ -313,7 +319,7 @@ detach: setup-attach
 .PHONY: test
 test: apply webapp/node_modules
 ifneq ($(HAS_SERVER),)
-	go tool gotestsum -- -v ./...
+	go tool -modfile=tools.mod gotestsum -- -v ./...
 endif
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run test;
@@ -324,7 +330,7 @@ endif
 .PHONY: test-ci
 test-ci: apply webapp/node_modules
 ifneq ($(HAS_SERVER),)
-	go tool gotestsum --format standard-verbose --junitfile report.xml -- ./...
+	go tool -modfile=tools.mod gotestsum --format standard-verbose --junitfile report.xml -- ./...
 endif
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run test;
@@ -403,5 +409,5 @@ help:
 
 mock:
 ifneq ($(HAS_SERVER),)
-	go tool mockgen -destination=server/command/mocks/mock_commands.go -package=mocks github.com/mattermost/mattermost-plugin-starter-template/server/command Command
+	go tool -modfile=tools.mod mockgen -destination=server/command/mocks/mock_commands.go -package=mocks github.com/mattermost/mattermost-plugin-starter-template/server/command Command
 endif
