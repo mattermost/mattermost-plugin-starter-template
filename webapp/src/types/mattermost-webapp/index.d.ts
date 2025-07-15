@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+/* eslint-disable max-lines */
+
 import type {Reducer} from 'redux';
 
 import type {WebSocketMessage} from '@mattermost/client';
@@ -127,7 +129,11 @@ export interface PluginRegistry {
         * Accepts a React component. Returns a unique identifier.
     */
     registerRootComponent(
-        component: ReactResolvable
+        ...args: [
+            component: ReactResolvable
+        ] | [{
+            component: ReactResolvable;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -135,7 +141,11 @@ export interface PluginRegistry {
         * Accepts a React component. Returns a unique identifier.
     */
     registerPopoverUserAttributesComponent(
-        component: ReactResolvable
+        ...args: [
+            component: ReactResolvable
+        ] | [{
+            component: ReactResolvable;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -143,7 +153,11 @@ export interface PluginRegistry {
         * Accepts a React component. Returns a unique identifier.
     */
     registerPopoverUserActionsComponent(
-        component: ReactResolvable
+        ...args: [
+            component: ReactResolvable
+        ] | [{
+            component: ReactResolvable;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -151,7 +165,11 @@ export interface PluginRegistry {
         * Accepts a React component. Returns a unique identifier.
     */
     registerLeftSidebarHeaderComponent(
-        component: ReactResolvable
+        ...args: [
+            component: ReactResolvable
+        ] | [{
+            component: ReactResolvable;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -160,7 +178,11 @@ export interface PluginRegistry {
         * Accepts a React component. Returns a unique identifier.
     */
     registerBottomTeamSidebarComponent(
-        component: ReactResolvable
+        ...args: [
+            component: ReactResolvable
+        ] | [{
+            component: ReactResolvable;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -168,7 +190,11 @@ export interface PluginRegistry {
         * Accepts a React component. Returns a unique identifier.
     */
     registerPostMessageAttachmentComponent(
-        component: ReactResolvable
+        ...args: [
+            component: ReactResolvable
+        ] | [{
+            component: ReactResolvable;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -179,7 +205,11 @@ export interface PluginRegistry {
         * - show - A boolean used to signal that the user is currently hovering over this link. Use this value to initialize your component when this boolean is true for the first time, using `componentDidUpdate` or `useEffect`.
     */
     registerLinkTooltipComponent(
-        component: ReactResolvable
+        ...args: [
+            component: ReactResolvable
+        ] | [{
+            component: ReactResolvable;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -188,7 +218,11 @@ export interface PluginRegistry {
         * Accepts a React component. Returns a unique identifier.
     */
     registerActionAfterChannelCreation(
-        component: ReactResolvable
+        ...args: [
+            component: ReactResolvable
+        ] | [{
+            component: ReactResolvable;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -201,10 +235,17 @@ export interface PluginRegistry {
         * - tooltipText - string or React element shown for tooltip appear on hover
     */
     registerChannelHeaderButtonAction(
-        icon: ReactResolvable,
-        action: () => void,
-        dropdownText: string,
-        tooltipText: string
+        ...args: [
+            icon: ReactResolvable,
+            action: () => void,
+            dropdownText: string,
+            tooltipText: string
+        ] | [{
+            icon: ReactResolvable;
+            action: () => void;
+            dropdownText: string;
+            tooltipText: string;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -215,9 +256,15 @@ export interface PluginRegistry {
         * - text - a localized string or React element  to use as the button's text
     */
     registerChannelIntroButtonAction(
-        icon: ReactResolvable,
-        action: () => void,
-        tooltipText: ReactResolvable
+        ...args: [
+            icon: ReactResolvable,
+            action: () => void,
+            tooltipText: ReactResolvable
+        ] | [{
+            icon: ReactResolvable;
+            action: () => void;
+            tooltipText: ReactResolvable;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -231,9 +278,15 @@ export interface PluginRegistry {
         * Minimum required version: 6.5
     */
     registerCallButtonAction(
-        button: ReactResolvable,
-        dropdownButton: ReactResolvable,
-        fn: (channel: Channel) => void
+        ...args: [
+            button: ReactResolvable,
+            dropdownButton: ReactResolvable,
+            fn: (channel: Channel) => void
+        ] | [{
+            button: ReactResolvable;
+            dropdownButton: ReactResolvable;
+            fn: (channel: Channel) => void;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -244,8 +297,13 @@ export interface PluginRegistry {
         * Returns a unique identifier.
     */
     registerPostTypeComponent(
-        typeName: string,
-        component: ReactResolvable
+        ...args: [
+            typeName: string,
+            component: ReactResolvable
+        ] | [{
+            typeName: string;
+            component: ReactResolvable;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -255,8 +313,13 @@ export interface PluginRegistry {
         * Returns a unique identifier.
     */
     registerPostCardTypeComponent(
-        type: string,
-        component: ReactResolvable
+        ...args: [
+            type: string,
+            component: ReactResolvable
+        ] | [{
+            type: string;
+            component: ReactResolvable;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -272,9 +335,15 @@ export interface PluginRegistry {
         * Returns a unique identifier.
     */
     registerPostWillRenderEmbedComponent(
-        match: (embed: PostEmbed) => void,
-        component: ReactResolvable,
-        toggleable: boolean
+        ...args: [
+            match: (embed: PostEmbed) => void,
+            component: ReactResolvable,
+            toggleable: boolean
+        ] | [{
+            match: (embed: PostEmbed) => void;
+            component: ReactResolvable;
+            toggleable: boolean;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -286,9 +355,15 @@ export interface PluginRegistry {
         * Returns a unique identifier.
     */
     registerMainMenuAction(
-        text: ReactResolvable,
-        action: () => void,
-        mobileIcon: ReactResolvable
+        ...args: [
+            text: ReactResolvable,
+            action: () => void,
+            mobileIcon: ReactResolvable
+        ] | [{
+            text: ReactResolvable;
+            action: () => void;
+            mobileIcon: ReactResolvable;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -301,8 +376,13 @@ export interface PluginRegistry {
         * Returns a unique identifier.
     */
     registerChannelHeaderMenuAction(
-        component: ReactResolvable,
-        fn: (channelID: string) => void
+        ...args: [
+            component: ReactResolvable,
+            fn: (channelID: string) => void
+        ] | [{
+            component: ReactResolvable;
+            fn: (channelID: string) => void;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -314,9 +394,15 @@ export interface PluginRegistry {
         * Returns a unique identifier.
     */
     registerFileDropdownMenuAction(
-        match: (fileInfo: FileInfo) => boolean,
-        text: ReactResolvable,
-        action: (fileInfo: FileInfo) => void
+        ...args: [
+            match: (fileInfo: FileInfo) => boolean,
+            text: ReactResolvable,
+            action: (fileInfo: FileInfo) => void
+        ] | [{
+            match: (fileInfo: FileInfo) => boolean;
+            text: ReactResolvable;
+            action: (fileInfo: FileInfo) => void;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -327,8 +413,13 @@ export interface PluginRegistry {
         * Returns a unique identifier.
     */
     registerUserGuideDropdownMenuAction(
-        text: ReactResolvable,
-        action: (fileInfo: FileInfo) => void
+        ...args: [
+            text: ReactResolvable,
+            action: (fileInfo: FileInfo) => void
+        ] | [{
+            text: ReactResolvable;
+            action: (fileInfo: FileInfo) => void;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -336,7 +427,11 @@ export interface PluginRegistry {
         * Accepts a React component. Returns a unique identifier.
     */
     registerPostActionComponent(
-        component: ReactResolvable
+        ...args: [
+            component: ReactResolvable
+        ] | [{
+            component: ReactResolvable;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -344,7 +439,11 @@ export interface PluginRegistry {
         * Accepts a React component. Returns a unique identifier.
     */
     registerPostEditorActionComponent(
-        component: ReactResolvable
+        ...args: [
+            component: ReactResolvable
+        ] | [{
+            component: ReactResolvable;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -352,7 +451,11 @@ export interface PluginRegistry {
         * Accepts a React component. Returns a unique identifier.
     */
     registerCodeBlockActionComponent(
-        component: ReactResolvable
+        ...args: [
+            component: ReactResolvable
+        ] | [{
+            component: ReactResolvable;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -360,7 +463,11 @@ export interface PluginRegistry {
         * Accepts a React component. Returns a unique identifier.
     */
     registerNewMessagesSeparatorActionComponent(
-        component: ReactResolvable
+        ...args: [
+            component: ReactResolvable
+        ] | [{
+            component: ReactResolvable;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -372,9 +479,15 @@ export interface PluginRegistry {
         * Returns a unique identifier.
     */
     registerPostDropdownMenuAction(
-        text: React.ReactNode,
-        action: () => void,
-        filter: (post: Post) => boolean
+        ...args: [
+            text: React.ReactNode,
+            action: () => void,
+            filter: (post: Post) => boolean
+        ] | [{
+            text: React.ReactNode;
+            action: () => void;
+            filter: (post: Post) => boolean;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -388,9 +501,15 @@ export interface PluginRegistry {
         * At this time, only one level of nesting is allowed to avoid rendering issue in the RHS.
     */
     registerPostDropdownSubMenuAction(
-        text: ReactResolvable,
-        action: (postId: string) => void,
-        filter: (postId: string) => boolean
+        ...args: [
+            text: ReactResolvable,
+            action: (postId: string) => void,
+            filter: (postId: string) => boolean
+        ] | [{
+            text: ReactResolvable;
+            action: (postId: string) => void;
+            filter: (postId: string) => boolean;
+        }]
     ): {
         id: UniqueIdentifier;
         rootRegisterMenuItem: (
@@ -405,7 +524,11 @@ export interface PluginRegistry {
         * Accepts a React component. Returns a unique identifier.
     */
     registerPostDropdownMenuComponent(
-        component: ReactResolvable
+        ...args: [
+            component: ReactResolvable
+        ] | [{
+            component: ReactResolvable;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -417,9 +540,15 @@ export interface PluginRegistry {
         * Returns a unique identifier.
     */
     registerFileUploadMethod(
-        icon: ReactResolvable,
-        action: (checkPluginHooksAndUploadFiles: ((files: FileList | File[]) => void)) => void,
-        text: ReactResolvable
+        ...args: [
+            icon: ReactResolvable,
+            action: (checkPluginHooksAndUploadFiles: ((files: FileList | File[]) => void)) => void,
+            text: ReactResolvable
+        ] | [{
+            icon: ReactResolvable;
+            action: (checkPluginHooksAndUploadFiles: ((files: FileList | File[]) => void)) => void;
+            text: ReactResolvable;
+        }]
     ): string;
 
     /**
@@ -432,10 +561,17 @@ export interface PluginRegistry {
         * Returns a unique identifier.
     */
     registerFilesWillUploadHook(
-        hook: (files: File[], uploadFiles: (files: File[]) => void) => {
-            message?: string;
-            files?: File[];
-        }
+        ...args: [
+            hook: (files: File[], uploadFiles: (files: File[]) => void) => {
+                message?: string;
+                files?: File[];
+            }
+        ] | [{
+            hook: (files: File[], uploadFiles: (files: File[]) => void) => {
+                message?: string;
+                files?: File[];
+            };
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -444,7 +580,11 @@ export interface PluginRegistry {
         * Returns undefined in all cases.
     */
     unregisterComponent(
-        componentId: UniqueIdentifier
+        ...args: [
+            componentId: UniqueIdentifier
+        ] | [{
+            componentId: UniqueIdentifier;
+        }]
     ): void;
 
     /**
@@ -453,7 +593,11 @@ export interface PluginRegistry {
         * Returns undefined in all cases.
     */
     unregisterPostTypeComponent(
-        componentId: UniqueIdentifier
+        ...args: [
+            componentId: UniqueIdentifier
+        ] | [{
+            componentId: UniqueIdentifier;
+        }]
     ): void;
 
     /**
@@ -462,7 +606,11 @@ export interface PluginRegistry {
         * Accepts a reducer. Returns undefined.
     */
     registerReducer(
-        reducer: Reducer
+        ...args: [
+            reducer: Reducer
+        ] | [{
+            reducer: Reducer;
+        }]
     ): string;
 
     /**
@@ -474,8 +622,13 @@ export interface PluginRegistry {
         * Returns undefined.
     */
     registerWebSocketEventHandler<T = Record<string, string>>(
-        event: string,
-        handler: (msg: WebSocketMessage<T>) => void
+        ...args: [
+            event: string,
+            handler: (msg: WebSocketMessage<T>) => void
+        ] | [{
+            event: string;
+            handler: (msg: WebSocketMessage<T>) => void;
+        }]
     ): void;
 
     /**
@@ -484,7 +637,11 @@ export interface PluginRegistry {
         * Returns undefined.
     */
     unregisterWebSocketEventHandler(
-        event: string
+        ...args: [
+            event: string
+        ] | [{
+            event: string;
+        }]
     ): void;
 
     /**
@@ -493,7 +650,11 @@ export interface PluginRegistry {
         * Accepts a function to handle the event. Returns undefined.
     */
     registerReconnectHandler(
-        handler: () => void
+        ...args: [
+            handler: () => void
+        ] | [{
+            handler: () => void;
+        }]
     ): void;
 
     /**
@@ -516,7 +677,11 @@ export interface PluginRegistry {
         * until the hook returns.
     */
     registerMessageWillBePostedHook(
-        hook: (post: Post) => ({ post: Post } | {error: { message: string }} | Promise<{ post: Post } | { error: { message: string } }>)
+        ...args: [
+            hook: (post: Post) => ({ post: Post } | {error: { message: string }} | Promise<{ post: Post } | { error: { message: string } }>)
+        ] | [{
+            hook: (post: Post) => ({ post: Post } | {error: { message: string }} | Promise<{ post: Post } | { error: { message: string } }>);
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -542,7 +707,11 @@ export interface PluginRegistry {
         * until the hook returns.
     */
     registerSlashCommandWillBePostedHook(
-        hook: (message: string, args: ContextArgs) => ({ message: string; args: ContextArgs } | object | Promise<{ message: string; args: ContextArgs } | object>)
+        ...args: [
+            hook: (message: string, args: ContextArgs) => ({ message: string; args: ContextArgs } | object | Promise<{ message: string; args: ContextArgs } | object>)
+        ] | [{
+            hook: (message: string, args: ContextArgs) => ({ message: string; args: ContextArgs } | object | Promise<{ message: string; args: ContextArgs } | object>);
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -553,7 +722,11 @@ export interface PluginRegistry {
         * Returns a unique identifier.
     */
     registerMessageWillFormatHook(
-        hook: (post: Post, message: string) => string
+        ...args: [
+            hook: (post: Post, message: string) => string
+        ] | [{
+            hook: (post: Post, message: string) => string;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -566,12 +739,21 @@ export interface PluginRegistry {
         * Only one plugin can override a file preview at a time. If two plugins try to override the same file preview, the first plugin will perform the override and the second will not. Plugin precedence is ordered alphabetically by plugin ID.
     */
     registerFilePreviewComponent(
-        override: (fileInfos: FileInfo[], post: Post) => boolean,
-        component: ReactResolvable
+        ...args: [
+            override: (fileInfos: FileInfo[], post: Post) => boolean,
+                    component: ReactResolvable
+        ] | [{
+            override: (fileInfos: FileInfo[], post: Post) => boolean;
+            component: ReactResolvable;
+        }]
     ): UniqueIdentifier;
 
     registerTranslations(
-        getTranslationsForLocale: (locale: string) => { [translationId: string]: string }
+        ...args: [
+            getTranslationsForLocale: (locale: string) => { [translationId: string]: string }
+        ] | [{
+            getTranslationsForLocale: (locale: string) => { [translationId: string]: string };
+        }]
     ): void;
 
     /**
@@ -585,7 +767,11 @@ export interface PluginRegistry {
         * replacing older ones.
     */
     registerAdminConsolePlugin(
-        func: (config: object) => void
+        ...args: [
+            func: (config: object) => void
+        ] | [{
+            func: (config: object) => void;
+        }]
     ): void;
 
     /**
@@ -605,9 +791,15 @@ export interface PluginRegistry {
         * available space in the right column.
     */
     registerAdminConsoleCustomSetting(
-        key: string,
-        component: ReactResolvable,
-        options: { showTitle?: boolean }
+        ...args: [
+            key: string,
+            component: ReactResolvable,
+            options: { showTitle?: boolean }
+        ] | [{
+            key: string;
+            component: ReactResolvable;
+            options: { showTitle?: boolean };
+        }]
     ): void;
 
     /**
@@ -617,8 +809,13 @@ export interface PluginRegistry {
         * - component - A react component to render in place of the default handling.
     */
     registerAdminConsoleCustomSection(
-        key: string,
-        component: ReactResolvable
+        ...args: [
+            key: string,
+            component: ReactResolvable
+        ] | [{
+            key: string;
+            component: ReactResolvable;
+        }]
     ): void;
 
     /**
@@ -633,8 +830,13 @@ export interface PluginRegistry {
         * - toggleRHSPlugin: the action to dispatch that will toggle the RHS
     */
     registerRightHandSidebarComponent(
-        component: ReactResolvable,
-        title: ReactResolvable
+        ...args: [
+            component: ReactResolvable,
+            title: ReactResolvable
+        ] | [{
+            component: ReactResolvable;
+            title: ReactResolvable;
+        }]
     ): {
         id: UniqueIdentifier;
         showRHSPlugin: object;
@@ -651,24 +853,45 @@ export interface PluginRegistry {
         * - id: a unique identifier
     */
     registerNeedsTeamRoute(
-        route: string,
-        component: ReactResolvable
+        ...args: [
+            route: string,
+            component: ReactResolvable
+        ] | [{
+            route: string;
+            component: ReactResolvable;
+        }]
     ): UniqueIdentifier;
 
     registerCustomRoute(
-        route: string,
-        component: ReactResolvable
+        ...args: [
+            route: string,
+                    component: ReactResolvable
+        ] | [{
+            route: string;
+            component: ReactResolvable;
+        }]
     ): UniqueIdentifier;
 
     registerProduct(
-        baseURL: string,
-        switcherIcon: string,
-        switcherText: string,
-        switcherLinkURL: string,
-        mainComponent: ReactResolvable,
-        headerCentreComponent: ReactResolvable,
-        headerRightComponent?: ReactResolvable,
-        showTeamSidebar: boolean
+        ...args: [
+            baseURL: string,
+            switcherIcon: string,
+            switcherText: string,
+            switcherLinkURL: string,
+            mainComponent: ReactResolvable,
+            headerCentreComponent: ReactResolvable,
+            headerRightComponent?: ReactResolvable,
+            showTeamSidebar: boolean
+        ] | [{
+            baseURL: string;
+            switcherIcon: string;
+            switcherText: string;
+            switcherLinkURL: string;
+            mainComponent: ReactResolvable;
+            headerCentreComponent: ReactResolvable;
+            headerRightComponent?: ReactResolvable;
+            showTeamSidebar: boolean;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -685,7 +908,11 @@ export interface PluginRegistry {
         * until the hook returns.
     */
     registerMessageWillBeUpdatedHook(
-        hook: (post: Partial<Post>, oldPost: Post) => Promise<{ error: { message: string } } | { post: Post }>
+        ...args: [
+            hook: (post: Partial<Post>, oldPost: Post) => Promise<{ error: { message: string } } | { post: Post }>
+        ] | [{
+            hook: (post: Partial<Post>, oldPost: Post) => Promise<{ error: { message: string } } | { post: Post }>;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -695,7 +922,11 @@ export interface PluginRegistry {
         * Returns a unique identifier.
     */
     registerSidebarChannelLinkLabelComponent(
-        component: ReactResolvable
+        ...args: [
+            component: ReactResolvable
+        ] | [{
+            component: ReactResolvable;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -705,7 +936,11 @@ export interface PluginRegistry {
         * Returns a unique identifier.
     */
     registerChannelToastComponent(
-        component: ReactResolvable
+        ...args: [
+            component: ReactResolvable
+        ] | [{
+            component: ReactResolvable;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -715,22 +950,42 @@ export interface PluginRegistry {
         * Returns a unique identifier.
     */
     registerGlobalComponent(
-        component: ReactResolvable
+        ...args: [
+            component: ReactResolvable
+        ] | [{
+            component: ReactResolvable;
+        }]
     ): UniqueIdentifier;
 
     registerAppBarComponent(
-        iconUrl: string,
-        action: PluginComponent['action'],
-        tooltipText: ReactResolvable,
-        supportedProductIds: ProductScope,
+        ...args: [
+            iconUrl: string,
+            action: PluginComponent['action'],
+            tooltipText: ReactResolvable,
+            supportedProductIds: ProductScope,
+        ] | [{
+            iconUrl: string;
+            action: PluginComponent['action'];
+            tooltipText: ReactResolvable;
+            supportedProductIds: ProductScope;
+        }]
     ): UniqueIdentifier;
     registerAppBarComponent(
-        iconUrl: string,
-        action: undefined,
-        tooltipText: ReactResolvable,
-        supportedProductIds: ProductScope,
-        rhsComponent: PluginComponent,
-        rhsTitle: ReactResolvable,
+        ...args: [
+            iconUrl: string,
+            action: undefined,
+            tooltipText: ReactResolvable,
+            supportedProductIds: ProductScope,
+            rhsComponent: PluginComponent,
+            rhsTitle: ReactResolvable,
+        ] | [{
+            iconUrl: string;
+            action: undefined;
+            tooltipText: ReactResolvable;
+            supportedProductIds: ProductScope;
+            rhsComponent: PluginComponent;
+            rhsTitle: ReactResolvable;
+        }]
     ): {
         id: UniqueIdentifier;
         component: ReturnType<PluginRegistry['registerRightHandSidebarComponent']>;
@@ -743,7 +998,13 @@ export interface PluginRegistry {
         * - handler - Func to be called to retrieve the stats from plugin api. It must be type PluginSiteStatsHandler.
         * Returns undefined
     */
-    registerSiteStatisticsHandler(handler: PluginSiteStatsHandler): void;
+    registerSiteStatisticsHandler(
+        ...args: [
+            handler: PluginSiteStatsHandler
+        ] | [{
+            handler: PluginSiteStatsHandler;
+        }]
+    ): void;
 
     /**
         * Register a hook to intercept desktop notifications before they occur.
@@ -780,16 +1041,29 @@ export interface PluginRegistry {
         * Returns a unique identifier.
     */
     registerDesktopNotificationHook(
-        hook: (
-            post: Post,
-            msgProps: NewPostMessageProps,
-            channel: Channel,
-            teamId: string,
-            args: DesktopNotificationArgs
-        ) => Promise<{
-            error?: string;
-            args?: DesktopNotificationArgs;
-        }>
+        ...args: [
+            hook: (
+                post: Post,
+                msgProps: NewPostMessageProps,
+                channel: Channel,
+                teamId: string,
+                args: DesktopNotificationArgs
+            ) => Promise<{
+                error?: string;
+                args?: DesktopNotificationArgs;
+            }>
+        ] | [{
+            hook: (
+                post: Post,
+                msgProps: NewPostMessageProps,
+                channel: Channel,
+                teamId: string,
+                args: DesktopNotificationArgs
+            ) => Promise<{
+                error?: string;
+                args?: DesktopNotificationArgs;
+            }>;
+        }]
     ): UniqueIdentifier;
 
     /**
@@ -802,7 +1076,11 @@ export interface PluginRegistry {
         * Malformed settings will be filtered out.
     */
     registerUserSettings(
-        settings: PluginConfiguration
+        ...args: [
+            settings: PluginConfiguration
+        ] | [{
+            settings: PluginConfiguration;
+        }]
     ): void;
 
     /**
@@ -810,7 +1088,11 @@ export interface PluginRegistry {
         * Accepts a React component. Returns a unique identifier.
     */
     registerSystemConsoleGroupTable(
-        component: ReactResolvable
+        ...args: [
+            component: ReactResolvable
+        ] | [{
+            component: ReactResolvable;
+        }]
     ): UniqueIdentifier;
 
     // The most up-to-date list of methods can be found at https://developers.mattermost.com/extend/plugins/webapp/reference
