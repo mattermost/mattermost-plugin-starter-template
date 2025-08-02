@@ -97,7 +97,7 @@
       "^bundle-loader\\?lazy\\!(.*)$": "$1"
     },
     "moduleDirectories": [
-      "",
+      "src",
       "node_modules",
       "non_npm_dependencies"
     ],
