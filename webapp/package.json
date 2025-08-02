@@ -20,7 +20,6 @@
     "@babel/preset-typescript": "7.24.7",
     "@babel/runtime": "7.25.6",
     "@emotion/babel-preset-css-prop": "11.2.0",
-    "@emotion/core": "10.3.1",
     "@emotion/react": "11.9.0",
     "@mattermost/client": "10.8.0",
     "@mattermost/eslint-plugin": "1.1.0-0",
