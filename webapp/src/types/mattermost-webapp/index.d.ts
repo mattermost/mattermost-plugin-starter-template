@@ -794,11 +794,11 @@ export interface PluginRegistry {
         ...args: [
             key: string,
             component: ReactResolvable,
-            options: { showTitle?: boolean }
+            options?: { showTitle?: boolean }
         ] | [{
             key: string;
             component: ReactResolvable;
-            options: { showTitle?: boolean };
+            options?: { showTitle?: boolean };
         }]
     ): void;
 
