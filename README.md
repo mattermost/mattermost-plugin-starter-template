@@ -34,9 +34,12 @@ Edit the following files:
 module github.com/example/my-plugin
 ```
 
-3. Replace all occurrences of `github.com/mattermost/mattermost-plugin-starter-template` in the codebase with your Go module path.
+3. Replace all occurrences of `github.com/mattermost/mattermost-plugin-starter-template` in the codebase with your Go module path:
+```bash
+sed -i '' 's|github.com/mattermost/mattermost-plugin-starter-template|github.com/example/my-plugin|g' server/*.go
+```
 
-4. `.golangci.yml` with your Go module path:
+4. Replace `.golangci.yml` `local-prefixes` attribute with your Go module path:
 ```yml
 linters-settings:
   # [...]
@@ -44,7 +47,7 @@ linters-settings:
     local-prefixes: github.com/example/my-plugin
 ```
 
-Build your plugin:
+5. Build your plugin:
 ```
 make
 ```
