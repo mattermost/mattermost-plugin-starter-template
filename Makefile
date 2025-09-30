@@ -255,6 +255,11 @@ endif
 ## Builds and bundles the plugin.
 .PHONY: dist
 dist: apply server webapp bundle
+ifeq ($(PLUGIN_ID),com.mattermost.plugin-starter-template)
+	$(warning WARNING)
+	$(warning You are building with the default plugin ID "com.mattermost.plugin-starter-template".)
+	$(warning Consider editing plugin.json to configure your project with a unique plugin ID.)
+endif
 
 ## Builds and installs the plugin to a server.
 .PHONY: deploy
