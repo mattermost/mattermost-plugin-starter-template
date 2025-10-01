@@ -34,7 +34,12 @@ Edit the following files:
 module github.com/example/my-plugin
 ```
 
-3. `.golangci.yml` with your Go module path:
+3. Replace all occurrences of `github.com/mattermost/mattermost-plugin-starter-template` in the codebase with your Go module path:
+```bash
+sed -i '' 's|github.com/mattermost/mattermost-plugin-starter-template|github.com/example/my-plugin|g' server/*.go
+```
+
+4. Replace `.golangci.yml` `local-prefixes` attribute with your Go module path:
 ```yml
 linters-settings:
   # [...]
@@ -42,7 +47,7 @@ linters-settings:
     local-prefixes: github.com/example/my-plugin
 ```
 
-Build your plugin:
+5. Build your plugin:
 ```
 make
 ```
@@ -64,7 +69,7 @@ To avoid having to manually install your plugin, build and deploy your plugin us
     }
 ```
 
-### Development guidance 
+### Development guidance
 
 1. Fewer packages is better: default to the main package unless there's good reason for a new package.
 
@@ -76,7 +81,7 @@ To avoid having to manually install your plugin, build and deploy your plugin us
 
 ### Modifying the server boilerplate
 
-The server code comes with some boilerplate for creating an api, using slash commands, accessing the kvstore and using the cluster package for jobs. 
+The server code comes with some boilerplate for creating an api, using slash commands, accessing the kvstore and using the cluster package for jobs.
 
 #### Api
 
