@@ -522,6 +522,10 @@ export interface PluginRegistry {
     /**
         * Register a component at the bottom of the post dropdown menu.
         * Accepts a React component. Returns a unique identifier.
+        *
+        * @deprecated This method is deprecated in Mattermost 11.0. It will continue to work for some time but its use
+        * may cause visual issues and issues for accessibility. Use
+        * {@link PluginRegistry.registerPostDropdownMenuAction} instead.
     */
     registerPostDropdownMenuComponent(
         ...args: [
