@@ -520,22 +520,6 @@ export interface PluginRegistry {
     };
 
     /**
-        * Register a component at the bottom of the post dropdown menu.
-        * Accepts a React component. Returns a unique identifier.
-        *
-        * @deprecated This method is deprecated in Mattermost 11.0. It will continue to work for some time but its use
-        * may cause visual issues and issues for accessibility. Use
-        * {@link PluginRegistry.registerPostDropdownMenuAction} instead.
-    */
-    registerPostDropdownMenuComponent(
-        ...args: [
-            component: ReactResolvable
-        ] | [{
-            component: ReactResolvable;
-        }]
-    ): UniqueIdentifier;
-
-    /**
         * Register a file upload method by providing some text, an icon, and an action function.
         * Accepts the following:
         * - icon - JSX element to use as the button's icon
