@@ -34,3 +34,36 @@ func TestManifestIsValid(t *testing.T) {
 		t.Fatalf("manifest is invalid: %v", err)
 	}
 }
+
+func TestManifestIsInvalid(t *testing.T) {
+	// Save current working directory
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("failed to get current working directory: %v", err)
+	}
+	defer os.Chdir(cwd)
+
+	// Change to repo root (where plugin.json exists)
+	repoRoot := filepath.Join(cwd, "..", "..")
+	if err := os.Chdir(repoRoot); err != nil {
+		t.Fatalf("failed to change to repo root: %v", err)
+	}
+
+	// Set dummy build variables
+	BuildHashShort = "abc123"
+	BuildTagCurrent = "v1.0.0"
+	BuildTagLatest = "v1.0.0"
+
+	// Load the manifest
+	manifest, err := findManifest()
+	if err != nil {
+		t.Fatalf("failed to find or parse manifest: %v", err)
+	}
+
+	manifest.Id = "" // remove the ID to make it invalid
+
+	// Ensure IsValid() fails
+	if err := manifest.IsValid(); err == nil {
+		t.Fatal("expected manifest.IsValid() to fail when Id is empty, but it passed")
+	}
+}
