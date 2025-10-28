@@ -12,11 +12,18 @@ func TestManifestIsValid(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get current working directory: %v", err)
 	}
-	defer os.Chdir(cwd) // restore after test
+
+	// Restore working directory after test
+	defer func() {
+		if chdirErr := os.Chdir(cwd); chdirErr != nil {
+			t.Logf("warning: failed to restore working directory: %v", chdirErr)
+		}
+	}()
 
 	// Change to repo root (where plugin.json exists)
 	repoRoot := filepath.Join(cwd, "..", "..")
-	if err := os.Chdir(repoRoot); err != nil {
+	err = os.Chdir(repoRoot)
+	if err != nil {
 		t.Fatalf("failed to change to repo root: %v", err)
 	}
 
@@ -30,8 +37,8 @@ func TestManifestIsValid(t *testing.T) {
 		t.Fatalf("failed to find or parse manifest: %v", err)
 	}
 
-	if err := manifest.IsValid(); err != nil {
-		t.Fatalf("manifest is invalid: %v", err)
+	if valErr := manifest.IsValid(); valErr != nil {
+		t.Fatalf("manifest is invalid: %v", valErr)
 	}
 }
 
@@ -41,11 +48,18 @@ func TestManifestIsInvalid(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get current working directory: %v", err)
 	}
-	defer os.Chdir(cwd)
+
+	// Restore working directory after test
+	defer func() {
+		if chdirErr := os.Chdir(cwd); chdirErr != nil {
+			t.Logf("warning: failed to restore working directory: %v", chdirErr)
+		}
+	}()
 
 	// Change to repo root (where plugin.json exists)
 	repoRoot := filepath.Join(cwd, "..", "..")
-	if err := os.Chdir(repoRoot); err != nil {
+	err = os.Chdir(repoRoot)
+	if err != nil {
 		t.Fatalf("failed to change to repo root: %v", err)
 	}
 
@@ -60,10 +74,10 @@ func TestManifestIsInvalid(t *testing.T) {
 		t.Fatalf("failed to find or parse manifest: %v", err)
 	}
 
-	manifest.Id = "" // remove the ID to make it invalid
+	// Invalidate the manifest
+	manifest.Id = ""
 
-	// Ensure IsValid() fails
-	if err := manifest.IsValid(); err == nil {
+	if valErr := manifest.IsValid(); valErr == nil {
 		t.Fatal("expected manifest.IsValid() to fail when Id is empty, but it passed")
 	}
 }
