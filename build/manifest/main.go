@@ -101,11 +101,11 @@ func findManifest() (*model.Manifest, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find manifest in current working directory")
 	}
-	manifestFile, err := os.Open(manifestFilePath)
+	manifestFile, err := os.Open(manifestFilePath) //nolint:gosec
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to open %s", manifestFilePath)
 	}
-	defer manifestFile.Close()
+	defer func() { _ = manifestFile.Close() }()
 
 	// Re-decode the manifest, disallowing unknown fields. When we write the manifest back out,
 	// we don't want to accidentally clobber anything we won't preserve.
@@ -120,8 +120,8 @@ func findManifest() (*model.Manifest, error) {
 	// commit, and use the first version we find (to prevent causing errors)
 	if manifest.Version == "" {
 		var version string
-		tags := strings.Fields(BuildTagCurrent)
-		for _, t := range tags {
+		tags := strings.FieldsSeq(BuildTagCurrent)
+		for t := range tags {
 			if strings.HasPrefix(t, "v") {
 				version = t
 				break
@@ -168,8 +168,8 @@ func applyManifest(manifest *model.Manifest) error {
 		// write generated code to file by using Go file template.
 		if err := os.WriteFile(
 			"server/manifest.go",
-			[]byte(fmt.Sprintf(pluginIDGoFileTemplate, manifestStr)),
-			0600,
+			fmt.Appendf(nil, pluginIDGoFileTemplate, manifestStr),
+			0o600,
 		); err != nil {
 			return errors.Wrap(err, "failed to write server/manifest.go")
 		}
@@ -191,8 +191,8 @@ func applyManifest(manifest *model.Manifest) error {
 		// write generated code to file by using JS file template.
 		if err := os.WriteFile(
 			"webapp/src/manifest.ts",
-			[]byte(fmt.Sprintf(pluginIDJSFileTemplate, manifestStr)),
-			0600,
+			fmt.Appendf(nil, pluginIDJSFileTemplate, manifestStr),
+			0o600,
 		); err != nil {
 			return errors.Wrap(err, "failed to open webapp/src/manifest.ts")
 		}
@@ -208,7 +208,7 @@ func distManifest(manifest *model.Manifest) error {
 		return err
 	}
 
-	if err := os.WriteFile(fmt.Sprintf("dist/%s/plugin.json", manifest.Id), manifestBytes, 0600); err != nil {
+	if err := os.WriteFile(fmt.Sprintf("dist/%s/plugin.json", manifest.Id), manifestBytes, 0o600); err != nil {
 		return errors.Wrap(err, "failed to write plugin.json")
 	}
 
