@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
@@ -28,6 +29,9 @@ type Plugin struct {
 	// commandClient is the client used to register and execute slash commands.
 	commandClient command.Command
 
+	// router is the HTTP router for handling API requests.
+	router *mux.Router
+
 	backgroundJob *cluster.Job
 
 	// configurationLock synchronizes access to the configuration.
@@ -45,6 +49,8 @@ func (p *Plugin) OnActivate() error {
 	p.kvstore = kvstore.NewKVStore(p.client)
 
 	p.commandClient = command.NewCommandHandler(p.client)
+
+	p.router = p.initRouter()
 
 	job, err := cluster.Schedule(
 		p.API,

@@ -38,7 +38,14 @@ func NewCommandHandler(client *pluginapi.Client) Command {
 
 // ExecuteCommand hook calls this method to execute the commands that were registered in the NewCommandHandler function.
 func (c *Handler) Handle(args *model.CommandArgs) (*model.CommandResponse, error) {
-	trigger := strings.TrimPrefix(strings.Fields(args.Command)[0], "/")
+	fields := strings.Fields(args.Command)
+	if len(fields) == 0 {
+		return &model.CommandResponse{
+			ResponseType: model.CommandResponseTypeEphemeral,
+			Text:         "Empty command",
+		}, nil
+	}
+	trigger := strings.TrimPrefix(fields[0], "/")
 	switch trigger {
 	case helloCommandTrigger:
 		return c.executeHelloCommand(args), nil

@@ -12,6 +12,7 @@ import (
 func TestServeHTTP(t *testing.T) {
 	assert := assert.New(t)
 	plugin := Plugin{}
+	plugin.router = plugin.initRouter()
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/api/v1/hello", nil)
 	r.Header.Set("Mattermost-User-ID", "test-user-id")
