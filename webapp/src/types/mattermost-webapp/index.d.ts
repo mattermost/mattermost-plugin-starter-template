@@ -32,7 +32,7 @@ export type PluginComponent = {
     iconUrl?: string;
     mobileIcon?: React.ReactElement;
     filter?: (id: string) => boolean;
-    action?: (...args: unknown) => void;
+    action?: (...args: unknown[]) => void;
     shouldRender?: (state: GlobalState) => boolean;
     hook?: (post: Post, message?: string) => string;
 };
