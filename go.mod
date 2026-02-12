@@ -1,6 +1,6 @@
 module github.com/mattermost/mattermost-plugin-starter-template
 
-go 1.24.11
+go 1.25
 
 require (
 	github.com/gorilla/mux v1.8.1
