@@ -61,7 +61,7 @@ export type NewPostMessageProps = {
     otherFile?: 'true';
     image?: 'true';
     post: string;
-}
+};
 
 export type PluginConfiguration = {
 
@@ -77,7 +77,7 @@ export type PluginConfiguration = {
     /** Action that will appear at the beginning of the plugin settings tab */
     action?: PluginConfigurationAction;
     sections: Array<PluginConfigurationSection | PluginConfigurationCustomSection>;
-}
+};
 
 export type PluginConfigurationAction = {
 
@@ -92,7 +92,7 @@ export type PluginConfigurationAction = {
 
     /** This function is called when the button on the action is clicked */
     onClick: () => void;
-}
+};
 
 export type PluginConfigurationSection = {
     settings: PluginConfigurationSetting[];
@@ -111,7 +111,7 @@ export type PluginConfigurationSection = {
      * to the change.
     */
     onSubmit?: (changes: {[name: string]: string}) => void;
-}
+};
 
 export type PluginConfigurationCustomSection = {
 
@@ -120,7 +120,53 @@ export type PluginConfigurationCustomSection = {
 
     /** A React component used to render the custom section. */
     component: React.ComponentType;
-}
+};
+
+export type BasePluginConfigurationSetting = {
+
+    /** Name of the setting. This will be the name used to store in the preferences. */
+    name: string;
+
+    /** Optional header for this setting. */
+    title?: string;
+
+    /** Optional help text for this setting */
+    helpText?: string;
+
+    /** The default value to use */
+    default?: string;
+};
+
+export type PluginConfigurationRadioSetting = BasePluginConfigurationSetting & {
+    type: 'radio';
+
+    /** The default value to use */
+    default: string;
+    options: PluginConfigurationRadioSettingOption[];
+};
+
+export type PluginCustomSettingComponent = React.ComponentType<{informChange: (name: string, value: string) => void}>;
+
+export type PluginConfigurationCustomSetting = BasePluginConfigurationSetting & {
+    type: 'custom';
+
+    /** A React component used to render the custom setting. */
+    component: PluginCustomSettingComponent;
+};
+
+export type PluginConfigurationRadioSettingOption = {
+
+    /** The value to store in the preferences */
+    value: string;
+
+    /** The text to show in the UI */
+    text: string;
+
+    /** Optional help text for this option */
+    helpText?: string;
+};
+
+export type PluginConfigurationSetting = PluginConfigurationRadioSetting | PluginConfigurationCustomSetting;
 
 export interface PluginRegistry {
 
@@ -1065,9 +1111,9 @@ export interface PluginRegistry {
     */
     registerUserSettings(
         ...args: [
-            settings: PluginConfiguration
+            setting: PluginConfiguration
         ] | [{
-            settings: PluginConfiguration;
+            setting: PluginConfiguration;
         }]
     ): void;
 
