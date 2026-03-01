@@ -60,7 +60,7 @@ func ensureContainers(t *testing.T) (*mmContainers, error) {
 		// Create a Docker network so Mattermost can reach Postgres by hostname.
 		nw, err := network.New(ctx)
 		if err != nil {
-			containersErr = fmt.Errorf("Docker not available or failed to create network: %w", err)
+			containersErr = fmt.Errorf("docker not available or failed to create network: %w", err)
 			return
 		}
 

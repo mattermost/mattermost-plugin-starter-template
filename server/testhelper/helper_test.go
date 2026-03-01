@@ -84,7 +84,7 @@ func TestFindRepoRoot(t *testing.T) {
 		parent := t.TempDir()
 		writeFile(t, parent, "plugin.json", `{"id": "test"}`)
 		child := filepath.Join(parent, "server")
-		require.NoError(t, os.Mkdir(child, 0o755))
+		require.NoError(t, os.Mkdir(child, 0o750))
 		t.Chdir(child)
 
 		root, err := findRepoRoot()
@@ -96,9 +96,9 @@ func TestFindRepoRoot(t *testing.T) {
 		grandparent := t.TempDir()
 		writeFile(t, grandparent, "plugin.json", `{"id": "test"}`)
 		parent := filepath.Join(grandparent, "server")
-		require.NoError(t, os.Mkdir(parent, 0o755))
+		require.NoError(t, os.Mkdir(parent, 0o750))
 		child := filepath.Join(parent, "testhelper")
-		require.NoError(t, os.Mkdir(child, 0o755))
+		require.NoError(t, os.Mkdir(child, 0o750))
 		t.Chdir(child)
 
 		root, err := findRepoRoot()
@@ -118,5 +118,5 @@ func TestFindRepoRoot(t *testing.T) {
 
 func writeFile(t *testing.T, dir, name, content string) {
 	t.Helper()
-	require.NoError(t, os.WriteFile(filepath.Join(dir, name), []byte(content), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, name), []byte(content), 0o600))
 }

@@ -132,11 +132,11 @@ func Setup(t *testing.T) *TestHelper {
 }
 
 func deployPlugin(ctx context.Context, client *model.Client4) error {
-	f, err := os.Open(pluginBundle)
+	f, err := os.Open(pluginBundle) //nolint:gosec
 	if err != nil {
 		return fmt.Errorf("open bundle %s: %w", pluginBundle, err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	// Remove any existing plugin (may fail if not installed, that's OK).
 	_, _ = client.RemovePlugin(ctx, pluginID)
@@ -186,7 +186,7 @@ func findRepoRoot() (string, error) {
 }
 
 func getPluginID(repoRoot string) (string, error) {
-	data, err := os.ReadFile(filepath.Join(repoRoot, "plugin.json"))
+	data, err := os.ReadFile(filepath.Join(repoRoot, "plugin.json")) //nolint:gosec
 	if err != nil {
 		return "", fmt.Errorf("read plugin.json: %w", err)
 	}
