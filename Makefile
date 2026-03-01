@@ -169,7 +169,7 @@ major-rc: ## to bump major release candidate version (semver)
 
 ## Checks the code style, tests, builds and bundles the plugin.
 .PHONY: all
-all: check-style test dist
+all: check-style test
 
 ## Ensures the plugin manifest is valid
 .PHONY: manifest-check
@@ -207,6 +207,8 @@ ifneq ($(HAS_SERVER),)
 endif
 
 ## Builds the server, if it exists, for all supported architectures, unless MM_SERVICESETTINGS_ENABLEDEVELOPER is set.
+## When BUILD_FOR_TEST=1 (set automatically by the test targets), only linux/$(DEFAULT_GOARCH) is built
+## since the integration test container always runs Linux.
 .PHONY: server
 server:
 ifneq ($(HAS_SERVER),)
@@ -218,11 +220,16 @@ ifneq ($(MM_SERVICESETTINGS_ENABLEDEVELOPER),)
 	@echo Building plugin only for $(DEFAULT_GOOS)-$(DEFAULT_GOARCH) because MM_SERVICESETTINGS_ENABLEDEVELOPER is enabled
 	cd server && env CGO_ENABLED=0 $(GO) build $(GO_BUILD_FLAGS) $(GO_BUILD_GCFLAGS) -trimpath -o dist/plugin-$(DEFAULT_GOOS)-$(DEFAULT_GOARCH);
 else
-	cd server && env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) $(GO_BUILD_GCFLAGS) -trimpath -o dist/plugin-linux-amd64;
-	cd server && env CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GO) build $(GO_BUILD_FLAGS) $(GO_BUILD_GCFLAGS) -trimpath -o dist/plugin-linux-arm64;
-	cd server && env CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) $(GO_BUILD_GCFLAGS) -trimpath -o dist/plugin-darwin-amd64;
-	cd server && env CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(GO) build $(GO_BUILD_FLAGS) $(GO_BUILD_GCFLAGS) -trimpath -o dist/plugin-darwin-arm64;
-	cd server && env CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) $(GO_BUILD_GCFLAGS) -trimpath -o dist/plugin-windows-amd64.exe;
+	@if [ "$(BUILD_FOR_TEST)" = "1" ]; then \
+		echo "Building plugin only for linux-$(DEFAULT_GOARCH) for integration tests"; \
+		cd server && env CGO_ENABLED=0 GOOS=linux GOARCH=$(DEFAULT_GOARCH) $(GO) build $(GO_BUILD_FLAGS) $(GO_BUILD_GCFLAGS) -trimpath -o dist/plugin-linux-$(DEFAULT_GOARCH); \
+	else \
+		cd server && env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) $(GO_BUILD_GCFLAGS) -trimpath -o dist/plugin-linux-amd64; \
+		cd server && env CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GO) build $(GO_BUILD_FLAGS) $(GO_BUILD_GCFLAGS) -trimpath -o dist/plugin-linux-arm64; \
+		cd server && env CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) $(GO_BUILD_GCFLAGS) -trimpath -o dist/plugin-darwin-amd64; \
+		cd server && env CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(GO) build $(GO_BUILD_FLAGS) $(GO_BUILD_GCFLAGS) -trimpath -o dist/plugin-darwin-arm64; \
+		cd server && env CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) $(GO_BUILD_GCFLAGS) -trimpath -o dist/plugin-windows-amd64.exe; \
+	fi
 endif
 endif
 
@@ -341,8 +348,11 @@ detach: setup-attach
 	fi
 
 ## Runs any lints and unit tests defined for the server and webapp, if they exist.
+## Depends on dist so the plugin bundle is available for integration tests.
+## BUILD_FOR_TEST=1 restricts the server build to linux/$(DEFAULT_GOARCH) only.
 .PHONY: test
-test: apply webapp/node_modules install-go-tools
+test: BUILD_FOR_TEST = 1
+test: dist install-go-tools
 ifneq ($(HAS_SERVER),)
 	$(GOBIN)/gotestsum -- -v ./...
 endif
@@ -353,7 +363,8 @@ endif
 ## Runs any lints and unit tests defined for the server and webapp, if they exist, optimized
 ## for a CI environment.
 .PHONY: test-ci
-test-ci: apply webapp/node_modules install-go-tools
+test-ci: BUILD_FOR_TEST = 1
+test-ci: dist install-go-tools
 ifneq ($(HAS_SERVER),)
 	$(GOBIN)/gotestsum --format standard-verbose --junitfile report.xml -- ./...
 endif
