@@ -3,10 +3,11 @@
 
 /* eslint-disable max-lines */
 
-import type {Reducer} from 'redux';
+import type {Reducer, UnknownAction} from 'redux';
 
 import type {WebSocketMessage} from '@mattermost/client';
 import type {Channel} from '@mattermost/types/channels';
+import type {AdminConfig, ClientLicense} from '@mattermost/types/config';
 import type {FileInfo} from '@mattermost/types/files';
 import type {Post, PostEmbed} from '@mattermost/types/posts';
 import type {ProductScope} from '@mattermost/types/products';
@@ -167,6 +168,25 @@ export type PluginConfigurationRadioSettingOption = {
 };
 
 export type PluginConfigurationSetting = PluginConfigurationRadioSetting | PluginConfigurationCustomSetting;
+
+export type PluginCustomSettingsComponentChangeHandler<ValueType> = (id: string, value: ValueType, confirm?: boolean, doSubmit?: boolean, warning?: boolean) => void;
+
+export type PluginCustomSettingsComponentProps<ValueType> = {
+    id: string;
+    label: string;
+    helpText: string;
+    value: ValueType;
+    disabled: boolean;
+    config: Partial<AdminConfig>;
+    license: ClientLicense;
+    setByEnv: boolean;
+    onChange: PluginCustomSettingsComponentChangeHandler<ValueType>;
+    registerSaveAction: (saveAction: () => Promise<{error?: {message?: string}}>) => void;
+    setSaveNeeded: () => void;
+    unRegisterSaveAction: (saveAction: () => Promise<{error?: {message?: string}}>) => void;
+    cancelSubmit: () => void;
+    showConfirm: boolean;
+};
 
 export interface PluginRegistry {
 
@@ -423,11 +443,13 @@ export interface PluginRegistry {
     */
     registerChannelHeaderMenuAction(
         ...args: [
-            component: ReactResolvable,
-            fn: (channelID: string) => void
+            text: ReactResolvable,
+            action: (channelID: string) => void,
+            shouldRender?: (state: GlobalState) => boolean,
         ] | [{
-            component: ReactResolvable;
-            fn: (channelID: string) => void;
+            text: ReactResolvable;
+            action: (channelID: string) => void;
+            shouldRender?: (state: GlobalState) => boolean;
         }]
     ): UniqueIdentifier;
 
@@ -873,9 +895,9 @@ export interface PluginRegistry {
         }]
     ): {
         id: UniqueIdentifier;
-        showRHSPlugin: object;
-        hideRHSPlugin: object;
-        toggleRHSPlugin: object;
+        showRHSPlugin: UnknownAction;
+        hideRHSPlugin: UnknownAction;
+        toggleRHSPlugin: UnknownAction;
     };
 
     /**
