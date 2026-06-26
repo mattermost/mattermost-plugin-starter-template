@@ -82,6 +82,10 @@ func ensurePluginMeta() error {
 // database — no state leaks between tests.
 //
 // If Docker is not available the test fails. Set SKIP_DOCKER_TESTS to skip instead.
+//
+// Setup is NOT safe to use with t.Parallel(). It resets and restarts a container that
+// is shared across all tests, so parallel tests would wipe each other's state. Run
+// integration tests serially.
 func Setup(t *testing.T) *TestHelper {
 	t.Helper()
 
@@ -227,7 +231,7 @@ func (th *TestHelper) createUserAndClient(ctx context.Context) (*model.User, *mo
 }
 
 // CreateUser creates a user with a random name, adds them to the test Team, and returns the user.
-// The password is "Password1!".
+// The user's password is the shared adminPassword constant.
 func (th *TestHelper) CreateUser() *model.User {
 	th.t.Helper()
 

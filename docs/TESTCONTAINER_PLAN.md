@@ -52,7 +52,7 @@ Containers are started once per `go test` invocation via `sync.Once`.
 #### Teardown
 
 - **Ryuk reaper** (testcontainers-go default): A sidecar container that automatically removes test containers when the parent process exits, even on crashes or `kill -9`. This is the primary safety net.
-- **Explicit cleanup**: `testcontainers.CleanupContainer(t, container)` is registered via `t.Cleanup()` on the *first* test that triggers `Setup()`. This provides orderly shutdown when tests complete normally.
+- **No explicit `t.Cleanup`**: Because the containers are shared across all tests via `sync.Once`, `Setup()` does not register `t.Cleanup()` to terminate them. Doing so on the first test would tear down containers the remaining tests still need, so teardown relies entirely on the Ryuk reaper.
 - **Documentation**: A note in `doc.go` will mention that Ryuk must not be disabled (`TESTCONTAINERS_RYUK_DISABLED=false` is the default) to prevent container leaks in CI.
 
 ### `helper.go` — TestHelper struct and convenience methods
@@ -188,8 +188,8 @@ CI already runs tests in the `plugin-ci` reusable workflow which has Docker avai
 ## Dependencies to add to go.mod
 
 ```
-github.com/testcontainers/testcontainers-go v0.35.0
-github.com/testcontainers/testcontainers-go/modules/postgres v0.35.0
+github.com/testcontainers/testcontainers-go v0.40.0
+github.com/testcontainers/testcontainers-go/modules/postgres v0.40.0
 ```
 
 (Verify latest version at implementation time — the library releases frequently.)
