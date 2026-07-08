@@ -21,6 +21,8 @@ Usage:
     pluginctl disable <plugin id>
     pluginctl enable <plugin id>
     pluginctl reset <plugin id>
+    pluginctl logs <plugin id>
+    pluginctl logs-watch <plugin id>
 `
 
 func main() {
