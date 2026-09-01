@@ -10,15 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestHelloEndpoint verifies the plugin's HTTP API works end-to-end through a real
-// Mattermost server. Setup() spins up Postgres + Mattermost containers, deploys the
-// plugin built from this repository (via `make dist`), and enables it. This test then
-// calls GET /plugins/<plugin-id>/api/v1/hello with a valid user auth token and expects
-// a 200 response with "Hello, world!".
-//
-// This exercises the full request path: client -> Mattermost server (auth validation) ->
-// plugin ServeHTTP -> MattermostAuthorizationRequired middleware -> HelloWorld handler.
-// Unlike the unit test in plugin_test.go which uses httptest, this hits a real server.
+// Exercises the real request path — server auth, then plugin ServeHTTP — unlike the
+// httptest-based unit test in plugin_test.go.
 func TestHelloEndpoint(t *testing.T) {
 	th := testhelper.Setup(t)
 
