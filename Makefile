@@ -343,10 +343,11 @@ detach: setup-attach
 
 ## Runs any lints and unit tests defined for the server and webapp, if they exist.
 ## The bundle is built first because integration tests deploy it to a Mattermost
-## container; that container is Linux, so only the Linux binary is worth building.
+## container. That image is published for linux/amd64 only — an arm64 host runs it
+## emulated — so that is the single binary the server will ever look for.
 .PHONY: test
 test: install-go-tools
-	$(MAKE) dist MM_SERVICESETTINGS_ENABLEDEVELOPER=true DEFAULT_GOOS=linux
+	$(MAKE) dist MM_SERVICESETTINGS_ENABLEDEVELOPER=true DEFAULT_GOOS=linux DEFAULT_GOARCH=amd64
 ifneq ($(HAS_SERVER),)
 	$(GOBIN)/gotestsum -- -v ./...
 endif
@@ -358,7 +359,7 @@ endif
 ## for a CI environment.
 .PHONY: test-ci
 test-ci: install-go-tools
-	$(MAKE) dist MM_SERVICESETTINGS_ENABLEDEVELOPER=true DEFAULT_GOOS=linux
+	$(MAKE) dist MM_SERVICESETTINGS_ENABLEDEVELOPER=true DEFAULT_GOOS=linux DEFAULT_GOARCH=amd64
 ifneq ($(HAS_SERVER),)
 	$(GOBIN)/gotestsum --format standard-verbose --junitfile report.xml -- ./...
 endif
