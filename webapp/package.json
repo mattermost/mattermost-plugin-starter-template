@@ -55,11 +55,15 @@
     "webpack-cli": "5.1.4"
   },
   "dependencies": {
+    "@mattermost/compass-icons": "0.1.63",
+    "@mattermost/compass-ui": "0.1.0-alpha.5",
     "core-js": "3.26.0",
     "mattermost-redux": "11.1.0",
     "react": "18.2.0",
+    "react-dom": "18.2.0",
     "react-redux": "9.2.0",
     "redux": "5.0.1",
+    "simplebar-react": "3.3.2",
     "typescript": "4.9.5"
   },
   "jest": {
@@ -79,7 +83,10 @@
       "^.+\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "identity-obj-proxy",
       "^.+\\.(css|less|scss)$": "identity-obj-proxy",
       "^.*i18n.*\\.(json)$": "<rootDir>/tests/i18n_mock.json",
-      "^bundle-loader\\?lazy\\!(.*)$": "$1"
+      "^bundle-loader\\?lazy\\!(.*)$": "$1",
+      "^@mattermost/compass-ui/hooks/(.*)$": "<rootDir>/node_modules/@mattermost/compass-ui/dist/hooks/$1.cjs",
+      "^@mattermost/compass-ui/utils/string$": "<rootDir>/node_modules/@mattermost/compass-ui/dist/utils/string.cjs",
+      "^@mattermost/compass-ui/components/(.*)$": "<rootDir>/node_modules/@mattermost/compass-ui/dist/components/$1/index.cjs"
     },
     "moduleDirectories": [
       "src",

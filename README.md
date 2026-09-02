@@ -1,3 +1,11 @@
+# Compass UI
+
+Mattermost plugin that showcases live [`@mattermost/compass-ui`](https://www.npmjs.com/package/@mattermost/compass-ui) components in the right-hand sidebar.
+
+Open it from the **channel header** or the **app bar**. Search and filter the gallery with Compass `SearchInput` and `Tabs`, then open a component to see variants.
+
+This repository started from the Mattermost plugin starter template. Server boilerplate is unchanged.
+
 # Plugin Starter Template
 
 [![Build Status](https://github.com/mattermost/mattermost-plugin-starter-template/actions/workflows/ci.yml/badge.svg)](https://github.com/mattermost/mattermost-plugin-starter-template/actions/workflows/ci.yml)

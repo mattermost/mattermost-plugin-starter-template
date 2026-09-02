@@ -39,6 +39,7 @@ const config = {
             'node_modules',
         ],
         extensions: ['*', '.js', '.jsx', '.ts', '.tsx'],
+        fullySpecified: false,
     },
     module: {
         rules: [
@@ -55,7 +56,28 @@ const config = {
                 },
             },
             {
+                test: /\.m?js$/,
+                include: /node_modules\/@mattermost\/compass-ui/,
+                resolve: {
+                    fullySpecified: false,
+                },
+            },
+            {
+                test: /\.css$/,
+                include: /node_modules\/@mattermost\/compass-ui/,
+                use: [
+                    'style-loader',
+                    {
+                        loader: 'css-loader',
+                        options: {
+                            modules: false,
+                        },
+                    },
+                ],
+            },
+            {
                 test: /\.(scss|css)$/,
+                exclude: /node_modules\/@mattermost\/compass-ui/,
                 use: [
                     'style-loader',
                     {
