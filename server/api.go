@@ -27,6 +27,7 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	p.router.ServeHTTP(w, r)
 }
 
+// MattermostAuthorizationRequired can trust Mattermost-User-ID because the server sets it only after authenticating the request.
 func (p *Plugin) MattermostAuthorizationRequired(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userID := r.Header.Get("Mattermost-User-ID")
