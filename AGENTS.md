@@ -1,73 +1,44 @@
 # AGENTS.md
 
-Guidance for coding agents working in this repository.
-
-This is the Mattermost plugin starter template. It has a Go server plugin (`server/`), a React/TypeScript webapp plugin (`webapp/`), and shared build tooling (`build/`, `Makefile`). Either half can be deleted. The Makefile detects which halves exist through `HAS_SERVER`/`HAS_WEBAPP` (derived from `plugin.json`) and skips the missing parts.
+Mattermost plugin starter template: a Go server plugin (`server/`) and a React/TypeScript webapp plugin (`webapp/`). Either half can be deleted; the Makefile skips whatever `plugin.json` doesn't declare.
 
 ## Commands
 
-```bash
-make                  # check-style + test + dist
-make dist             # build server binaries + webapp, bundle to dist/<id>-<version>.tar.gz
-make check-style      # eslint + tsc (webapp), go vet + golangci-lint (server)
-make test             # builds a linux/amd64 bundle, then runs all Go tests (gotestsum) + jest
-make deploy           # build and install into a running server (local mode socket or MM_* creds)
-make watch            # rebuild/redeploy the webapp on change
-make mock             # regenerate server/command/mocks with mockgen
-make help             # list all targets
-```
-
-Running a single test:
+While iterating, run the narrow command; `make test` and `make check-style` reinstall Go tools, rebuild the full bundle, and run everything.
 
 ```bash
-go test ./server/command -run TestHelloCommand          # unit test, no setup needed
-make dist MM_SERVICESETTINGS_ENABLEDEVELOPER=true DEFAULT_GOOS=linux DEFAULT_GOARCH=amd64
-go test ./server -run TestHelloEndpoint                 # integration test, needs Docker + bundle
-SKIP_DOCKER_TESTS=1 go test ./...                       # run everything except integration tests
-cd webapp && npx jest src/manifest.test.tsx             # single webapp test
+SKIP_DOCKER_TESTS=1 go test ./server/...       # server unit tests only
+go test ./server/command -run TestHelloCommand # single test
+cd webapp && npx jest src/manifest.test.tsx    # single webapp test
+go vet ./... && golangci-lint run ./...        # server lint
+cd webapp && npm run lint && npm run check-types
+make test                                      # full check before pushing
+make mock                                      # regenerate server/command/mocks after changing command.Command
 ```
 
-`MM_DEBUG=1` produces unminified webapp and debug-friendly server builds. `MM_SERVICESETTINGS_ENABLEDEVELOPER=true` builds the server for a single `DEFAULT_GOOS`/`DEFAULT_GOARCH` pair instead of every platform.
+`make help` lists the remaining targets (deploy, watch, release bumps, debugger attach).
 
 ## Architecture
 
-- `plugin.json` is the source of truth for the plugin's ID, version, and settings schema. `make apply` (run by `build/manifest`) generates `server/manifest.go` and `webapp/src/manifest.ts` from it. Both files are gitignored, so edit `plugin.json` and never the generated files. If no version is set, it is derived from git tags at build time.
-- `server/plugin.go` holds the `Plugin` struct. `OnActivate` wires up the `pluginapi.Client`, the KV store wrapper (`server/store/kvstore`), the slash command handler (`server/command`), the HTTP router, and a cluster-wide background job (`server/job.go`, scheduled via `pluginapi/cluster`).
-- `server/api.go`: `ServeHTTP` delegates to a gorilla/mux router mounted under `/plugins/<id>/`. The `MattermostAuthorizationRequired` middleware trusts the `Mattermost-User-ID` header, which the Mattermost server sets only after it authenticates the request.
-- `server/configuration.go` uses the standard copy-on-write configuration pattern behind `configurationLock`.
-- `build/pluginctl` is the tool behind `deploy`, `disable`, `logs`, and similar targets. Project-specific make targets go in `build/custom.mk`.
-- Following the README: keep code in the `main` package unless it introduces a new interface or wraps an upstream integration.
-- CI (`.github/workflows/ci.yml`) delegates to the shared `mattermost/actions-workflows` plugin-ci workflow, which runs `make test-ci`.
+- `plugin.json` is the source of truth for ID, version, and settings. `make apply` generates `server/manifest.go` and `webapp/src/manifest.ts` from it; both are gitignored, so never edit them.
+- `server/plugin.go`: `OnActivate` is where clients, the KV store, slash commands, the HTTP router, and the background job are wired up.
+- `server/api.go`: the auth middleware trusts the `Mattermost-User-ID` header, which the server only sets after authenticating the request. Unit tests set it by hand.
+- Project-specific make targets go in `build/custom.mk`.
+- Package layout follows the README's "Development guidance": stay in `main` unless there's a reason not to.
 
 ## Backend tests
 
-The server has three kinds of tests. Use the cheapest one that can catch the bug you care about.
+Pick the cheapest kind that can catch the bug.
 
-### 1. Plain unit tests (`httptest`, no mocks)
+- **Plain unit tests** (`server/plugin_test.go`): construct `Plugin{}`, call `initRouter()`, drive `ServeHTTP` with `httptest`. For handlers and logic that don't touch `p.API`/`p.client`.
+- **Mocked-API unit tests** (`server/command/command_test.go`): wrap a `plugintest.API` in `pluginapi.NewClient` and set `api.On(...)` expectations; use the mockgen mocks in `server/command/mocks` for this plugin's own interfaces. For checking which API calls the code makes and exercising error paths that are hard to trigger for real. Brittle: they encode your assumptions about the server and need an expectation per call.
+- **Integration tests** (`server/integration_test.go`): `testhelper.Setup(t)` runs Postgres and Mattermost via testcontainers and deploys the bundle from `dist/` (see `go doc github.com/mattermost/mattermost/server/public/pluginapi/testhelper` for fixtures and env vars). For behavior that depends on the real server: auth and routing into the plugin, hooks, KV persistence, permissions, activation. Each `Setup` resets the server (~10s), so keep these few, assert several things per test, and push edge cases down to unit tests.
 
-Example: `server/plugin_test.go` (`TestServeHTTP`). These build a `Plugin{}` directly, call `initRouter()`, and drive `ServeHTTP` with `httptest`. They fake the auth header that the server would normally set.
-
-Use them for pure logic and HTTP handlers that don't touch `p.API` or `p.client`, such as routing, request parsing, response formatting, and middleware. They are fast and need nothing installed.
-
-### 2. Unit tests with mocked plugin API (`plugintest` / mockgen)
-
-Example: `server/command/command_test.go`. These create a `plugintest.API` (testify mock) and wrap it in `pluginapi.NewClient`, then set `api.On(...)` expectations for each server call the code makes. For mocking this plugin's own interfaces (e.g. `command.Command`), use the mockgen mocks in `server/command/mocks`, and regenerate them with `make mock` after changing the interface.
-
-Use them when code calls the Mattermost API and you want to check what it calls and how it handles specific return values, especially error paths that are hard to trigger on a real server. Keep in mind that these tests only verify your assumptions about the server's behavior. Every API call needs an expectation, which makes them brittle when the implementation changes.
-
-### 3. Integration tests (`pluginapi/testhelper`)
-
-Example: `server/integration_test.go` (`TestHelloEndpoint`). `testhelper.Setup(t)` uses testcontainers to start Postgres and a real Mattermost server, deploys the bundle from `dist/`, and provides `th.AdminClient`, `th.Client`, `th.Team`, `th.User`, and `th.Channel`. Helpers include `CreateUser`, `CreateChannel`, and `PostAs`.
-
-Use them for behavior that depends on the real server: authentication and request routing into the plugin, hooks firing, KV store persistence, permissions, and plugin activation and configuration. Also use them for anything where a mock could silently disagree with the real API.
-
-Requirements and caveats:
-- Docker must be running. Without it, the test fails instead of skipping. Set `SKIP_DOCKER_TESTS=1` to skip.
-- Exactly one bundle must exist in `dist/*.tar.gz`, built for linux/amd64, because the Mattermost image only ships for that platform. `make test` handles this. When running `go test` by hand, rebuild the bundle after any server change, or you will be testing stale code.
-- These tests have no build tag, so a plain `go test ./...` includes them.
-- Every `Setup` call resets the database and restarts the server, which costs about 10 seconds per test. Prefer a few integration tests with several assertions each over many small ones.
-- `MM_TEST_IMAGE` overrides the server image (default `mattermost/mattermost-enterprise-edition:latest`).
-
-### Rule of thumb
-
-Start with a plain unit test. Add `plugintest` mocks when the code under test calls the plugin API and you need to control its responses. Write an integration test when correctness depends on how the real server behaves, or when the test should cover a full user-visible flow end to end. Keep integration tests few and focused, and push edge cases down to unit tests.
+Integration test caveats specific to this repo:
+- There's no build tag, so `go test ./...` includes them and fails without Docker. `SKIP_DOCKER_TESTS=1` skips them.
+- They test whatever bundle is in `dist/`, which must be linux/amd64 (see the `test` target comment in the Makefile). After a server change, rebuild it before running one by hand:
+  ```bash
+  make apply server bundle MM_SERVICESETTINGS_ENABLEDEVELOPER=true DEFAULT_GOOS=linux DEFAULT_GOARCH=amd64
+  go test ./server -run TestHelloEndpoint
+  ```
+  This skips the webapp build but requires an existing `webapp/dist`; use `make dist` with the same variables the first time.
