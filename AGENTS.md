@@ -21,8 +21,6 @@ make mock                                      # regenerate server/command/mocks
 ## Architecture
 
 - `plugin.json` is the source of truth for ID, version, and settings. `make apply` generates `server/manifest.go` and `webapp/src/manifest.ts` from it; both are gitignored, so never edit them.
-- `server/plugin.go`: `OnActivate` is where clients, the KV store, slash commands, the HTTP router, and the background job are wired up.
-- `server/api.go`: the auth middleware trusts the `Mattermost-User-ID` header, which the server only sets after authenticating the request. Unit tests set it by hand.
 - Project-specific make targets go in `build/custom.mk`.
 - Package layout follows the README's "Development guidance": stay in `main` unless there's a reason not to.
 
