@@ -4,7 +4,7 @@ Mattermost plugin starter template: a Go server plugin (`server/`) and a React/T
 
 ## Commands
 
-While iterating, run the narrow command; `make test` and `make check-style` reinstall Go tools, rebuild the full bundle, and run everything.
+While iterating, run the narrow command; both `make test` and `make check-style` reinstall Go tools first, and `make test` also rebuilds the bundle and runs every test.
 
 ```bash
 SKIP_DOCKER_TESTS=1 go test ./server/...       # server unit tests only
