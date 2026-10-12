@@ -217,7 +217,7 @@ endif
 	mkdir -p server/dist;
 ifneq ($(MM_SERVICESETTINGS_ENABLEDEVELOPER),)
 	@echo Building plugin only for $(DEFAULT_GOOS)-$(DEFAULT_GOARCH) because MM_SERVICESETTINGS_ENABLEDEVELOPER is enabled
-	cd server && env CGO_ENABLED=0 $(GO) build $(GO_BUILD_FLAGS) $(GO_BUILD_GCFLAGS) -trimpath -o dist/plugin-$(DEFAULT_GOOS)-$(DEFAULT_GOARCH);
+	cd server && env CGO_ENABLED=0 GOOS=$(DEFAULT_GOOS) GOARCH=$(DEFAULT_GOARCH) $(GO) build $(GO_BUILD_FLAGS) $(GO_BUILD_GCFLAGS) -trimpath -o dist/plugin-$(DEFAULT_GOOS)-$(DEFAULT_GOARCH);
 else
 	cd server && env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) $(GO_BUILD_GCFLAGS) -trimpath -o dist/plugin-linux-amd64;
 	cd server && env CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GO) build $(GO_BUILD_FLAGS) $(GO_BUILD_GCFLAGS) -trimpath -o dist/plugin-linux-arm64;
@@ -342,8 +342,12 @@ detach: setup-attach
 	fi
 
 ## Runs any lints and unit tests defined for the server and webapp, if they exist.
+## The bundle is built first because integration tests deploy it to a Mattermost
+## container. That image is published for linux/amd64 only — an arm64 host runs it
+## emulated — so that is the single binary the server will ever look for.
 .PHONY: test
-test: apply webapp/node_modules install-go-tools
+test: install-go-tools
+	$(MAKE) dist MM_SERVICESETTINGS_ENABLEDEVELOPER=true DEFAULT_GOOS=linux DEFAULT_GOARCH=amd64
 ifneq ($(HAS_SERVER),)
 	$(GOBIN)/gotestsum -- -v ./...
 endif
@@ -354,7 +358,8 @@ endif
 ## Runs any lints and unit tests defined for the server and webapp, if they exist, optimized
 ## for a CI environment.
 .PHONY: test-ci
-test-ci: apply webapp/node_modules install-go-tools
+test-ci: install-go-tools
+	$(MAKE) dist MM_SERVICESETTINGS_ENABLEDEVELOPER=true DEFAULT_GOOS=linux DEFAULT_GOARCH=amd64
 ifneq ($(HAS_SERVER),)
 	$(GOBIN)/gotestsum --format standard-verbose --junitfile report.xml -- ./...
 endif
