@@ -89,6 +89,7 @@ func TestServeHTTPRecoversFromPanic(t *testing.T) {
 		assert.Equal(t, "test-user-id", panicLog.fields["user_id"])
 		assert.NotEmpty(t, panicLog.fields["stack"])
 		assert.Equal(t, http.StatusInternalServerError, api.entries[1].fields["status"])
+		assert.Equal(t, "test-user-id", api.entries[1].fields["user_id"])
 	})
 
 	t.Run("after the response is written", func(t *testing.T) {
