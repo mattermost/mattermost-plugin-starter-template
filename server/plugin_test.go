@@ -69,25 +69,44 @@ func TestServeHTTP(t *testing.T) {
 }
 
 func TestServeHTTPRecoversFromPanic(t *testing.T) {
-	plugin, api := newTestPlugin()
-	plugin.router.HandleFunc("/api/v1/panic", func(http.ResponseWriter, *http.Request) {
-		panic("boom")
+	t.Run("before the response is written", func(t *testing.T) {
+		plugin, api := newTestPlugin()
+		plugin.router.HandleFunc("/api/v1/panic", func(http.ResponseWriter, *http.Request) {
+			panic("boom")
+		})
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, "/api/v1/panic", nil)
+		r.Header.Set("Mattermost-User-ID", "test-user-id")
+
+		plugin.ServeHTTP(nil, w, r)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		require.Len(t, api.entries, 2)
+		panicLog := api.entries[0]
+		assert.Equal(t, "error", panicLog.level)
+		assert.Equal(t, "Recovered from panic in HTTP handler", panicLog.msg)
+		assert.Equal(t, "boom", panicLog.fields["panic"])
+		assert.Equal(t, "test-user-id", panicLog.fields["user_id"])
+		assert.NotEmpty(t, panicLog.fields["stack"])
+		assert.Equal(t, http.StatusInternalServerError, api.entries[1].fields["status"])
 	})
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/api/v1/panic", nil)
-	r.Header.Set("Mattermost-User-ID", "test-user-id")
 
-	plugin.ServeHTTP(nil, w, r)
+	t.Run("after the response is written", func(t *testing.T) {
+		plugin, api := newTestPlugin()
+		plugin.router.HandleFunc("/api/v1/panic", func(w http.ResponseWriter, _ *http.Request) {
+			_, _ = w.Write([]byte("partial"))
+			panic("boom")
+		})
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, "/api/v1/panic", nil)
+		r.Header.Set("Mattermost-User-ID", "test-user-id")
 
-	assert.Equal(t, http.StatusInternalServerError, w.Code)
-	require.Len(t, api.entries, 2)
-	panicLog := api.entries[0]
-	assert.Equal(t, "error", panicLog.level)
-	assert.Equal(t, "Recovered from panic in HTTP handler", panicLog.msg)
-	assert.Equal(t, "boom", panicLog.fields["panic"])
-	assert.Equal(t, "test-user-id", panicLog.fields["user_id"])
-	assert.NotEmpty(t, panicLog.fields["stack"])
-	assert.Equal(t, http.StatusInternalServerError, api.entries[1].fields["status"])
+		plugin.ServeHTTP(nil, w, r)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		require.Len(t, api.entries, 2)
+		assert.Equal(t, http.StatusOK, api.entries[1].fields["status"])
+	})
 }
 
 func TestServeHTTPLimitsRequestBody(t *testing.T) {

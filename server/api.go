@@ -86,12 +86,22 @@ func (p *Plugin) logRequests(next http.Handler) http.Handler {
 
 type statusRecorder struct {
 	http.ResponseWriter
-	status int
+	status      int
+	wroteHeader bool
 }
 
+// WriteHeader records only the first status, since later ones never reach the client.
 func (r *statusRecorder) WriteHeader(status int) {
-	r.status = status
+	if !r.wroteHeader {
+		r.status = status
+		r.wroteHeader = true
+	}
 	r.ResponseWriter.WriteHeader(status)
+}
+
+func (r *statusRecorder) Write(b []byte) (int, error) {
+	r.wroteHeader = true
+	return r.ResponseWriter.Write(b)
 }
 
 // Unwrap lets http.ResponseController reach the underlying writer.
