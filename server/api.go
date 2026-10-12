@@ -1,15 +1,25 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"net/http"
+	"runtime/debug"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost/server/public/plugin"
+	"github.com/mattermost/mattermost/server/public/pluginapi/experimental/bot/logger"
 )
 
 // initRouter initializes the HTTP router for the plugin.
 func (p *Plugin) initRouter() *mux.Router {
 	router := mux.NewRouter()
+
+	// The Mattermost server forwards plugin requests without the panic recovery,
+	// body size limit, or security headers it applies to its own REST API.
+	// logRequests comes first so it records the 500 written by recoverPanic.
+	router.Use(p.logRequests, p.recoverPanic, limitRequestBody, setSecurityHeaders)
 
 	// Middleware to require that the user is logged in
 	router.Use(p.MattermostAuthorizationRequired)
@@ -40,9 +50,91 @@ func (p *Plugin) MattermostAuthorizationRequired(next http.Handler) http.Handler
 	})
 }
 
+// maxRequestBodyBytes bounds how much of a request body a handler will read.
+// Raise it for endpoints that legitimately accept larger payloads.
+const maxRequestBodyBytes = 1 << 20 // 1 MiB
+
+type loggerContextKey struct{}
+
+// requestLogger returns the logger attached by logRequests, which tags every line with the requesting user.
+func requestLogger(r *http.Request) logger.Logger {
+	return r.Context().Value(loggerContextKey{}).(logger.Logger)
+}
+
+// logRequests attaches a request-scoped logger and logs every request at debug level,
+// since the server doesn't log plugin requests.
+func (p *Plugin) logRequests(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		log := logger.New(p.API).With(logger.LogContext{
+			"user_id": r.Header.Get("Mattermost-User-ID"),
+		})
+		r = r.WithContext(context.WithValue(r.Context(), loggerContextKey{}, log))
+		rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
+
+		next.ServeHTTP(rec, r)
+
+		// The query string is omitted because it may carry tokens or other secrets.
+		log.With(logger.LogContext{
+			"method":   r.Method,
+			"path":     r.URL.Path,
+			"status":   rec.status,
+			"duration": time.Since(start).String(),
+		}).Debugf("HTTP request")
+	})
+}
+
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (r *statusRecorder) WriteHeader(status int) {
+	r.status = status
+	r.ResponseWriter.WriteHeader(status)
+}
+
+// Unwrap lets http.ResponseController reach the underlying writer.
+func (r *statusRecorder) Unwrap() http.ResponseWriter {
+	return r.ResponseWriter
+}
+
+// recoverPanic stops a panicking handler from crashing the plugin process.
+// The server deactivates a plugin that crashes repeatedly.
+func (p *Plugin) recoverPanic(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if rec := recover(); rec != nil {
+				requestLogger(r).With(logger.LogContext{
+					"path":  r.URL.Path,
+					"panic": fmt.Sprint(rec),
+					"stack": string(debug.Stack()),
+				}).Errorf("Recovered from panic in HTTP handler")
+				http.Error(w, "Internal server error", http.StatusInternalServerError)
+			}
+		}()
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func limitRequestBody(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.Body = http.MaxBytesReader(w, r.Body, maxRequestBodyBytes)
+		next.ServeHTTP(w, r)
+	})
+}
+
+func setSecurityHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		next.ServeHTTP(w, r)
+	})
+}
+
 func (p *Plugin) HelloWorld(w http.ResponseWriter, r *http.Request) {
 	if _, err := w.Write([]byte("Hello, world!")); err != nil {
-		p.API.LogError("Failed to write response", "error", err)
+		requestLogger(r).WithError(err).Errorf("Failed to write response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
