@@ -26,11 +26,9 @@ make mock                                      # regenerate server/command/mocks
 
 ## Backend tests
 
-Pick the cheapest kind that can catch the bug.
-
-- **Plain unit tests** (`server/plugin_test.go`): construct `Plugin{}`, call `initRouter()`, drive `ServeHTTP` with `httptest`. For handlers and logic that don't touch `p.API`/`p.client`.
-- **Mocked-API unit tests** (`server/command/command_test.go`): wrap a `plugintest.API` in `pluginapi.NewClient` and set `api.On(...)` expectations; use the mockgen mocks in `server/command/mocks` for this plugin's own interfaces. For checking which API calls the code makes and exercising error paths that are hard to trigger for real. Brittle: they encode your assumptions about the server and need an expectation per call.
-- **Integration tests** (`server/integration_test.go`): `testhelper.Setup(t)` runs Postgres and Mattermost via testcontainers and deploys the bundle from `dist/` (see `go doc github.com/mattermost/mattermost/server/public/pluginapi/testhelper` for fixtures and env vars). For behavior that depends on the real server: auth and routing into the plugin, hooks, KV persistence, permissions, activation. Each `Setup` resets the server (~10s), so keep these few, assert several things per test, and push edge cases down to unit tests.
+- **Integration tests** (`server/integration_test.go`) are the default for anything that goes through the Mattermost server: plugin API calls, hooks, KV persistence, permissions, HTTP routing, activation. `testhelper.Setup(t)` runs Postgres and Mattermost via testcontainers and deploys the bundle from `dist/` (see `go doc github.com/mattermost/mattermost/server/public/pluginapi/testhelper` for fixtures and env vars). Each `Setup` resets the server (~10s), so group related assertions into one test.
+- **Plain unit tests** (`server/plugin_test.go`) for pure logic that doesn't touch `p.API`/`p.client`, e.g. drive `ServeHTTP` with `httptest` after `initRouter()`.
+- **Mocked-API unit tests** (`server/command/command_test.go`) only for error paths a real server can't easily produce: wrap a `plugintest.API` in `pluginapi.NewClient` and set `api.On(...)` expectations, or use the mockgen mocks in `server/command/mocks` for this plugin's own interfaces. Avoid them otherwise; they encode assumptions about the server rather than testing it.
 
 Integration test caveats specific to this repo:
 - There's no build tag, so `go test ./...` includes them and fails without Docker. `SKIP_DOCKER_TESTS=1` skips them.
