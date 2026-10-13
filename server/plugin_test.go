@@ -105,6 +105,7 @@ func TestServeHTTPRecoversFromPanic(t *testing.T) {
 		plugin.ServeHTTP(nil, w, r)
 
 		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, "partial", w.Body.String())
 		require.Len(t, api.entries, 2)
 		assert.Equal(t, http.StatusOK, api.entries[1].fields["status"])
 	})
