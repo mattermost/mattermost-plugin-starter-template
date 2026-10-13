@@ -30,4 +30,5 @@ func TestHelloEndpoint(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, "Hello, world!", string(body))
+	assert.Equal(t, "nosniff", resp.Header.Get("X-Content-Type-Options"))
 }
