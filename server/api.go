@@ -113,18 +113,22 @@ func (r *statusRecorder) Unwrap() http.ResponseWriter {
 // The server deactivates a plugin that crashes repeatedly.
 func (p *Plugin) recoverPanic(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
 		defer func() {
-			if rec := recover(); rec != nil {
+			if panicVal := recover(); panicVal != nil {
 				requestLogger(r).With(logger.LogContext{
 					"path":  r.URL.Path,
-					"panic": fmt.Sprint(rec),
+					"panic": fmt.Sprint(panicVal),
 					"stack": string(debug.Stack()),
 				}).Errorf("Recovered from panic in HTTP handler")
-				http.Error(w, "Internal server error", http.StatusInternalServerError)
+				// Once the response has started, an error body would be appended to it.
+				if !rec.wroteHeader {
+					http.Error(w, "Internal server error", http.StatusInternalServerError)
+				}
 			}
 		}()
 
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(rec, r)
 	})
 }
 
