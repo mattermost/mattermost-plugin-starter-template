@@ -34,18 +34,21 @@ jobs:
         with:
           persist-credentials: false
 
+      # Go must be installed before CodeQL starts so CodeQL can trace the build. The build
+      # cache stays off: a cached build compiles nothing, leaving CodeQL with no code to analyze.
+      - name: Setup go
+        if: matrix.language == 'go'
+        uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
+        with:
+          go-version-file: go.mod
+          cache: false
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@0d579ffd059c29b07949a3cce3983f0780820c98 # v4.32.6
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
           config-file: ./.github/codeql/codeql-config.yml
-
-      - name: Setup go
-        if: matrix.language == 'go'
-        uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
-        with:
-          go-version-file: go.mod
 
       # The server doesn't compile until make apply generates server/manifest.go.
       - name: Build server

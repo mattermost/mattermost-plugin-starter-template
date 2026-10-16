@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {render, screen} from '@testing-library/react';
+import {act, render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {getGreetingCount, resetGreetingCount} from 'client';
 import {IntlProvider} from 'react-intl';
@@ -23,7 +23,10 @@ function makeState(channelRoles: string) {
             teams: {myMembers: {}},
             channels: {
                 currentChannelId: 'channel-id',
-                channels: {'channel-id': {id: 'channel-id', team_id: 'team-id', display_name: 'Town Square', type: 'O'}},
+                channels: {
+                    'channel-id': {id: 'channel-id', team_id: 'team-id', display_name: 'Town Square', type: 'O'},
+                    'other-channel-id': {id: 'other-channel-id', team_id: 'team-id', display_name: 'Off-Topic', type: 'O'},
+                },
                 roles: {'channel-id': new Set(channelRoles.split(' '))},
             },
             roles: {
@@ -37,15 +40,26 @@ function makeState(channelRoles: string) {
     };
 }
 
+type State = ReturnType<typeof makeState>;
+type SwitchChannel = {type: 'SWITCH_CHANNEL'; channelId: string};
+
 function renderSidebar(channelRoles = 'channel_user') {
-    const state = makeState(channelRoles);
-    return render(
-        <Provider store={createStore(() => state)}>
+    const initialState = makeState(channelRoles);
+    const store = createStore((state: State = initialState, action: SwitchChannel | {type: string}) => {
+        if (action.type !== 'SWITCH_CHANNEL') {
+            return state;
+        }
+        const {channelId} = action as SwitchChannel;
+        return {...state, entities: {...state.entities, channels: {...state.entities.channels, currentChannelId: channelId}}};
+    });
+    render(
+        <Provider store={store}>
             <IntlProvider locale='en'>
                 <GreetingsSidebar/>
             </IntlProvider>
         </Provider>,
     );
+    return store;
 }
 
 beforeEach(() => {
@@ -84,4 +98,28 @@ test('lets channel admins reset the count', async () => {
     await userEvent.click(screen.getByRole('button', {name: 'Reset'}));
     expect(await screen.findByText('No greetings in Town Square yet')).toBeVisible();
     expect(mockResetGreetingCount).toHaveBeenCalledWith('channel-id');
+});
+
+test('ignores a reset that finishes after switching channels', async () => {
+    let rejectReset: (error: Error) => void = () => {};
+    mockResetGreetingCount.mockReturnValue(new Promise((_, reject) => {
+        rejectReset = reject;
+    }));
+    mockGetGreetingCount.mockResolvedValueOnce(3);
+    mockGetGreetingCount.mockResolvedValueOnce(5);
+
+    const store = renderSidebar('channel_user channel_admin');
+    expect(await screen.findByText('3 greetings in Town Square')).toBeVisible();
+    await userEvent.click(screen.getByRole('button', {name: 'Reset'}));
+
+    act(() => {
+        store.dispatch({type: 'SWITCH_CHANNEL', channelId: 'other-channel-id'});
+    });
+    expect(await screen.findByText('5 greetings in Off-Topic')).toBeVisible();
+
+    await act(async () => rejectReset(new Error('Failed to reset greetings')));
+
+    expect(screen.getByText('5 greetings in Off-Topic')).toBeVisible();
+    expect(screen.queryByText('Failed to reset greetings')).not.toBeInTheDocument();
+    expect(mockGetGreetingCount).toHaveBeenCalledTimes(2);
 });

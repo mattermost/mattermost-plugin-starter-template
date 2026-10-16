@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {getGreetingCount, resetGreetingCount} from 'client';
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 
@@ -33,14 +33,24 @@ export default function GreetingsSidebar() {
 
     // Only hides the button; the server makes the real permission check.
     const canReset = useSelector((state: GlobalState) => haveIChannelPermission(state, channel?.team_id, channelId, Permissions.MANAGE_CHANNEL_ROLES));
+
+    const currentChannelId = useRef(channelId);
+    useEffect(() => {
+        currentChannelId.current = channelId;
+    }, [channelId]);
+
     const reset = () => {
         if (!channelId) {
             return;
         }
+
+        // Ignore the result if the user has switched channels while the reset was in flight.
+        const resetChannelId = channelId;
+        const stillCurrent = () => currentChannelId.current === resetChannelId;
         setState({status: 'loading'});
-        resetGreetingCount(channelId).then(
-            reload,
-            (error: Error) => setState({status: 'error', message: error.message}),
+        resetGreetingCount(resetChannelId).then(
+            () => stillCurrent() && reload(),
+            (error: Error) => stillCurrent() && setState({status: 'error', message: error.message}),
         );
     };
 

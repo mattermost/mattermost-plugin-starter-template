@@ -116,7 +116,7 @@ The webapp registers a right-hand sidebar and a channel header / App Bar button 
 - **Strings.** Add user-facing strings to `i18n/en.json` and render them with `react-intl`.
 - **Tests.** Jest, React Testing Library and `userEvent`. See `greetings_sidebar.test.tsx` for a component test against a real Redux store.
 
-`AGENTS.md` has the full design, accessibility and testing rules, adapted from the Mattermost webapp's.
+`webapp/AGENTS.md` has the full design, accessibility and testing rules, adapted from the Mattermost webapp's, and `server/AGENTS.md` has the server security and testing rules. Coding agents load them automatically when working in those folders.
 
 ### Adding a slash command
 
@@ -133,7 +133,7 @@ The webapp registers a right-hand sidebar and a channel header / App Bar button 
    ```
 2. Add a `case statusCommandTrigger:` to the `switch` in `Handle` that calls your `executeStatusCommand(args, params)`.
 3. Return `ephemeral(...)` so only the caller sees the reply. Use `model.CommandResponseTypeInChannel` only when everyone should see it.
-4. The server only checks that the user can post in the channel. If a command or subcommand is admin-only, check it yourself, e.g. `c.client.User.HasPermissionTo(args.UserId, model.PermissionManageSystem)`.
+4. The server only checks that the user can post in the channel. If a command or subcommand needs more, check the permission for what it changes, e.g. `c.client.User.HasPermissionToChannel(args.UserId, args.ChannelId, model.PermissionManageChannelRoles)` for channel admins, or `HasPermissionTo(args.UserId, model.PermissionManageSystem)` only for system-wide actions.
 5. Add a test next to `TestHelloCommand` in `command_test.go`, and an integration test if the command touches server data.
 
 Commands are registered when the plugin activates, so redeploy to pick up a new one.
