@@ -1,15 +1,22 @@
 package main
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
+	"github.com/mattermost/mattermost/server/public/plugin/plugintest/mock"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
+
+	"github.com/mattermost/mattermost-plugin-starter-template/server/store/kvstore/mocks"
 )
 
 type logEntry struct {
@@ -37,21 +44,35 @@ func (l *logRecorder) LogDebug(msg string, keyValuePairs ...any) {
 	l.record("debug", msg, keyValuePairs)
 }
 
+func (l *logRecorder) LogWarn(msg string, keyValuePairs ...any) {
+	l.record("warn", msg, keyValuePairs)
+}
+
 func (l *logRecorder) LogError(msg string, keyValuePairs ...any) {
 	l.record("error", msg, keyValuePairs)
 }
 
-func newTestPlugin() (*Plugin, *logRecorder) {
+func newTestPlugin(t *testing.T) (*Plugin, *logRecorder, *mocks.MockKVStore) {
 	api := &logRecorder{API: &plugintest.API{}}
-	plugin := &Plugin{}
+	t.Cleanup(func() { api.AssertExpectations(t) })
+	store := mocks.NewMockKVStore(gomock.NewController(t))
+
+	plugin := &Plugin{kvstore: store}
 	plugin.SetAPI(api)
+	plugin.client = pluginapi.NewClient(api, &plugintest.Driver{})
 	plugin.router = plugin.initRouter()
-	return plugin, api
+	return plugin, api, store
+}
+
+func serve(plugin *Plugin, r *http.Request) *httptest.ResponseRecorder {
+	w := httptest.NewRecorder()
+	plugin.ServeHTTP(nil, w, r)
+	return w
 }
 
 func TestServeHTTP(t *testing.T) {
 	assert := assert.New(t)
-	plugin, _ := newTestPlugin()
+	plugin, _, _ := newTestPlugin(t)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/api/v1/hello", nil)
 	r.Header.Set("Mattermost-User-ID", "test-user-id")
@@ -70,7 +91,7 @@ func TestServeHTTP(t *testing.T) {
 
 func TestServeHTTPRecoversFromPanic(t *testing.T) {
 	t.Run("before the response is written", func(t *testing.T) {
-		plugin, api := newTestPlugin()
+		plugin, api, _ := newTestPlugin(t)
 		plugin.router.HandleFunc("/api/v1/panic", func(http.ResponseWriter, *http.Request) {
 			panic("boom")
 		})
@@ -93,7 +114,7 @@ func TestServeHTTPRecoversFromPanic(t *testing.T) {
 	})
 
 	t.Run("after the response is written", func(t *testing.T) {
-		plugin, api := newTestPlugin()
+		plugin, api, _ := newTestPlugin(t)
 		plugin.router.HandleFunc("/api/v1/panic", func(w http.ResponseWriter, _ *http.Request) {
 			_, _ = w.Write([]byte("partial"))
 			panic("boom")
@@ -112,7 +133,7 @@ func TestServeHTTPRecoversFromPanic(t *testing.T) {
 }
 
 func TestServeHTTPLimitsRequestBody(t *testing.T) {
-	plugin, _ := newTestPlugin()
+	plugin, _, _ := newTestPlugin(t)
 	var readErr error
 	plugin.router.HandleFunc("/api/v1/echo", func(_ http.ResponseWriter, r *http.Request) {
 		_, readErr = io.ReadAll(r.Body)
@@ -128,7 +149,7 @@ func TestServeHTTPLimitsRequestBody(t *testing.T) {
 }
 
 func TestServeHTTPLogsRequests(t *testing.T) {
-	plugin, api := newTestPlugin()
+	plugin, api, _ := newTestPlugin(t)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/api/v1/hello?token=secret", nil)
 
@@ -143,4 +164,150 @@ func TestServeHTTPLogsRequests(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, entry.fields["status"])
 	assert.Equal(t, "", entry.fields["user_id"])
 	assert.NotEmpty(t, entry.fields["duration"])
+}
+
+func TestGetGreetings(t *testing.T) {
+	channelID := model.NewId()
+	request := func(channelID string) *http.Request {
+		r := httptest.NewRequest(http.MethodGet, "/api/v1/channels/"+channelID+"/greetings", nil)
+		r.Header.Set("Mattermost-User-ID", "test-user-id")
+		return r
+	}
+
+	t.Run("returns the channel's greeting count", func(t *testing.T) {
+		plugin, api, store := newTestPlugin(t)
+		api.On("HasPermissionToChannel", "test-user-id", channelID, model.PermissionReadChannel).Return(true)
+		store.EXPECT().GetGreetingCount(channelID).Return(2, nil)
+
+		w := serve(plugin, request(channelID))
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
+		assert.JSONEq(t, `{"count": 2}`, w.Body.String())
+	})
+
+	t.Run("rejects malformed channel IDs", func(t *testing.T) {
+		plugin, _, _ := newTestPlugin(t)
+
+		w := serve(plugin, request("not-a-channel-id"))
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.JSONEq(t, `{"error": "Invalid channel ID"}`, w.Body.String())
+	})
+
+	t.Run("rejects users who can't read the channel", func(t *testing.T) {
+		plugin, api, _ := newTestPlugin(t)
+		api.On("HasPermissionToChannel", "test-user-id", channelID, model.PermissionReadChannel).Return(false)
+
+		w := serve(plugin, request(channelID))
+
+		assert.Equal(t, http.StatusForbidden, w.Code)
+	})
+
+	t.Run("logs store errors without returning them", func(t *testing.T) {
+		plugin, api, store := newTestPlugin(t)
+		api.On("HasPermissionToChannel", "test-user-id", channelID, model.PermissionReadChannel).Return(true)
+		store.EXPECT().GetGreetingCount(channelID).Return(0, errors.New("pq: connection refused"))
+
+		w := serve(plugin, request(channelID))
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.JSONEq(t, `{"error": "Failed to load greetings"}`, w.Body.String())
+		require.NotEmpty(t, api.entries)
+		assert.Equal(t, "error", api.entries[0].level)
+		assert.Equal(t, "pq: connection refused", api.entries[0].fields["error"])
+	})
+}
+
+func TestResetGreetings(t *testing.T) {
+	channelID := model.NewId()
+	request := func(channelID string) *http.Request {
+		r := httptest.NewRequest(http.MethodDelete, "/api/v1/channels/"+channelID+"/greetings", nil)
+		r.Header.Set("Mattermost-User-ID", "test-user-id")
+		return r
+	}
+	captureAudit := func(api *logRecorder) *model.AuditRecord {
+		rec := &model.AuditRecord{}
+		api.On("LogAuditRec", mock.Anything).Run(func(args mock.Arguments) {
+			*rec = *args.Get(0).(*model.AuditRecord)
+		}).Once()
+		return rec
+	}
+
+	t.Run("lets channel admins reset the count", func(t *testing.T) {
+		plugin, api, store := newTestPlugin(t)
+		api.On("HasPermissionToChannel", "test-user-id", channelID, model.PermissionManageChannelRoles).Return(true)
+		store.EXPECT().ResetGreetingCount(channelID).Return(nil)
+		audit := captureAudit(api)
+
+		w := serve(plugin, request(channelID))
+
+		assert.Equal(t, http.StatusNoContent, w.Code)
+		assert.Equal(t, "resetGreetingCount", audit.EventName)
+		assert.Equal(t, model.AuditStatusSuccess, audit.Status)
+		assert.Equal(t, "test-user-id", audit.Actor.UserId)
+		assert.Equal(t, channelID, audit.EventData.Parameters["channel_id"])
+	})
+
+	t.Run("audits denied attempts", func(t *testing.T) {
+		plugin, api, _ := newTestPlugin(t)
+		api.On("HasPermissionToChannel", "test-user-id", channelID, model.PermissionManageChannelRoles).Return(false)
+		audit := captureAudit(api)
+
+		w := serve(plugin, request(channelID))
+
+		assert.Equal(t, http.StatusForbidden, w.Code)
+		assert.Equal(t, model.AuditStatusFail, audit.Status)
+		assert.Equal(t, channelID, audit.EventData.Parameters["channel_id"])
+	})
+
+	t.Run("keeps unvalidated input out of the audit record", func(t *testing.T) {
+		plugin, api, _ := newTestPlugin(t)
+		audit := captureAudit(api)
+
+		w := serve(plugin, request("not-a-channel-id"))
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Equal(t, model.AuditStatusFail, audit.Status)
+		assert.NotContains(t, audit.EventData.Parameters, "channel_id")
+	})
+
+	t.Run("logs store errors without returning them", func(t *testing.T) {
+		plugin, api, store := newTestPlugin(t)
+		api.On("HasPermissionToChannel", "test-user-id", channelID, model.PermissionManageChannelRoles).Return(true)
+		store.EXPECT().ResetGreetingCount(channelID).Return(errors.New("pq: connection refused"))
+		audit := captureAudit(api)
+
+		w := serve(plugin, request(channelID))
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.JSONEq(t, `{"error": "Failed to reset greetings"}`, w.Body.String())
+		assert.Equal(t, model.AuditStatusFail, audit.Status)
+	})
+}
+
+func TestWebhook(t *testing.T) {
+	for name, tc := range map[string]struct {
+		configured string
+		provided   string
+		status     int
+	}{
+		"accepts the configured secret":            {configured: "s3cret", provided: "s3cret", status: http.StatusNoContent},
+		"rejects a wrong secret":                   {configured: "s3cret", provided: "guess", status: http.StatusUnauthorized},
+		"rejects a missing secret":                 {configured: "s3cret", provided: "", status: http.StatusUnauthorized},
+		"rejects everything until it's configured": {configured: "", provided: "", status: http.StatusUnauthorized},
+	} {
+		t.Run(name, func(t *testing.T) {
+			plugin, _, _ := newTestPlugin(t)
+			plugin.setConfiguration(&configuration{WebhookSecret: tc.configured})
+			r := httptest.NewRequest(http.MethodPost, "/webhook", strings.NewReader(`{}`))
+			if tc.provided != "" {
+				r.Header.Set(webhookAuthHeader, tc.provided)
+			}
+
+			w := serve(plugin, r)
+
+			assert.Equal(t, tc.status, w.Code)
+		})
+	}
 }

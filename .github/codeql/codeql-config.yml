@@ -1,0 +1,16 @@
+name: "CodeQL config"
+
+query-filters:
+  - exclude:
+      problem.severity:
+        - warning
+        - recommendation
+  - exclude:
+      id: go/log-injection
+
+paths-ignore:
+  - '**/*_test.go'
+  - '**/*.test.*'
+  - '**/mocks/**'
+  - webapp/dist
+  - server/dist

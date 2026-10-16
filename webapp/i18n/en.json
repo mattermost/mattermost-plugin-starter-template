@@ -1,1 +1,10 @@
-{}
+{
+  "greetings.count": "{count, plural, =0 {No greetings in {channel} yet} one {# greeting in {channel}} other {# greetings in {channel}}}",
+  "greetings.error": "Couldn’t load greetings",
+  "greetings.intro": "Run {command} in this channel, then refresh to see the count change.",
+  "greetings.loading": "Loading…",
+  "greetings.refresh": "Refresh",
+  "greetings.reset": "Reset",
+  "greetings.retry": "Try again",
+  "greetings.title": "Greetings"
+}

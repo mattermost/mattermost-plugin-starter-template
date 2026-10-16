@@ -2,12 +2,15 @@ package main
 
 import (
 	"context"
+	"crypto/subtle"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"runtime/debug"
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin"
 	"github.com/mattermost/mattermost/server/public/pluginapi/experimental/bot/logger"
 )
@@ -21,23 +24,33 @@ func (p *Plugin) initRouter() *mux.Router {
 	// logRequests comes first so it records the 500 written by recoverPanic.
 	router.Use(p.logRequests, p.recoverPanic, limitRequestBody, setSecurityHeaders)
 
-	// Middleware to require that the user is logged in
-	router.Use(p.MattermostAuthorizationRequired)
+	// External services have no Mattermost session, so webhooks sit outside the
+	// authenticated subrouter and prove themselves with a shared secret instead.
+	router.HandleFunc("/webhook", p.handleWebhook).Methods(http.MethodPost)
 
 	apiRouter := router.PathPrefix("/api/v1").Subrouter()
+	apiRouter.Use(p.MattermostAuthorizationRequired)
 
+	// The server only checks CSRF tokens on non-GET requests, so anything that changes
+	// state must use POST, PUT, PATCH or DELETE.
 	apiRouter.HandleFunc("/hello", p.HelloWorld).Methods(http.MethodGet)
+	apiRouter.HandleFunc("/channels/{channel_id}/greetings", p.handleGetGreetings).Methods(http.MethodGet)
+	apiRouter.HandleFunc("/channels/{channel_id}/greetings", p.handleResetGreetings).Methods(http.MethodDelete)
 
 	return router
 }
 
+type pluginContextKey struct{}
+
 // ServeHTTP demonstrates a plugin that handles HTTP requests by greeting the world.
 // The root URL is currently <siteUrl>/plugins/com.mattermost.plugin-starter-template/api/v1/. Replace com.mattermost.plugin-starter-template with the plugin ID.
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
-	p.router.ServeHTTP(w, r)
+	p.router.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), pluginContextKey{}, c)))
 }
 
 // MattermostAuthorizationRequired can trust Mattermost-User-ID because the server sets it only after authenticating the request.
+// Requests from other plugins arrive without a user ID and are rejected here; routes meant for
+// them should check Mattermost-Plugin-ID against an allowlist instead.
 func (p *Plugin) MattermostAuthorizationRequired(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userID := r.Header.Get("Mattermost-User-ID")
@@ -148,7 +161,113 @@ func setSecurityHeaders(next http.Handler) http.Handler {
 
 func (p *Plugin) HelloWorld(w http.ResponseWriter, r *http.Request) {
 	if _, err := w.Write([]byte("Hello, world!")); err != nil {
-		requestLogger(r).WithError(err).Errorf("Failed to write response")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		requestLogger(r).WithError(err).Warnf("Failed to write response")
+	}
+}
+
+type greetingsResponse struct {
+	Count int `json:"count"`
+}
+
+func (p *Plugin) handleGetGreetings(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+	channelID := mux.Vars(r)["channel_id"]
+
+	if !model.IsValidId(channelID) {
+		writeError(w, r, http.StatusBadRequest, "Invalid channel ID", nil)
+		return
+	}
+
+	// The server only authenticates the user. Every endpoint that takes an ID must check
+	// the user may access that object, or any user can read any channel's data.
+	if !p.client.User.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel) {
+		writeError(w, r, http.StatusForbidden, "You don't have access to this channel", nil)
+		return
+	}
+
+	count, err := p.kvstore.GetGreetingCount(channelID)
+	if err != nil {
+		writeError(w, r, http.StatusInternalServerError, "Failed to load greetings", err)
+		return
+	}
+
+	writeJSON(w, r, http.StatusOK, greetingsResponse{Count: count})
+}
+
+func (p *Plugin) handleResetGreetings(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+	channelID := mux.Vars(r)["channel_id"]
+
+	// Denied attempts are recorded too; they're what an investigation looks for.
+	auditRec := p.newAuditRecord(r, "resetGreetingCount")
+	defer p.API.LogAuditRec(auditRec)
+
+	if !model.IsValidId(channelID) {
+		writeError(w, r, http.StatusBadRequest, "Invalid channel ID", nil)
+		return
+	}
+	model.AddEventParameterToAuditRec(auditRec, "channel_id", channelID)
+
+	// Hiding the button in the webapp is cosmetic; this check is what enforces it.
+	if !p.client.User.HasPermissionToChannel(userID, channelID, model.PermissionManageChannelRoles) {
+		writeError(w, r, http.StatusForbidden, "Only channel admins can reset greetings", nil)
+		return
+	}
+
+	if err := p.kvstore.ResetGreetingCount(channelID); err != nil {
+		writeError(w, r, http.StatusInternalServerError, "Failed to reset greetings", err)
+		return
+	}
+
+	auditRec.Success()
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// newAuditRecord starts a failed record for a state-changing request; call Success once it
+// completes. Record IDs and outcomes only, never message content, secrets or config values.
+func (p *Plugin) newAuditRecord(r *http.Request, event string) *model.AuditRecord {
+	pluginCtx, _ := r.Context().Value(pluginContextKey{}).(*plugin.Context)
+	if pluginCtx == nil {
+		pluginCtx = &plugin.Context{}
+	}
+	return plugin.MakeAuditRecordWithContext(event, model.AuditStatusFail, pluginCtx, r.Header.Get("Mattermost-User-ID"), r.URL.Path)
+}
+
+// webhookAuthHeader carries the secret generated in the plugin settings. Prefer a header
+// over a query parameter: URLs end up in proxy and browser logs.
+const webhookAuthHeader = "X-Webhook-Secret"
+
+func (p *Plugin) handleWebhook(w http.ResponseWriter, r *http.Request) {
+	secret := p.getConfiguration().WebhookSecret
+	provided := r.Header.Get(webhookAuthHeader)
+
+	// ConstantTimeCompare keeps response timing from revealing how much of the secret matched.
+	if secret == "" || subtle.ConstantTimeCompare([]byte(provided), []byte(secret)) != 1 {
+		writeError(w, r, http.StatusUnauthorized, "Invalid webhook secret", nil)
+		return
+	}
+
+	// Handle the payload here. limitRequestBody already caps how much of r.Body can be read.
+	w.WriteHeader(http.StatusNoContent)
+}
+
+type errorResponse struct {
+	Error string `json:"error"`
+}
+
+// writeError sends a message that is safe to show users and logs err, which may hold
+// internal details such as SQL errors or upstream responses, only on the server.
+func writeError(w http.ResponseWriter, r *http.Request, status int, message string, err error) {
+	if err != nil {
+		requestLogger(r).WithError(err).Errorf("%s", message)
+	}
+	writeJSON(w, r, status, errorResponse{Error: message})
+}
+
+func writeJSON(w http.ResponseWriter, r *http.Request, status int, body any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(body); err != nil {
+		requestLogger(r).WithError(err).Warnf("Failed to write response")
 	}
 }

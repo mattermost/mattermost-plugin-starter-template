@@ -6,21 +6,24 @@ import (
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
-)
+	"github.com/pkg/errors"
 
-type Handler struct {
-	client *pluginapi.Client
-}
+	"github.com/mattermost/mattermost-plugin-starter-template/server/store/kvstore"
+)
 
 type Command interface {
 	Handle(args *model.CommandArgs) (*model.CommandResponse, error)
-	executeHelloCommand(args *model.CommandArgs) *model.CommandResponse
+}
+
+type Handler struct {
+	client  *pluginapi.Client
+	kvstore kvstore.KVStore
 }
 
 const helloCommandTrigger = "hello"
 
-// Register all your slash commands in the NewCommandHandler function.
-func NewCommandHandler(client *pluginapi.Client) Command {
+// NewCommandHandler registers the plugin's slash commands and returns the handler that executes them.
+func NewCommandHandler(client *pluginapi.Client, store kvstore.KVStore) (Command, error) {
 	err := client.SlashCommand.Register(&model.Command{
 		Trigger:          helloCommandTrigger,
 		AutoComplete:     true,
@@ -29,43 +32,47 @@ func NewCommandHandler(client *pluginapi.Client) Command {
 		AutocompleteData: model.NewAutocompleteData(helloCommandTrigger, "[@username]", "Username to say hello to"),
 	})
 	if err != nil {
-		client.Log.Error("Failed to register command", "error", err)
+		return nil, errors.Wrapf(err, "failed to register /%s command", helloCommandTrigger)
 	}
+
 	return &Handler{
-		client: client,
-	}
+		client:  client,
+		kvstore: store,
+	}, nil
 }
 
-// ExecuteCommand hook calls this method to execute the commands that were registered in the NewCommandHandler function.
+// Handle is called from the ExecuteCommand hook for every command registered in NewCommandHandler.
 func (c *Handler) Handle(args *model.CommandArgs) (*model.CommandResponse, error) {
 	fields := strings.Fields(args.Command)
 	if len(fields) == 0 {
-		return &model.CommandResponse{
-			ResponseType: model.CommandResponseTypeEphemeral,
-			Text:         "Empty command",
-		}, nil
+		return ephemeral("Empty command"), nil
 	}
-	trigger := strings.TrimPrefix(fields[0], "/")
-	switch trigger {
+
+	switch trigger := strings.TrimPrefix(fields[0], "/"); trigger {
 	case helloCommandTrigger:
-		return c.executeHelloCommand(args), nil
+		return c.executeHelloCommand(args, fields[1:])
 	default:
-		return &model.CommandResponse{
-			ResponseType: model.CommandResponseTypeEphemeral,
-			Text:         fmt.Sprintf("Unknown command: %s", args.Command),
-		}, nil
+		return ephemeral(fmt.Sprintf("Unknown command: /%s", trigger)), nil
 	}
 }
 
-func (c *Handler) executeHelloCommand(args *model.CommandArgs) *model.CommandResponse {
-	if len(strings.Fields(args.Command)) < 2 {
-		return &model.CommandResponse{
-			ResponseType: model.CommandResponseTypeEphemeral,
-			Text:         "Please specify a username",
-		}
+func (c *Handler) executeHelloCommand(args *model.CommandArgs, params []string) (*model.CommandResponse, error) {
+	if len(params) == 0 {
+		return ephemeral("Please specify a username"), nil
 	}
-	username := strings.Fields(args.Command)[1]
+
+	// The server only runs commands in channels the user can post in, so args.ChannelId needs no extra check.
+	count, err := c.kvstore.IncrementGreetingCount(args.ChannelId)
+	if err != nil {
+		return nil, err
+	}
+
+	return ephemeral(fmt.Sprintf("Hello, %s! That's %d greeting(s) in this channel.", params[0], count)), nil
+}
+
+func ephemeral(text string) *model.CommandResponse {
 	return &model.CommandResponse{
-		Text: "Hello, " + username,
+		ResponseType: model.CommandResponseTypeEphemeral,
+		Text:         text,
 	}
 }

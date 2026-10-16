@@ -7,7 +7,7 @@ This plugin serves as a starting point for writing a Mattermost plugin. Feel fre
 
 To learn more about plugins, see [our plugin documentation](https://developers.mattermost.com/extend/plugins/).
 
-This template requires node v16 and npm v8. You can download and install nvm to manage your node versions by following the instructions [here](https://github.com/nvm-sh/nvm). Once you've setup the project simply run `nvm i` within the root folder to use the suggested version of node.
+This template targets Mattermost Server 12.0 or later (`min_server_version` in `plugin.json`). It requires the Go version in `go.mod` and the Node version in `.nvmrc`. You can download and install nvm to manage your node versions by following the instructions [here](https://github.com/nvm-sh/nvm). Once you've setup the project simply run `nvm i` within the root folder to use the suggested version of node.
 
 ## Getting Started
 Use GitHub's template feature to make a copy of this repository by clicking the "Use this template" button.
@@ -29,25 +29,13 @@ Edit the following files:
 }
 ```
 
-2. `go.mod` with your Go module path, following the `<hosting-site>/<repository>/<module>` convention:
-```
-module github.com/example/my-plugin
-```
-
-3. Replace all occurrences of `github.com/mattermost/mattermost-plugin-starter-template` in the codebase with your Go module path:
+2. Replace the Go module path (`go.mod`, imports, mocks, `Makefile`, `.golangci.yml`) with yours, following the `<hosting-site>/<repository>/<module>` convention. On Linux, drop the `''` after `-i`:
 ```bash
-sed -i '' 's|github.com/mattermost/mattermost-plugin-starter-template|github.com/example/my-plugin|g' server/*.go
+git grep -l github.com/mattermost/mattermost-plugin-starter-template -- go.mod '*.go' Makefile .golangci.yml \
+  | xargs sed -i '' 's|github.com/mattermost/mattermost-plugin-starter-template|github.com/example/my-plugin|g'
 ```
 
-4. Replace `.golangci.yml` `local-prefixes` attribute with your Go module path:
-```yml
-linters-settings:
-  # [...]
-  goimports:
-    local-prefixes: github.com/example/my-plugin
-```
-
-5. Build your plugin:
+3. Build your plugin:
 ```
 make
 ```
@@ -57,6 +45,18 @@ This will produce a single plugin file (with support for multiple architectures)
 ```
 dist/com.example.my-plugin.tar.gz
 ```
+
+## Try the example
+
+Once the plugin is installed and enabled (System Console > Plugins > Plugin Management, or `make deploy`):
+
+1. In any channel, run `/hello @someone`. Only you see the reply, which includes the channel's greeting count.
+2. Click the raised-hand icon in the App Bar on the right edge of the window to open the **Greetings** sidebar. It shows the count for the channel you're viewing. **Refresh** reloads it; **Reset** only appears for channel and system admins.
+3. Open System Console > Plugins > Plugin Starter Template, click **Regenerate** next to **Webhook Secret**, then **Save**. The webhook rejects every call until a secret exists. Then:
+   ```bash
+   curl -i -X POST -H "X-Webhook-Secret: <secret>" <SiteURL>/plugins/com.mattermost.plugin-starter-template/webhook
+   ```
+   returns `204`. Without the header, or with a wrong secret, it returns `401`.
 
 ## Development
 
@@ -85,15 +85,156 @@ The server code comes with some boilerplate for creating an api, using slash com
 
 #### Api
 
-api.go implements the ServeHTTP hook which allows the plugin to implement the http.Handler interface. Requests destined for the `/plugins/{id}` path will be routed to the plugin. This file also contains a sample `HelloWorld` endpoint that is tested in plugin_test.go.
+api.go implements the ServeHTTP hook which allows the plugin to implement the http.Handler interface. Requests destined for the `/plugins/{id}` path will be routed to the plugin. It contains four example routes:
+
+- `GET /api/v1/hello`: the minimal authenticated endpoint.
+- `GET /api/v1/channels/{channel_id}/greetings`: validates its input and checks the user can read the channel before returning data.
+- `DELETE /api/v1/channels/{channel_id}/greetings`: a state-changing route. It uses a non-GET method so the server's CSRF check applies, requires channel admin permission, and writes an audit record whether it succeeds or is denied.
+- `POST /webhook`: an unauthenticated route for external services, protected by a shared secret.
 
 #### Command package
 
-This package contains the boilerplate for adding a slash command and an instance of it is created in the `OnActivate` hook in plugin.go. If you don't need it you can delete the package and remove any reference to `commandClient` in plugin.go. The package also contains an example of how to create a mock for testing.
+This package contains the boilerplate for adding a slash command and an instance of it is created in the `OnActivate` hook in plugin.go. `/hello` replies with an ephemeral message and counts greetings per channel through the KVStore. If you don't need it you can delete the package and remove any reference to `commandClient` in plugin.go. Run `make mock` to regenerate the mocks in `server/command/mocks` and `server/store/kvstore/mocks` after changing an interface.
 
 #### KVStore package
 
-This is a central place for you to access the KVStore methods that are available in the `pluginapi.Client`. The package contains an interface for you to define your methods that will wrap the KVStore methods. An instance of the KVStore is created in the `OnActivate` hook.
+This is a central place for you to access the KVStore methods that are available in the `pluginapi.Client`. The package contains an interface for you to define your methods that will wrap the KVStore methods. An instance of the KVStore is created in the `OnActivate` hook. Use `SetAtomicWithRetries` for read-modify-write updates; plugins can run on several nodes in a cluster at once.
+
+### Modifying the webapp boilerplate
+
+The webapp registers a right-hand sidebar and a channel header / App Bar button that show the greeting count for the current channel. Channel admins also get a Reset button.
+
+- **Shared dependencies.** React, ReactDOM, react-intl, Redux, react-redux, react-router-dom and prop-types are provided by the Mattermost webapp at runtime (see `externals` in `webpack.config.js`). Keep their versions in `package.json` aligned with the server version you target. Don't bundle your own copies.
+- **`@mattermost/shared`.** Imports from `@mattermost/shared/*` (e.g. `WithTooltip` from `@mattermost/shared/components/tooltip`) are loaded from the host at runtime. Install `@mattermost/shared` as a devDependency for the types when you first use it.
+- **Compass.** UI is built with [`@mattermost/compass-ui`](https://www.npmjs.com/package/@mattermost/compass-ui) and [`@mattermost/compass-icons`](https://www.npmjs.com/package/@mattermost/compass-icons).
+  - Use an existing Compass component before writing your own.
+  - Import from subpaths (e.g. `@mattermost/compass-ui/components/button`), never the package root.
+  - Import `@mattermost/compass-ui/styles` once in `index.tsx`, and never import `@mattermost/compass-ui/styles/standalone` in a plugin.
+  - Wrap icons passed to Compass in `Icon` without a size: `leadingIcon={<Icon glyph={<RefreshIcon/>}/>}`.
+  - Take colors from the host theme variables (`--center-channel-color`, `--button-bg`, …), and spacing and type from Compass tokens (`--spacing-m`, `--font-size-100`, …).
+- **API calls.** Use the helpers in `src/client.ts`. They go through `Client4.getOptions`, which adds the CSRF token the server requires on cookie-authenticated, non-GET requests.
+- **Strings.** Add user-facing strings to `i18n/en.json` and render them with `react-intl`.
+- **Tests.** Jest, React Testing Library and `userEvent`. See `greetings_sidebar.test.tsx` for a component test against a real Redux store.
+
+`AGENTS.md` has the full design, accessibility and testing rules, adapted from the Mattermost webapp's.
+
+### Adding a slash command
+
+1. In `server/command/command.go`, add a trigger constant and register it in `NewCommandHandler`:
+   ```go
+   const statusCommandTrigger = "status"
+
+   err = client.SlashCommand.Register(&model.Command{
+       Trigger:          statusCommandTrigger,
+       AutoComplete:     true,
+       AutoCompleteDesc: "Show the plugin's status",
+       AutocompleteData: model.NewAutocompleteData(statusCommandTrigger, "", "Show the plugin's status"),
+   })
+   ```
+2. Add a `case statusCommandTrigger:` to the `switch` in `Handle` that calls your `executeStatusCommand(args, params)`.
+3. Return `ephemeral(...)` so only the caller sees the reply. Use `model.CommandResponseTypeInChannel` only when everyone should see it.
+4. The server only checks that the user can post in the channel. If a command or subcommand is admin-only, check it yourself, e.g. `c.client.User.HasPermissionTo(args.UserId, model.PermissionManageSystem)`.
+5. Add a test next to `TestHelloCommand` in `command_test.go`, and an integration test if the command touches server data.
+
+Commands are registered when the plugin activates, so redeploy to pick up a new one.
+
+### Adding an HTTP endpoint
+
+1. Add a route to `apiRouter` in `initRouter` (`server/api.go`). Routes there require a logged-in user. Use GET only for reads; anything that changes state uses POST, PUT, PATCH or DELETE.
+2. In the handler, read the user from `r.Header.Get("Mattermost-User-ID")`, validate every ID with `model.IsValidId`, and check permissions (`p.client.User.HasPermissionToChannel`, `HasPermissionToTeam`, `HasPermissionTo`) before touching data.
+3. Respond with `writeJSON`, and report failures with `writeError` so internal errors are logged rather than sent to the user.
+4. For state-changing routes, write an audit record as `handleResetGreetings` does.
+5. Call it from the webapp through a function in `webapp/src/client.ts`, which adds the CSRF token.
+6. Test the allowed and the denied case in `plugin_test.go`, and the real permission check in `integration_test.go`.
+
+The endpoint is served at `<SiteURL>/plugins/<plugin-id>/api/v1/...`.
+
+### Receiving webhooks
+
+`POST /webhook` (`handleWebhook` in `server/api.go`) is the starting point for calls from external services. They have no Mattermost session, so the route sits outside `apiRouter` and checks a shared secret instead. This is the pattern the GitHub and GitLab plugins use.
+
+Nothing has to be registered with Mattermost: the route exists as soon as the plugin is enabled. If all you need is for an external service to post messages, Mattermost's built-in incoming webhooks (Integrations > Incoming Webhooks) do that without a plugin. Use a plugin route when you need to process the payload yourself.
+
+1. An admin clicks **Regenerate** next to **Webhook Secret** in System Console > Plugins > <your plugin>, then **Save**, and gives the external service that value and the URL `<SiteURL>/plugins/<plugin-id>/webhook`.
+2. The service sends the secret in the `X-Webhook-Secret` header. The handler compares it in constant time and rejects everything while no secret is configured.
+3. Decode the payload where the handler says `Handle the payload here`, e.g. `json.NewDecoder(r.Body).Decode(&payload)`. `limitRequestBody` already caps its size.
+4. If the provider signs its requests (GitHub, Stripe, Slack, ...), verify that HMAC signature over the raw body instead of, or as well as, the shared secret.
+5. To post the result in a channel, create a bot with `p.client.Bot.EnsureBot` in `OnActivate` and post as that bot.
+
+Regenerating the secret and saving invalidates the old one immediately.
+
+### Adding System Console settings
+
+Settings declared in `plugin.json` appear automatically under System Console > Plugins > <your plugin>.
+
+1. Add an entry to `settings_schema.settings` in `plugin.json`:
+   ```json
+   {
+       "key": "MaxGreetings",
+       "display_name": "Maximum greetings:",
+       "type": "number",
+       "help_text": "How many greetings a channel can store.",
+       "default": 100
+   }
+   ```
+   `type` is one of `bool`, `text`, `longtext`, `number`, `dropdown`, `radio`, `generated`, `username` or `custom`. Add `"secret": true` to credentials and keys so they're masked in the System Console and support packets.
+2. Add a field with the same name to the `configuration` struct in `server/configuration.go` (`MaxGreetings int`).
+3. Read it with `p.getConfiguration().MaxGreetings`. `OnConfigurationChange` reloads the struct whenever an admin saves.
+4. To reject invalid values before they're saved, implement the `ConfigurationWillBeSaved` hook.
+
+### Adding webapp UI
+
+Register components in `initialize` in `webapp/src/index.tsx`. The template uses:
+
+- `registry.registerRightHandSidebarComponent(Component, title)` for the sidebar. It returns `toggleRHSPlugin`, an action that opens and closes it.
+- `registry.registerChannelHeaderButtonAction(icon, action, dropdownText, tooltipText)` for the App Bar button that dispatches `toggleRHSPlugin`.
+
+Other surfaces (post menu actions, custom post types, root components, admin console sections, ...) are listed in the [webapp plugin reference](https://developers.mattermost.com/extend/plugins/webapp/reference/). Put each component in its own folder under `src/components/` with its CSS and test, and use Compass components for the UI.
+
+### Security checklist
+
+The Mattermost server authenticates requests to `/plugins/{id}`, sets `Mattermost-User-Id` (after stripping any spoofed value), and enforces CSRF on cookie-authenticated, non-GET requests. Everything else is up to your plugin.
+
+**Authentication and authorization**
+
+- **Authorize every request.** A logged-in user isn't necessarily allowed to see a channel, team or post. Check with `p.client.User.HasPermissionTo`, `HasPermissionToTeam` or `HasPermissionToChannel` before reading or changing data the user names in the request. Take the user's identity only from the `Mattermost-User-Id` header.
+- **Enforce permissions on the server.** Hiding a button in the webapp doesn't stop anyone from calling the API.
+- **Scope KV data.** The KV store is shared by all users of the plugin; key per-user data by user ID and check ownership.
+- **Check slash command permissions.** The server only checks that the user can post in the channel; admin-only subcommands must check more.
+
+**Requests that don't come from a logged-in user**
+
+- **Authenticate webhooks.** Routes outside `MattermostAuthorizationRequired` must verify the caller themselves, e.g. with a shared secret compared using `crypto/subtle.ConstantTimeCompare`, or the provider's HMAC signature. Fail closed when the secret isn't configured, and never accept secrets in the query string.
+- **Allowlist inter-plugin callers.** Requests from other plugins have no user ID; check `Mattermost-Plugin-ID` against the plugins you expect.
+- **Treat interactive actions and dialogs as user input.** Re-check permissions, and verify the post really came from your bot before trusting its context.
+- **Don't trust post props.** Clients can set most of them; identify your own posts by `post.UserId`.
+- **Keep `public/` public.** Anything in it is served to anyone without logging in.
+
+**Input, output and errors**
+
+- **Validate input.** Check IDs with `model.IsValidId`, cap request bodies (see `limitRequestBody`), paginate lists, and reject unknown values.
+- **Never change state on GET.** CSRF checks only cover POST, PUT, PATCH and DELETE.
+- **Avoid injection.** Use SQL placeholders, never pass user input to `os/exec`, and validate file paths with `filepath.IsLocal`.
+- **Limit outbound requests.** Set timeouts, and allowlist the hosts for any user-supplied URL so the plugin can't be used to reach internal services.
+- **Don't leak internals.** Log the underlying error and return a generic message (see `writeError`).
+
+**Secrets, logging and auditing**
+
+- **Keep secrets secret.** Mark settings `"secret": true` in `plugin.json` so they're masked in the System Console and support packets. Use `"type": "generated"` for values the plugin creates itself. Encrypt per-user OAuth tokens before storing them.
+- **Log carefully.** Never log tokens, secrets, query strings or message content.
+- **Audit state changes.** Write an audit record for every state-changing request, including denied ones, with IDs only (see `handleResetGreetings`).
+
+**Webapp**
+
+- **No raw HTML.** `dangerouslySetInnerHTML` is blocked by ESLint; render Markdown with `window.PostUtils.formatText` and `messageHtmlToComponent`, which sanitize it.
+- **Check URLs.** Allow only `http:` and `https:` in user-supplied `href` and `src` values.
+- **Keep credentials on the server.** Don't store tokens in `localStorage` or call third-party APIs with credentials from the browser.
+- **Check message origins.** Verify `event.origin` in `message` event listeners.
+
+**Dependencies**
+
+- **Stay patched.** Dependabot (`.github/dependabot.yml`) opens monthly update PRs. Run `govulncheck ./...` and `npm audit --omit=dev` in `webapp/` before releasing.
+- **Watch the scans.** CodeQL checks the Go and TypeScript code on every PR, and OpenSSF Scorecard checks the repository's supply-chain settings weekly. Results appear under the repository's Security > Code scanning tab.
 
 ### Deploying with Local Mode
 
@@ -209,13 +350,13 @@ if err != nil {
     return errors.Wrap(err, "failed to get bundle path")
 }
 
-profileImage, err := ioutil.ReadFile(filepath.Join(bundlePath, "assets", "profile_image.png"))
+profileImage, err := os.ReadFile(filepath.Join(bundlePath, "assets", "profile_image.png"))
 if err != nil {
     return errors.Wrap(err, "failed to read profile image")
 }
 
 if appErr := p.API.SetProfileImage(userID, profileImage); appErr != nil {
-    return errors.Wrap(err, "failed to set profile image")
+    return errors.Wrap(appErr, "failed to set profile image")
 }
 ```
 
