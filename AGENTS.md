@@ -2,9 +2,11 @@
 
 Mattermost plugin starter template: a Go server plugin (`server/`) and a React/TypeScript webapp plugin (`webapp/`). Either half can be deleted; the Makefile skips whatever `plugin.json` doesn't declare.
 
+**Before editing `server/`, read `server/AGENTS.md`. Before editing `webapp/`, read `webapp/AGENTS.md`.** Step-by-step guides for adding a slash command, HTTP endpoint, webhook, setting or webapp UI are in `README.md` under "Modifying the server boilerplate" and "Modifying the webapp boilerplate".
+
 ## Commands
 
-While iterating, run the narrow command; both `make test` and `make check-style` reinstall Go tools first, and `make test` also rebuilds the bundle and runs every test.
+While iterating, run the narrow command; `make test` and `make check-style` reinstall Go tools first, and `make test` also rebuilds the bundle.
 
 ```bash
 SKIP_DOCKER_TESTS=1 go test ./server/...       # server unit tests only
@@ -13,28 +15,26 @@ cd webapp && npx jest src/manifest.test.tsx    # single webapp test
 go vet ./... && golangci-lint run ./...        # server lint
 cd webapp && npm run lint && npm run check-types
 make test                                      # full check before pushing
-make mock                                      # regenerate server/command/mocks after changing command.Command
+make mock                                      # regenerate mocks after changing command.Command or kvstore.KVStore
 ```
 
-`make help` lists the remaining targets (deploy, watch, release bumps, debugger attach).
+`make help` lists the rest (deploy, watch, release bumps, debugger attach).
 
 ## Architecture
 
-- `plugin.json` is the source of truth for ID, version, and settings. `make apply` generates `server/manifest.go` and `webapp/src/manifest.ts` from it; both are gitignored, so never edit them.
+- `plugin.json` is the source of truth for ID, version, and settings. `make apply` generates `server/manifest.go` and `webapp/src/manifest.ts` from it; both are gitignored, so never edit them. A fresh checkout doesn't compile until `make apply` runs. Never edit `dist/`, `server/dist/` or `webapp/dist/`.
 - Project-specific make targets go in `build/custom.mk`.
-- Package layout follows the README's "Development guidance": stay in `main` unless there's a reason not to.
+- `min_server_version` is 12.0.0. Don't use plugin API methods or host webapp exports newer than that without bumping it.
 
-## Backend tests
+## Rules that apply everywhere
 
-- **Integration tests** (`server/integration_test.go`) are the default for anything that goes through the Mattermost server: plugin API calls, hooks, KV persistence, permissions, HTTP routing, activation. `testhelper.Setup(t)` runs Postgres and Mattermost via testcontainers and deploys the bundle from `dist/` (see `go doc github.com/mattermost/mattermost/server/public/pluginapi/testhelper` for fixtures and env vars). Each `Setup` resets the server (~10s), so group related assertions into one test.
-- **Plain unit tests** (`server/plugin_test.go`) for pure logic that doesn't touch `p.API`/`p.client`, e.g. drive `ServeHTTP` with `httptest` after `initRouter()`.
-- **Mocked-API unit tests** (`server/command/command_test.go`) only for error paths a real server can't easily produce: wrap a `plugintest.API` in `pluginapi.NewClient` and set `api.On(...)` expectations, or use the mockgen mocks in `server/command/mocks` for this plugin's own interfaces. Avoid them otherwise; they encode assumptions about the server rather than testing it.
+- The server only authenticates plugin requests. Every route and command that touches data checks the user's permission on that object, on the server; hiding UI is not a check.
+- Anything that changes state uses POST, PUT, PATCH or DELETE. The server's CSRF check doesn't cover GET.
+- Never send internal errors to clients or write secrets, tokens or message content to logs.
+- Don't add dependencies the host, Compass or the standard library already provide. Fix CodeQL alerts instead of excluding them in `.github/codeql/codeql-config.yml`.
+- In GitHub workflows, pin third-party actions to a commit SHA with the version in a comment, and start from `permissions: {}`.
 
-Integration test caveats specific to this repo:
-- There's no build tag, so `go test ./...` includes them and fails without Docker. `SKIP_DOCKER_TESTS=1` skips them.
-- They test whatever bundle is in `dist/`, which must be linux/amd64 (see the `test` target comment in the Makefile). After a server change, rebuild it before running one by hand:
-  ```bash
-  make apply server bundle MM_SERVICESETTINGS_ENABLEDEVELOPER=true DEFAULT_GOOS=linux DEFAULT_GOARCH=amd64
-  go test ./server -run TestHelloEndpoint
-  ```
-  This skips the webapp build but requires an existing `webapp/dist`; use `make dist` with the same variables the first time.
+## Pull requests and commits
+
+- Commit subject: one succinct line. Don't add a `Co-Authored-By` line for the agent.
+- In the PR description, call out any change to permissions, authentication, secrets or `min_server_version`.

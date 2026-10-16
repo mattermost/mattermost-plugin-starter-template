@@ -48,7 +48,11 @@ func (p *Plugin) OnActivate() error {
 
 	p.kvstore = kvstore.NewKVStore(p.client)
 
-	p.commandClient = command.NewCommandHandler(p.client)
+	commandClient, err := command.NewCommandHandler(p.client, p.kvstore)
+	if err != nil {
+		return err
+	}
+	p.commandClient = commandClient
 
 	p.router = p.initRouter()
 

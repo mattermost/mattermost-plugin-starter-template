@@ -441,5 +441,6 @@ help:
 mock:
 ifneq ($(HAS_SERVER),)
 	go install go.uber.org/mock/mockgen@v0.6.0
-	mockgen -destination=server/command/mocks/mock_commands.go -package=mocks github.com/mattermost/mattermost-plugin-starter-template/server/command Command
+	$(GOBIN)/mockgen -destination=server/command/mocks/mock_commands.go -package=mocks github.com/mattermost/mattermost-plugin-starter-template/server/command Command
+	$(GOBIN)/mockgen -destination=server/store/kvstore/mocks/mock_kvstore.go -package=mocks github.com/mattermost/mattermost-plugin-starter-template/server/store/kvstore KVStore
 endif

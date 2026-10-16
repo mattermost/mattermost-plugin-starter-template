@@ -54,17 +54,3 @@ func (mr *MockCommandMockRecorder) Handle(args any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Handle", reflect.TypeOf((*MockCommand)(nil).Handle), args)
 }
-
-// executeHelloCommand mocks base method.
-func (m *MockCommand) executeHelloCommand(args *model.CommandArgs) *model.CommandResponse {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "executeHelloCommand", args)
-	ret0, _ := ret[0].(*model.CommandResponse)
-	return ret0
-}
-
-// executeHelloCommand indicates an expected call of executeHelloCommand.
-func (mr *MockCommandMockRecorder) executeHelloCommand(args any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "executeHelloCommand", reflect.TypeOf((*MockCommand)(nil).executeHelloCommand), args)
-}

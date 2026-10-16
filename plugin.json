@@ -5,7 +5,7 @@
     "homepage_url": "https://github.com/mattermost/mattermost-plugin-starter-template",
     "support_url": "https://github.com/mattermost/mattermost-plugin-starter-template/issues",
     "icon_path": "assets/starter-template-icon.svg",
-    "min_server_version": "6.2.1",
+    "min_server_version": "12.0.0",
     "server": {
         "executables": {
             "linux-amd64": "server/dist/plugin-linux-amd64",
@@ -21,6 +21,17 @@
     "settings_schema": {
         "header": "",
         "footer": "",
-        "settings": []
+        "settings": [
+            {
+                "key": "WebhookSecret",
+                "display_name": "Webhook Secret:",
+                "type": "generated",
+                "help_text": "External services must send this value in the X-Webhook-Secret header when calling the plugin's /webhook endpoint.",
+                "regenerate_help_text": "Regenerating the secret stops existing webhook integrations from working until they're updated.",
+                "placeholder": "",
+                "default": null,
+                "secret": true
+            }
+        ]
     }
 }

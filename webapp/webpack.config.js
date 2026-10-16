@@ -38,7 +38,7 @@ const config = {
             'src',
             'node_modules',
         ],
-        extensions: ['*', '.js', '.jsx', '.ts', '.tsx'],
+        extensions: ['.js', '.jsx', '.ts', '.tsx'],
     },
     module: {
         rules: [
@@ -55,45 +55,50 @@ const config = {
                 },
             },
             {
-                test: /\.(scss|css)$/,
-                use: [
-                    'style-loader',
-                    {
-                        loader: 'css-loader',
-                    },
-                    {
-                        loader: 'sass-loader',
-                        options: {
-                            sassOptions: {
-                                includePaths: ['node_modules/compass-mixins/lib', 'sass'],
-                            },
-                        },
-                    },
-                ],
+                // Compass UI ships ES modules that import bare specifiers like 'react/jsx-runtime'.
+                test: /\.m?js$/,
+                include: /node_modules[\\/]@mattermost[\\/]compass-ui/,
+                resolve: {fullySpecified: false},
+            },
+            {
+                test: /\.css$/,
+                use: ['style-loader', 'css-loader'],
             },
         ],
     },
-    externals: {
-        react: 'React',
-        'react-dom': 'ReactDOM',
-        redux: 'Redux',
-        'react-redux': 'ReactRedux',
-        'prop-types': 'PropTypes',
-        'react-bootstrap': 'ReactBootstrap',
-        'react-router-dom': 'ReactRouterDom',
-    },
+
+    // Libraries the Mattermost web app exposes on window. Using the host's copies keeps
+    // React context (store, intl, router) shared with the app and keeps the bundle small.
+    externals: [
+        {
+            react: 'React',
+            'react/jsx-runtime': 'ReactJSXRuntime',
+            'react/jsx-dev-runtime': 'ReactJSXDevRuntime',
+            'react-dom': 'ReactDOM',
+            'react-intl': 'ReactIntl',
+            redux: 'Redux',
+            'react-redux': 'ReactRedux',
+            'react-router-dom': 'ReactRouterDom',
+            'prop-types': 'PropTypes',
+        },
+
+        // @mattermost/shared components (e.g. WithTooltip) are loaded from the host on demand.
+        ({request}, callback) => {
+            if ((/^@mattermost\/shared\//).test(request)) {
+                return callback(null, `promise globalThis.loadSharedDependency('${request}')`);
+            }
+            return callback();
+        },
+    ],
     output: {
         devtoolNamespace: PLUGIN_ID,
         path: path.join(__dirname, '/dist'),
         publicPath: '/',
         filename: 'main.js',
     },
-    mode: (isDev) ? 'eval-source-map' : 'production',
+    mode: isDev ? 'development' : 'production',
+    devtool: isDev ? 'eval-source-map' : false,
     plugins,
 };
-
-if (isDev) {
-    Object.assign(config, {devtool: 'eval-source-map'});
-}
 
 module.exports = config;
