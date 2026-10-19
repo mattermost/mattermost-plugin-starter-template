@@ -1,10 +1,19 @@
 {
-  "greetings.count": "{count, plural, =0 {No greetings in {channel} yet} one {# greeting in {channel}} other {# greetings in {channel}}}",
-  "greetings.error": "Couldn’t load greetings",
-  "greetings.intro": "Run {command} in this channel, then refresh to see the count change.",
-  "greetings.loading": "Loading…",
-  "greetings.refresh": "Refresh",
-  "greetings.reset": "Reset",
-  "greetings.retry": "Try again",
-  "greetings.title": "Greetings"
+  "channel_status.at_risk": "At risk",
+  "channel_status.clear": "Clear status",
+  "channel_status.current": "Current status",
+  "channel_status.intro": "Show everyone in {channel} how things are going. You can also use {command}.",
+  "channel_status.load_error": "Couldn’t load the channel status",
+  "channel_status.loading": "Loading…",
+  "channel_status.none": "No status set",
+  "channel_status.off_track": "Off track",
+  "channel_status.on_track": "On track",
+  "channel_status.read_only": "You don’t have permission to change this channel’s status.",
+  "channel_status.retry": "Try again",
+  "channel_status.save": "Save",
+  "channel_status.save_error": "Couldn’t update the status",
+  "channel_status.select_label": "New status",
+  "channel_status.select_placeholder": "Choose a status",
+  "channel_status.tag_label": "Channel status: {status}",
+  "channel_status.title": "Channel status"
 }

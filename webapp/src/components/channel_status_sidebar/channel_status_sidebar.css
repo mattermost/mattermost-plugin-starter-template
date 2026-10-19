@@ -1,0 +1,60 @@
+/* Colors come from the host theme; spacing, radius and type come from Compass tokens. */
+.ChannelStatusSidebar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-l);
+    padding: var(--spacing-xl);
+    color: var(--center-channel-color);
+}
+
+.ChannelStatusSidebar__text {
+    margin: 0;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-size: var(--font-size-100);
+    line-height: var(--line-height-100);
+}
+
+.ChannelStatusSidebar__current {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+}
+
+.ChannelStatusSidebar__heading {
+    margin: 0;
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-200);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-200);
+}
+
+.ChannelStatusSidebar__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-m);
+}
+
+.ChannelStatusSidebar__actions {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.ChannelStatusSidebar__dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+}
+
+.ChannelStatusSidebar__dot--on-track {
+    background: var(--online-indicator);
+}
+
+.ChannelStatusSidebar__dot--at-risk {
+    background: var(--away-indicator);
+}
+
+.ChannelStatusSidebar__dot--off-track {
+    background: var(--dnd-indicator);
+}

@@ -39,46 +39,45 @@ func (m *MockKVStore) EXPECT() *MockKVStoreMockRecorder {
 	return m.recorder
 }
 
-// GetGreetingCount mocks base method.
-func (m *MockKVStore) GetGreetingCount(channelID string) (int, error) {
+// DeleteChannelStatus mocks base method.
+func (m *MockKVStore) DeleteChannelStatus(channelID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetGreetingCount", channelID)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetGreetingCount indicates an expected call of GetGreetingCount.
-func (mr *MockKVStoreMockRecorder) GetGreetingCount(channelID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGreetingCount", reflect.TypeOf((*MockKVStore)(nil).GetGreetingCount), channelID)
-}
-
-// IncrementGreetingCount mocks base method.
-func (m *MockKVStore) IncrementGreetingCount(channelID string) (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IncrementGreetingCount", channelID)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// IncrementGreetingCount indicates an expected call of IncrementGreetingCount.
-func (mr *MockKVStoreMockRecorder) IncrementGreetingCount(channelID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementGreetingCount", reflect.TypeOf((*MockKVStore)(nil).IncrementGreetingCount), channelID)
-}
-
-// ResetGreetingCount mocks base method.
-func (m *MockKVStore) ResetGreetingCount(channelID string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResetGreetingCount", channelID)
+	ret := m.ctrl.Call(m, "DeleteChannelStatus", channelID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// ResetGreetingCount indicates an expected call of ResetGreetingCount.
-func (mr *MockKVStoreMockRecorder) ResetGreetingCount(channelID any) *gomock.Call {
+// DeleteChannelStatus indicates an expected call of DeleteChannelStatus.
+func (mr *MockKVStoreMockRecorder) DeleteChannelStatus(channelID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetGreetingCount", reflect.TypeOf((*MockKVStore)(nil).ResetGreetingCount), channelID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteChannelStatus", reflect.TypeOf((*MockKVStore)(nil).DeleteChannelStatus), channelID)
+}
+
+// GetChannelStatus mocks base method.
+func (m *MockKVStore) GetChannelStatus(channelID string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChannelStatus", channelID)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChannelStatus indicates an expected call of GetChannelStatus.
+func (mr *MockKVStoreMockRecorder) GetChannelStatus(channelID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChannelStatus", reflect.TypeOf((*MockKVStore)(nil).GetChannelStatus), channelID)
+}
+
+// SetChannelStatus mocks base method.
+func (m *MockKVStore) SetChannelStatus(channelID, status string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetChannelStatus", channelID, status)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetChannelStatus indicates an expected call of SetChannelStatus.
+func (mr *MockKVStoreMockRecorder) SetChannelStatus(channelID, status any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetChannelStatus", reflect.TypeOf((*MockKVStore)(nil).SetChannelStatus), channelID, status)
 }

@@ -50,8 +50,8 @@ dist/com.example.my-plugin.tar.gz
 
 Once the plugin is installed and enabled (System Console > Plugins > Plugin Management, or `make deploy`):
 
-1. In any channel, run `/hello @someone`. Only you see the reply, which includes the channel's greeting count.
-2. Click the raised-hand icon in the App Bar on the right edge of the window to open the **Greetings** sidebar. It shows the count for the channel you're viewing. **Refresh** reloads it; **Reset** only appears for channel and system admins.
+1. In any channel, run `/channelstatus at-risk`. An **At risk** tag appears in the channel header for everyone in the channel, without a refresh. `/channelstatus` on its own shows the current status, and `/channelstatus clear` removes it.
+2. Click the tag, or the flag icon in the App Bar on the right edge of the window, to open the **Channel status** sidebar. Pick a status and click **Save**, or click **Clear status**. Who can change a status follows the permission for editing the channel header (System Console > User Management > Permissions); everyone else sees it read-only.
 3. Open System Console > Plugins > Plugin Starter Template, click **Regenerate** next to **Webhook Secret**, then **Save**. The webhook rejects every call until a secret exists. Then:
    ```bash
    curl -i -X POST -H "X-Webhook-Secret: <secret>" <SiteURL>/plugins/com.mattermost.plugin-starter-template/webhook
@@ -85,16 +85,20 @@ The server code comes with some boilerplate for creating an api, using slash com
 
 #### Api
 
-api.go implements the ServeHTTP hook which allows the plugin to implement the http.Handler interface. Requests destined for the `/plugins/{id}` path will be routed to the plugin. It contains four example routes:
+api.go implements the ServeHTTP hook which allows the plugin to implement the http.Handler interface. Requests destined for the `/plugins/{id}` path will be routed to the plugin. It contains these example routes:
 
 - `GET /api/v1/hello`: the minimal authenticated endpoint.
-- `GET /api/v1/channels/{channel_id}/greetings`: validates its input and checks the user can read the channel before returning data.
-- `DELETE /api/v1/channels/{channel_id}/greetings`: a state-changing route. It uses a non-GET method so the server's CSRF check applies, requires channel admin permission, and writes an audit record whether it succeeds or is denied.
+- `GET /api/v1/channels/{channel_id}/status`: validates its input and checks the user can read the channel before returning data.
+- `PUT` and `DELETE /api/v1/channels/{channel_id}/status`: state-changing routes. They use non-GET methods so the server's CSRF check applies, accept only known status values, check the channel permission, and write an audit record whether they succeed or are denied.
 - `POST /webhook`: an unauthenticated route for external services, protected by a shared secret.
+
+#### Channelstatus package
+
+`server/channelstatus` holds the rules for reading and changing a status: the allowed values, the permission check, the audit record, and the WebSocket event that updates every open client. The slash command and the API both call it, so they can't drift apart. When a feature has more than one entry point, put its rules in one place like this.
 
 #### Command package
 
-This package contains the boilerplate for adding a slash command and an instance of it is created in the `OnActivate` hook in plugin.go. `/hello` replies with an ephemeral message and counts greetings per channel through the KVStore. If you don't need it you can delete the package and remove any reference to `commandClient` in plugin.go. Run `make mock` to regenerate the mocks in `server/command/mocks` and `server/store/kvstore/mocks` after changing an interface.
+This package contains the boilerplate for adding a slash command and an instance of it is created in the `OnActivate` hook in plugin.go. `/channelstatus` shows or changes the channel's status through the channelstatus package. If you don't need it you can delete the package and remove any reference to `commandClient` in plugin.go. Run `make mock` to regenerate the mocks in `server/command/mocks` and `server/store/kvstore/mocks` after changing an interface.
 
 #### KVStore package
 
@@ -102,19 +106,19 @@ This is a central place for you to access the KVStore methods that are available
 
 ### Modifying the webapp boilerplate
 
-The webapp registers a right-hand sidebar and a channel header / App Bar button that show the greeting count for the current channel. Channel admins also get a Reset button.
+The webapp shows the current channel's status as a tag in the channel header and in a right-hand sidebar, where members with permission can change it. Statuses live in a small Redux reducer that a WebSocket handler keeps up to date.
 
 - **Shared dependencies.** React, ReactDOM, react-intl, Redux, react-redux, react-router-dom and prop-types are provided by the Mattermost webapp at runtime (see `externals` in `webpack.config.js`). Keep their versions in `package.json` aligned with the server version you target. Don't bundle your own copies.
-- **`@mattermost/shared`.** Imports from `@mattermost/shared/*` (e.g. `WithTooltip` from `@mattermost/shared/components/tooltip`) are loaded from the host at runtime. Install `@mattermost/shared` as a devDependency for the types when you first use it.
-- **Compass.** UI is built with [`@mattermost/compass-ui`](https://www.npmjs.com/package/@mattermost/compass-ui) and [`@mattermost/compass-icons`](https://www.npmjs.com/package/@mattermost/compass-icons).
+- **`@mattermost/shared`.** Imports from `@mattermost/shared/*` (e.g. `WithTooltip` from `@mattermost/shared/components/tooltip`) are loaded from the host at runtime. Install `@mattermost/shared` as a devDependency for the types when you first use it. Use its tooltip and emoji until the host adopts the Compass versions.
+- **Compass.** UI is built with the [Compass design system](https://compass.mattermost.com) ([`@mattermost/compass-ui`](https://www.npmjs.com/package/@mattermost/compass-ui), [`@mattermost/compass-icons`](https://www.npmjs.com/package/@mattermost/compass-icons)). Browse available components on [compass.mattermost.com](https://compass.mattermost.com); view interactive examples and APIs in [Storybook](https://compass.mattermost.com/storybook/).
   - Use an existing Compass component before writing your own.
   - Import from subpaths (e.g. `@mattermost/compass-ui/components/button`), never the package root.
   - Import `@mattermost/compass-ui/styles` once in `index.tsx`, and never import `@mattermost/compass-ui/styles/standalone` in a plugin.
   - Wrap icons passed to Compass in `Icon` without a size: `leadingIcon={<Icon glyph={<RefreshIcon/>}/>}`.
-  - Take colors from the host theme variables (`--center-channel-color`, `--button-bg`, …), and spacing and type from Compass tokens (`--spacing-m`, `--font-size-100`, …).
+  - Take colors from the host theme variables (`--center-channel-color`, `--button-bg`, …), spacing, radius and type from Compass tokens (`--spacing-m`, `--radius-s`, `--font-size-100`, …).
 - **API calls.** Use the helpers in `src/client.ts`. They go through `Client4.getOptions`, which adds the CSRF token the server requires on cookie-authenticated, non-GET requests.
 - **Strings.** Add user-facing strings to `i18n/en.json` and render them with `react-intl`.
-- **Tests.** Jest, React Testing Library and `userEvent`. See `greetings_sidebar.test.tsx` for a component test against a real Redux store.
+- **Tests.** Jest, React Testing Library and `userEvent`. See `channel_status_sidebar.test.tsx` for component tests against a real Redux store.
 
 `webapp/AGENTS.md` has the full design, accessibility and testing rules, adapted from the Mattermost webapp's, and `server/AGENTS.md` has the server security and testing rules. Coding agents load them automatically when working in those folders.
 
@@ -122,19 +126,19 @@ The webapp registers a right-hand sidebar and a channel header / App Bar button 
 
 1. In `server/command/command.go`, add a trigger constant and register it in `NewCommandHandler`:
    ```go
-   const statusCommandTrigger = "status"
+   const versionCommandTrigger = "version"
 
    err = client.SlashCommand.Register(&model.Command{
-       Trigger:          statusCommandTrigger,
+       Trigger:          versionCommandTrigger,
        AutoComplete:     true,
-       AutoCompleteDesc: "Show the plugin's status",
-       AutocompleteData: model.NewAutocompleteData(statusCommandTrigger, "", "Show the plugin's status"),
+       AutoCompleteDesc: "Show the plugin's version",
+       AutocompleteData: model.NewAutocompleteData(versionCommandTrigger, "", "Show the plugin's version"),
    })
    ```
-2. Add a `case statusCommandTrigger:` to the `switch` in `Handle` that calls your `executeStatusCommand(args, params)`.
+2. Add a `case versionCommandTrigger:` to the `switch` in `Handle` that calls your `executeVersionCommand(c, args, params)`.
 3. Return `ephemeral(...)` so only the caller sees the reply. Use `model.CommandResponseTypeInChannel` only when everyone should see it.
-4. The server only checks that the user can post in the channel. If a command or subcommand needs more, check the permission for what it changes, e.g. `c.client.User.HasPermissionToChannel(args.UserId, args.ChannelId, model.PermissionManageChannelRoles)` for channel admins, or `HasPermissionTo(args.UserId, model.PermissionManageSystem)` only for system-wide actions.
-5. Add a test next to `TestHelloCommand` in `command_test.go`, and an integration test if the command touches server data.
+4. The server only checks that the user can post in the channel. If a command changes anything, check the permission for what it changes, as `checkCanEdit` in `server/channelstatus` does. Use `HasPermissionTo(args.UserId, model.PermissionManageSystem)` only for system-wide actions.
+5. Add a test next to `TestStatusCommand` in `command_test.go`, and an integration test if the command touches server data.
 
 Commands are registered when the plugin activates, so redeploy to pick up a new one.
 
@@ -143,7 +147,7 @@ Commands are registered when the plugin activates, so redeploy to pick up a new 
 1. Add a route to `apiRouter` in `initRouter` (`server/api.go`). Routes there require a logged-in user. Use GET only for reads; anything that changes state uses POST, PUT, PATCH or DELETE.
 2. In the handler, read the user from `r.Header.Get("Mattermost-User-ID")`, validate every ID with `model.IsValidId`, and check permissions (`p.client.User.HasPermissionToChannel`, `HasPermissionToTeam`, `HasPermissionTo`) before touching data.
 3. Respond with `writeJSON`, and report failures with `writeError` so internal errors are logged rather than sent to the user.
-4. For state-changing routes, write an audit record as `handleResetGreetings` does.
+4. For state-changing routes, write an audit record as `Set` in `server/channelstatus` does.
 5. Call it from the webapp through a function in `webapp/src/client.ts`, which adds the CSRF token.
 6. Test the allowed and the denied case in `plugin_test.go`, and the real permission check in `integration_test.go`.
 
@@ -170,24 +174,27 @@ Settings declared in `plugin.json` appear automatically under System Console > P
 1. Add an entry to `settings_schema.settings` in `plugin.json`:
    ```json
    {
-       "key": "MaxGreetings",
-       "display_name": "Maximum greetings:",
-       "type": "number",
-       "help_text": "How many greetings a channel can store.",
-       "default": 100
+       "key": "AllowInDirectMessages",
+       "display_name": "Allow statuses in direct messages:",
+       "type": "bool",
+       "help_text": "Let members of direct and group messages set a status.",
+       "default": true
    }
    ```
    `type` is one of `bool`, `text`, `longtext`, `number`, `dropdown`, `radio`, `generated`, `username` or `custom`. Add `"secret": true` to credentials and keys so they're masked in the System Console and support packets.
-2. Add a field with the same name to the `configuration` struct in `server/configuration.go` (`MaxGreetings int`).
-3. Read it with `p.getConfiguration().MaxGreetings`. `OnConfigurationChange` reloads the struct whenever an admin saves.
+2. Add a field with the same name to the `configuration` struct in `server/configuration.go` (`AllowInDirectMessages bool`).
+3. Read it with `p.getConfiguration().AllowInDirectMessages`. `OnConfigurationChange` reloads the struct whenever an admin saves.
 4. To reject invalid values before they're saved, implement the `ConfigurationWillBeSaved` hook.
 
 ### Adding webapp UI
 
 Register components in `initialize` in `webapp/src/index.tsx`. The template uses:
 
-- `registry.registerRightHandSidebarComponent(Component, title)` for the sidebar. It returns `toggleRHSPlugin`, an action that opens and closes it.
+- `registry.registerRightHandSidebarComponent(Component, title)` for the sidebar. It returns `showRHSPlugin` and `toggleRHSPlugin`, actions that open it and toggle it.
 - `registry.registerChannelHeaderButtonAction(icon, action, dropdownText, tooltipText)` for the App Bar button that dispatches `toggleRHSPlugin`.
+- `registry.registerChannelHeaderIcon(Component)` for the status tag. It renders after the pinned messages and files buttons and receives the `channel` (11.5+).
+- `registry.registerReducer(reducer)` for plugin state, available under `state['plugins-<plugin-id>']`.
+- `registry.registerWebSocketEventHandler('custom_<plugin-id>_<event>', handler)` to receive events the server publishes with `p.client.Frontend.PublishWebSocketEvent`, and `registry.registerReconnectHandler` to refetch what was missed while offline.
 
 Other surfaces (post menu actions, custom post types, root components, admin console sections, ...) are listed in the [webapp plugin reference](https://developers.mattermost.com/extend/plugins/webapp/reference/). Put each component in its own folder under `src/components/` with its CSS and test, and use Compass components for the UI.
 
@@ -222,7 +229,8 @@ The Mattermost server authenticates requests to `/plugins/{id}`, sets `Mattermos
 
 - **Keep secrets secret.** Mark settings `"secret": true` in `plugin.json` so they're masked in the System Console and support packets. Use `"type": "generated"` for values the plugin creates itself. Encrypt per-user OAuth tokens before storing them.
 - **Log carefully.** Never log tokens, secrets, query strings or message content.
-- **Audit state changes.** Write an audit record for every state-changing request, including denied ones, with IDs only (see `handleResetGreetings`).
+- **Audit state changes.** Write an audit record for every state-changing request, including denied ones, with IDs and validated values only (see `Set` in `server/channelstatus`).
+- **Scope WebSocket events.** Everyone who receives an event can read its payload. Broadcast to a channel or user (`model.WebsocketBroadcast{ChannelId: ...}`), never to everyone, unless the data is public.
 
 **Webapp**
 

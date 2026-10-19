@@ -5,17 +5,20 @@
 // copy. Never import '@mattermost/compass-ui/styles/standalone' here: it overrides the user's theme.
 import '@mattermost/compass-ui/styles';
 
+import {reducer, statusesReset, statusReceived} from 'channel_status/state';
 import {setSiteURL} from 'client';
 import manifest from 'manifest';
 import {FormattedMessage} from 'react-intl';
 import type {Store} from 'redux';
 
-import HandRightOutlineIcon from '@mattermost/compass-icons/components/hand-right-outline';
+import FlagOutlineIcon from '@mattermost/compass-icons/components/flag-outline';
+import type {Channel} from '@mattermost/types/channels';
 import type {GlobalState} from '@mattermost/types/store';
 
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 
-import GreetingsSidebar from 'components/greetings_sidebar/greetings_sidebar';
+import ChannelStatusSidebar from 'components/channel_status_sidebar/channel_status_sidebar';
+import ChannelStatusTag from 'components/channel_status_tag/channel_status_tag';
 
 import type {PluginRegistry} from 'types/mattermost-webapp';
 
@@ -31,20 +34,38 @@ export default class Plugin {
         // Strings fall back to their defaultMessage for locales without a file.
         registry.registerTranslations((locale) => translations[locale] ?? {});
 
-        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(
-            GreetingsSidebar,
+        registry.registerReducer(reducer);
+
+        // The server sends this to the channel's members whenever its status changes.
+        registry.registerWebSocketEventHandler<{channel_id: string; status: string}>(
+            `custom_${manifest.id}_status_updated`,
+            (msg) => store.dispatch(statusReceived(msg.data.channel_id, msg.data.status)),
+        );
+
+        // Events sent while disconnected are lost, so drop what's cached and let components refetch.
+        registry.registerReconnectHandler(() => store.dispatch(statusesReset()));
+
+        const {showRHSPlugin, toggleRHSPlugin} = registry.registerRightHandSidebarComponent(
+            ChannelStatusSidebar,
             <FormattedMessage
-                id='greetings.title'
-                defaultMessage='Greetings'
+                id='channel_status.title'
+                defaultMessage='Channel status'
             />,
         );
 
         registry.registerChannelHeaderButtonAction(
-            <HandRightOutlineIcon size={18}/>,
+            <FlagOutlineIcon size={18}/>,
             () => store.dispatch(toggleRHSPlugin),
-            'Greetings',
-            'Open greetings',
+            'Channel status',
+            'Channel status',
         );
+
+        registry.registerChannelHeaderIcon(({channel}: {channel: Channel}) => (
+            <ChannelStatusTag
+                channel={channel}
+                onOpen={() => store.dispatch(showRHSPlugin)}
+            />
+        ));
     }
 }
 

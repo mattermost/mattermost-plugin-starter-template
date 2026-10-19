@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/subtle"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"runtime/debug"
@@ -13,6 +14,8 @@ import (
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin"
 	"github.com/mattermost/mattermost/server/public/pluginapi/experimental/bot/logger"
+
+	"github.com/mattermost/mattermost-plugin-starter-template/server/channelstatus"
 )
 
 // initRouter initializes the HTTP router for the plugin.
@@ -34,15 +37,16 @@ func (p *Plugin) initRouter() *mux.Router {
 	// The server only checks CSRF tokens on non-GET requests, so anything that changes
 	// state must use POST, PUT, PATCH or DELETE.
 	apiRouter.HandleFunc("/hello", p.HelloWorld).Methods(http.MethodGet)
-	apiRouter.HandleFunc("/channels/{channel_id}/greetings", p.handleGetGreetings).Methods(http.MethodGet)
-	apiRouter.HandleFunc("/channels/{channel_id}/greetings", p.handleResetGreetings).Methods(http.MethodDelete)
+	apiRouter.HandleFunc("/channels/{channel_id}/status", p.handleGetStatus).Methods(http.MethodGet)
+	apiRouter.HandleFunc("/channels/{channel_id}/status", p.handleSetStatus).Methods(http.MethodPut)
+	apiRouter.HandleFunc("/channels/{channel_id}/status", p.handleClearStatus).Methods(http.MethodDelete)
 
 	return router
 }
 
 type pluginContextKey struct{}
 
-// ServeHTTP demonstrates a plugin that handles HTTP requests by greeting the world.
+// ServeHTTP routes requests sent to the plugin.
 // The root URL is currently <siteUrl>/plugins/com.mattermost.plugin-starter-template/api/v1/. Replace com.mattermost.plugin-starter-template with the plugin ID.
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
 	p.router.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), pluginContextKey{}, c)))
@@ -165,72 +169,86 @@ func (p *Plugin) HelloWorld(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type greetingsResponse struct {
-	Count int `json:"count"`
+type statusBody struct {
+	Status string `json:"status"`
 }
 
-func (p *Plugin) handleGetGreetings(w http.ResponseWriter, r *http.Request) {
-	userID := r.Header.Get("Mattermost-User-ID")
+// channelIDFromPath rejects malformed IDs before they reach a permission check, the store or a log.
+func channelIDFromPath(w http.ResponseWriter, r *http.Request) (string, bool) {
 	channelID := mux.Vars(r)["channel_id"]
-
 	if !model.IsValidId(channelID) {
 		writeError(w, r, http.StatusBadRequest, "Invalid channel ID", nil)
+		return "", false
+	}
+	return channelID, true
+}
+
+func (p *Plugin) handleGetStatus(w http.ResponseWriter, r *http.Request) {
+	channelID, ok := channelIDFromPath(w, r)
+	if !ok {
 		return
 	}
 
-	// The server only authenticates the user. Every endpoint that takes an ID must check
-	// the user may access that object, or any user can read any channel's data.
-	if !p.client.User.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel) {
-		writeError(w, r, http.StatusForbidden, "You don't have access to this channel", nil)
-		return
-	}
-
-	count, err := p.kvstore.GetGreetingCount(channelID)
+	status, err := p.statuses.Get(r.Header.Get("Mattermost-User-ID"), channelID)
 	if err != nil {
-		writeError(w, r, http.StatusInternalServerError, "Failed to load greetings", err)
+		writeStatusError(w, r, err, "Failed to load the channel status")
 		return
 	}
 
-	writeJSON(w, r, http.StatusOK, greetingsResponse{Count: count})
+	writeJSON(w, r, http.StatusOK, statusBody{Status: status})
 }
 
-func (p *Plugin) handleResetGreetings(w http.ResponseWriter, r *http.Request) {
-	userID := r.Header.Get("Mattermost-User-ID")
-	channelID := mux.Vars(r)["channel_id"]
-
-	// Denied attempts are recorded too; they're what an investigation looks for.
-	auditRec := p.newAuditRecord(r, "resetGreetingCount")
-	defer p.API.LogAuditRec(auditRec)
-
-	if !model.IsValidId(channelID) {
-		writeError(w, r, http.StatusBadRequest, "Invalid channel ID", nil)
-		return
-	}
-	model.AddEventParameterToAuditRec(auditRec, "channel_id", channelID)
-
-	// Hiding the button in the webapp is cosmetic; this check is what enforces it.
-	if !p.client.User.HasPermissionToChannel(userID, channelID, model.PermissionManageChannelRoles) {
-		writeError(w, r, http.StatusForbidden, "Only channel admins can reset greetings", nil)
+func (p *Plugin) handleSetStatus(w http.ResponseWriter, r *http.Request) {
+	channelID, ok := channelIDFromPath(w, r)
+	if !ok {
 		return
 	}
 
-	if err := p.kvstore.ResetGreetingCount(channelID); err != nil {
-		writeError(w, r, http.StatusInternalServerError, "Failed to reset greetings", err)
+	var body statusBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Status == "" {
+		writeError(w, r, http.StatusBadRequest, "Request body must include a status", nil)
 		return
 	}
 
-	auditRec.Success()
+	if err := p.statuses.Set(pluginContext(r), r.URL.Path, r.Header.Get("Mattermost-User-ID"), channelID, body.Status); err != nil {
+		writeStatusError(w, r, err, "Failed to update the channel status")
+		return
+	}
+
+	writeJSON(w, r, http.StatusOK, body)
+}
+
+func (p *Plugin) handleClearStatus(w http.ResponseWriter, r *http.Request) {
+	channelID, ok := channelIDFromPath(w, r)
+	if !ok {
+		return
+	}
+
+	if err := p.statuses.Set(pluginContext(r), r.URL.Path, r.Header.Get("Mattermost-User-ID"), channelID, ""); err != nil {
+		writeStatusError(w, r, err, "Failed to clear the channel status")
+		return
+	}
+
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// newAuditRecord starts a failed record for a state-changing request; call Success once it
-// completes. Record IDs and outcomes only, never message content, secrets or config values.
-func (p *Plugin) newAuditRecord(r *http.Request, event string) *model.AuditRecord {
-	pluginCtx, _ := r.Context().Value(pluginContextKey{}).(*plugin.Context)
-	if pluginCtx == nil {
-		pluginCtx = &plugin.Context{}
+// writeStatusError turns channelstatus errors into responses. Unexpected errors are logged
+// and replaced with failure, since they can hold internal details.
+func writeStatusError(w http.ResponseWriter, r *http.Request, err error, failure string) {
+	switch {
+	case errors.Is(err, channelstatus.ErrForbidden):
+		writeError(w, r, http.StatusForbidden, "You don't have permission to do that in this channel", nil)
+	case errors.Is(err, channelstatus.ErrInvalidStatus):
+		writeError(w, r, http.StatusBadRequest, "Unknown status", nil)
+	default:
+		writeError(w, r, http.StatusInternalServerError, failure, err)
 	}
-	return plugin.MakeAuditRecordWithContext(event, model.AuditStatusFail, pluginCtx, r.Header.Get("Mattermost-User-ID"), r.URL.Path)
+}
+
+// pluginContext returns the session details ServeHTTP received, for audit records.
+func pluginContext(r *http.Request) *plugin.Context {
+	c, _ := r.Context().Value(pluginContextKey{}).(*plugin.Context)
+	return c
 }
 
 // webhookAuthHeader carries the secret generated in the plugin settings. Prefer a header

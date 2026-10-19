@@ -16,13 +16,13 @@ Adapted from the Mattermost webapp's `webapp/AGENTS.md` and `STYLE_GUIDE.md` so 
 - `src/index.tsx` imports `@mattermost/compass-ui/styles` once. Never import `@mattermost/compass-ui/styles/standalone`: it overrides the user's theme.
 - Never use `@mattermost/compass-proto` (unpublished prototypes).
 - Icons come from `@mattermost/compass-icons/components`. In a Compass slot (`leadingIcon`, `trailingIcon`, `icon`), wrap them in Compass `Icon` with no `size`: `leadingIcon={<Icon glyph={<RefreshIcon/>}/>}`.
-- Tooltips: `WithTooltip` from `@mattermost/shared/components/tooltip`. Emoji: `Emoji` from `@mattermost/shared/components/emoji`.
+- Tooltips: `WithTooltip` from `@mattermost/shared/components/tooltip`. Emoji: `Emoji` from `@mattermost/shared/components/emoji`. Use these instead of the compass-ui versions until the host adopts those.
 - Compass modals and menus aren't adopted in the host yet. Use `window.WebappUtils.modals` for published host modals and agree on anything else with design first.
 - When migrating existing UI, switch to Compass only in code you're already changing.
 
 ## Styling
 
-- Co-locate `my_component.css` with `my_component.tsx`. Root class in PascalCase matching the component (`.GreetingsSidebar`), BEM children (`.GreetingsSidebar__count`), modifiers as a separate class. No `!important`, inline `style`, or element selectors.
+- Co-locate `my_component.css` with `my_component.tsx`. Root class in PascalCase matching the component (`.ChannelStatusSidebar`), BEM children (`.ChannelStatusSidebar__heading`), modifiers as a separate class. No `!important`, inline `style`, or element selectors.
 - Colors from host theme variables (`--center-channel-color`, `--button-bg`, `--error-text`; `rgba(var(--center-channel-color-rgb), 0.72)` for transparency). Spacing, radius, elevation, type and motion from Compass tokens (`--spacing-m`, `--font-size-100`, `--line-height-100`, `--font-weight-semibold`). Never hard-code those. Pills use `var(--radius-pill)`: the webapp's `--radius-full` is `50%`.
 
 ## Accessibility and i18n
@@ -42,6 +42,6 @@ Adapted from the Mattermost webapp's `webapp/AGENTS.md` and `STYLE_GUIDE.md` so 
 
 ## Tests
 
-- React Testing Library with a real Redux store and `IntlProvider`; mock `client` at the module boundary (see `greetings_sidebar.test.tsx`).
+- React Testing Library with a real Redux store and `IntlProvider`; mock `client` at the module boundary (see `channel_status_sidebar.test.tsx` and `channel_status/test_utils.tsx`).
 - `await userEvent...`; `fireEvent` only for focus/blur, scroll, image load or fake timers.
 - Query by role first (`getByRole` > text/placeholder > label/alt/title > `getByTestId`). No snapshots: assert `toBeVisible` and ARIA attributes.

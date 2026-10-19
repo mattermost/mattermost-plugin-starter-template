@@ -315,6 +315,20 @@ export interface PluginRegistry {
     ): UniqueIdentifier;
 
     /**
+        * Register a component in the channel header, after the pinned messages and files buttons.
+        * The component receives `channel` and `channelMember` props.
+        * Accepts a React component. Returns a unique identifier.
+        * Minimum required version: 11.5
+    */
+    registerChannelHeaderIcon(
+        ...args: [
+            component: ReactResolvable
+        ] | [{
+            component: ReactResolvable;
+        }]
+    ): UniqueIdentifier;
+
+    /**
         * Add a button to the channel intro message.
         * Accepts the following:
         * - icon - React element to use as the button's icon

@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/mattermost/mattermost-plugin-starter-template/server/channelstatus"
 	"github.com/mattermost/mattermost-plugin-starter-template/server/store/kvstore/mocks"
 )
 
@@ -60,6 +61,7 @@ func newTestPlugin(t *testing.T) (*Plugin, *logRecorder, *mocks.MockKVStore) {
 	plugin := &Plugin{kvstore: store}
 	plugin.SetAPI(api)
 	plugin.client = pluginapi.NewClient(api, &plugintest.Driver{})
+	plugin.statuses = channelstatus.NewService(api, plugin.client, store)
 	plugin.router = plugin.initRouter()
 	return plugin, api, store
 }
@@ -166,123 +168,111 @@ func TestServeHTTPLogsRequests(t *testing.T) {
 	assert.NotEmpty(t, entry.fields["duration"])
 }
 
-func TestGetGreetings(t *testing.T) {
+// The permission rules themselves are tested in the channelstatus package; these tests cover
+// how the routes validate input and turn results into responses.
+func TestChannelStatusAPI(t *testing.T) {
 	channelID := model.NewId()
-	request := func(channelID string) *http.Request {
-		r := httptest.NewRequest(http.MethodGet, "/api/v1/channels/"+channelID+"/greetings", nil)
+	request := func(method, channelID, body string) *http.Request {
+		r := httptest.NewRequest(method, "/api/v1/channels/"+channelID+"/status", strings.NewReader(body))
 		r.Header.Set("Mattermost-User-ID", "test-user-id")
 		return r
 	}
+	allowEdit := func(api *logRecorder) {
+		api.On("HasPermissionToChannel", "test-user-id", channelID, model.PermissionReadChannel).Return(true)
+		api.On("GetChannel", channelID).Return(&model.Channel{Id: channelID, Type: model.ChannelTypeOpen}, nil)
+		api.On("HasPermissionToChannel", "test-user-id", channelID, model.PermissionManagePublicChannelProperties).Return(true)
+		api.On("LogAuditRec", mock.Anything).Once()
+	}
 
-	t.Run("returns the channel's greeting count", func(t *testing.T) {
+	t.Run("GET returns the channel's status", func(t *testing.T) {
 		plugin, api, store := newTestPlugin(t)
 		api.On("HasPermissionToChannel", "test-user-id", channelID, model.PermissionReadChannel).Return(true)
-		store.EXPECT().GetGreetingCount(channelID).Return(2, nil)
+		store.EXPECT().GetChannelStatus(channelID).Return(channelstatus.AtRisk, nil)
 
-		w := serve(plugin, request(channelID))
+		w := serve(plugin, request(http.MethodGet, channelID, ""))
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
-		assert.JSONEq(t, `{"count": 2}`, w.Body.String())
+		assert.JSONEq(t, `{"status": "at-risk"}`, w.Body.String())
+	})
+
+	t.Run("GET rejects users who can't read the channel", func(t *testing.T) {
+		plugin, api, _ := newTestPlugin(t)
+		api.On("HasPermissionToChannel", "test-user-id", channelID, model.PermissionReadChannel).Return(false)
+
+		w := serve(plugin, request(http.MethodGet, channelID, ""))
+
+		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
 
 	t.Run("rejects malformed channel IDs", func(t *testing.T) {
 		plugin, _, _ := newTestPlugin(t)
 
-		w := serve(plugin, request("not-a-channel-id"))
+		w := serve(plugin, request(http.MethodPut, "not-a-channel-id", `{"status": "at-risk"}`))
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		assert.JSONEq(t, `{"error": "Invalid channel ID"}`, w.Body.String())
 	})
 
-	t.Run("rejects users who can't read the channel", func(t *testing.T) {
+	t.Run("PUT sets the status", func(t *testing.T) {
+		plugin, api, store := newTestPlugin(t)
+		allowEdit(api)
+		store.EXPECT().SetChannelStatus(channelID, channelstatus.OnTrack).Return(nil)
+		api.On("PublishWebSocketEvent", mock.Anything, mock.Anything, mock.Anything).Once()
+
+		w := serve(plugin, request(http.MethodPut, channelID, `{"status": "on-track"}`))
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.JSONEq(t, `{"status": "on-track"}`, w.Body.String())
+	})
+
+	for name, body := range map[string]string{
+		"invalid JSON":   `{`,
+		"missing status": `{}`,
+	} {
+		t.Run("PUT rejects "+name, func(t *testing.T) {
+			plugin, _, _ := newTestPlugin(t)
+
+			w := serve(plugin, request(http.MethodPut, channelID, body))
+
+			assert.Equal(t, http.StatusBadRequest, w.Code)
+			assert.JSONEq(t, `{"error": "Request body must include a status"}`, w.Body.String())
+		})
+	}
+
+	t.Run("PUT rejects unknown statuses", func(t *testing.T) {
 		plugin, api, _ := newTestPlugin(t)
-		api.On("HasPermissionToChannel", "test-user-id", channelID, model.PermissionReadChannel).Return(false)
+		api.On("LogAuditRec", mock.Anything).Once()
 
-		w := serve(plugin, request(channelID))
+		w := serve(plugin, request(http.MethodPut, channelID, `{"status": "shipped"}`))
 
-		assert.Equal(t, http.StatusForbidden, w.Code)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.JSONEq(t, `{"error": "Unknown status"}`, w.Body.String())
+	})
+
+	t.Run("DELETE clears the status", func(t *testing.T) {
+		plugin, api, store := newTestPlugin(t)
+		allowEdit(api)
+		store.EXPECT().DeleteChannelStatus(channelID).Return(nil)
+		api.On("PublishWebSocketEvent", mock.Anything, mock.Anything, mock.Anything).Once()
+
+		w := serve(plugin, request(http.MethodDelete, channelID, ""))
+
+		assert.Equal(t, http.StatusNoContent, w.Code)
 	})
 
 	t.Run("logs store errors without returning them", func(t *testing.T) {
 		plugin, api, store := newTestPlugin(t)
-		api.On("HasPermissionToChannel", "test-user-id", channelID, model.PermissionReadChannel).Return(true)
-		store.EXPECT().GetGreetingCount(channelID).Return(0, errors.New("pq: connection refused"))
+		allowEdit(api)
+		store.EXPECT().SetChannelStatus(channelID, channelstatus.OnTrack).Return(errors.New("pq: connection refused"))
 
-		w := serve(plugin, request(channelID))
+		w := serve(plugin, request(http.MethodPut, channelID, `{"status": "on-track"}`))
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.JSONEq(t, `{"error": "Failed to load greetings"}`, w.Body.String())
+		assert.JSONEq(t, `{"error": "Failed to update the channel status"}`, w.Body.String())
 		require.NotEmpty(t, api.entries)
 		assert.Equal(t, "error", api.entries[0].level)
 		assert.Equal(t, "pq: connection refused", api.entries[0].fields["error"])
-	})
-}
-
-func TestResetGreetings(t *testing.T) {
-	channelID := model.NewId()
-	request := func(channelID string) *http.Request {
-		r := httptest.NewRequest(http.MethodDelete, "/api/v1/channels/"+channelID+"/greetings", nil)
-		r.Header.Set("Mattermost-User-ID", "test-user-id")
-		return r
-	}
-	captureAudit := func(api *logRecorder) *model.AuditRecord {
-		rec := &model.AuditRecord{}
-		api.On("LogAuditRec", mock.Anything).Run(func(args mock.Arguments) {
-			*rec = *args.Get(0).(*model.AuditRecord)
-		}).Once()
-		return rec
-	}
-
-	t.Run("lets channel admins reset the count", func(t *testing.T) {
-		plugin, api, store := newTestPlugin(t)
-		api.On("HasPermissionToChannel", "test-user-id", channelID, model.PermissionManageChannelRoles).Return(true)
-		store.EXPECT().ResetGreetingCount(channelID).Return(nil)
-		audit := captureAudit(api)
-
-		w := serve(plugin, request(channelID))
-
-		assert.Equal(t, http.StatusNoContent, w.Code)
-		assert.Equal(t, "resetGreetingCount", audit.EventName)
-		assert.Equal(t, model.AuditStatusSuccess, audit.Status)
-		assert.Equal(t, "test-user-id", audit.Actor.UserId)
-		assert.Equal(t, channelID, audit.EventData.Parameters["channel_id"])
-	})
-
-	t.Run("audits denied attempts", func(t *testing.T) {
-		plugin, api, _ := newTestPlugin(t)
-		api.On("HasPermissionToChannel", "test-user-id", channelID, model.PermissionManageChannelRoles).Return(false)
-		audit := captureAudit(api)
-
-		w := serve(plugin, request(channelID))
-
-		assert.Equal(t, http.StatusForbidden, w.Code)
-		assert.Equal(t, model.AuditStatusFail, audit.Status)
-		assert.Equal(t, channelID, audit.EventData.Parameters["channel_id"])
-	})
-
-	t.Run("keeps unvalidated input out of the audit record", func(t *testing.T) {
-		plugin, api, _ := newTestPlugin(t)
-		audit := captureAudit(api)
-
-		w := serve(plugin, request("not-a-channel-id"))
-
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Equal(t, model.AuditStatusFail, audit.Status)
-		assert.NotContains(t, audit.EventData.Parameters, "channel_id")
-	})
-
-	t.Run("logs store errors without returning them", func(t *testing.T) {
-		plugin, api, store := newTestPlugin(t)
-		api.On("HasPermissionToChannel", "test-user-id", channelID, model.PermissionManageChannelRoles).Return(true)
-		store.EXPECT().ResetGreetingCount(channelID).Return(errors.New("pq: connection refused"))
-		audit := captureAudit(api)
-
-		w := serve(plugin, request(channelID))
-
-		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.JSONEq(t, `{"error": "Failed to reset greetings"}`, w.Body.String())
-		assert.Equal(t, model.AuditStatusFail, audit.Status)
 	})
 }
 

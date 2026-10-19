@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -35,44 +36,62 @@ func TestHelloEndpoint(t *testing.T) {
 	assert.Equal(t, "nosniff", resp.Header.Get("X-Content-Type-Options"))
 }
 
-// Runs /hello for real, then checks the count is readable by channel members only
-// and resettable by channel admins only.
-func TestGreetingsEndpoint(t *testing.T) {
+// Sets a status with the slash command, then checks the API against the server's real
+// permissions: members read it, non-members can't, and the role permission for editing
+// a channel header decides who can change it.
+func TestChannelStatusEndpoint(t *testing.T) {
 	th := testhelper.Setup(t)
 	ctx := context.Background()
 
 	_, _, err := th.AdminClient.AddChannelMember(ctx, th.Channel.Id, th.User.Id)
 	require.NoError(t, err)
-	_, _, err = th.Client.ExecuteCommand(ctx, th.Channel.Id, "/hello @someone")
+	_, _, err = th.Client.ExecuteCommand(ctx, th.Channel.Id, "/channelstatus at-risk")
 	require.NoError(t, err)
 
-	greetings := func(client *model.Client4, method, channelID string) (int, string) {
-		url := th.ServerURL + "/plugins/" + testhelper.PluginID() + "/api/v1/channels/" + channelID + "/greetings"
-		req, reqErr := http.NewRequest(method, url, nil)
+	channelStatus := func(client *model.Client4, method, channelID, body string) (int, string) {
+		url := th.ServerURL + "/plugins/" + testhelper.PluginID() + "/api/v1/channels/" + channelID + "/status"
+		req, reqErr := http.NewRequest(method, url, strings.NewReader(body))
 		require.NoError(t, reqErr)
 		req.Header.Set("Authorization", "Bearer "+client.AuthToken)
 
 		resp, doErr := http.DefaultClient.Do(req)
 		require.NoError(t, doErr)
 		defer func() { _ = resp.Body.Close() }()
-		body, readErr := io.ReadAll(resp.Body)
+		respBody, readErr := io.ReadAll(resp.Body)
 		require.NoError(t, readErr)
-		return resp.StatusCode, string(body)
+		return resp.StatusCode, string(respBody)
 	}
 
-	status, body := greetings(th.Client, http.MethodGet, th.Channel.Id)
+	status, body := channelStatus(th.Client, http.MethodGet, th.Channel.Id, "")
 	assert.Equal(t, http.StatusOK, status)
-	assert.JSONEq(t, `{"count": 1}`, body)
+	assert.JSONEq(t, `{"status": "at-risk"}`, body)
 
 	privateChannel := th.CreateChannel(model.ChannelTypePrivate)
-	status, _ = greetings(th.Client, http.MethodGet, privateChannel.Id)
+	status, _ = channelStatus(th.Client, http.MethodGet, privateChannel.Id, "")
+	assert.Equal(t, http.StatusForbidden, status)
+	status, _ = channelStatus(th.Client, http.MethodPut, privateChannel.Id, `{"status": "on-track"}`)
 	assert.Equal(t, http.StatusForbidden, status)
 
-	status, _ = greetings(th.Client, http.MethodDelete, th.Channel.Id)
-	assert.Equal(t, http.StatusForbidden, status)
+	status, _ = channelStatus(th.Client, http.MethodPut, th.Channel.Id, `{"status": "on-track"}`)
+	assert.Equal(t, http.StatusOK, status)
 
-	status, _ = greetings(th.AdminClient, http.MethodDelete, th.Channel.Id)
-	assert.Equal(t, http.StatusNoContent, status)
-	_, body = greetings(th.Client, http.MethodGet, th.Channel.Id)
-	assert.JSONEq(t, `{"count": 0}`, body)
+	role, _, err := th.AdminClient.GetRoleByName(ctx, model.ChannelUserRoleId)
+	require.NoError(t, err)
+	original := role.Permissions
+	t.Cleanup(func() {
+		_, _, _ = th.AdminClient.PatchRole(context.Background(), role.Id, &model.RolePatch{Permissions: &original})
+	})
+	restricted := []string{}
+	for _, permission := range original {
+		if permission != model.PermissionManagePublicChannelProperties.Id {
+			restricted = append(restricted, permission)
+		}
+	}
+	_, _, err = th.AdminClient.PatchRole(ctx, role.Id, &model.RolePatch{Permissions: &restricted})
+	require.NoError(t, err)
+
+	status, _ = channelStatus(th.Client, http.MethodDelete, th.Channel.Id, "")
+	assert.Equal(t, http.StatusForbidden, status)
+	_, body = channelStatus(th.Client, http.MethodGet, th.Channel.Id, "")
+	assert.JSONEq(t, `{"status": "on-track"}`, body)
 }

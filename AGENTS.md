@@ -10,7 +10,7 @@ While iterating, run the narrow command; `make test` and `make check-style` rein
 
 ```bash
 SKIP_DOCKER_TESTS=1 go test ./server/...       # server unit tests only
-go test ./server/command -run TestHelloCommand # single test
+go test ./server/command -run TestStatusCommand # single test
 cd webapp && npx jest src/manifest.test.tsx    # single webapp test
 go vet ./... && golangci-lint run ./...        # server lint
 cd webapp && npm run lint && npm run check-types

@@ -12,6 +12,7 @@ import (
 	"github.com/mattermost/mattermost/server/public/pluginapi/cluster"
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost-plugin-starter-template/server/channelstatus"
 	"github.com/mattermost/mattermost-plugin-starter-template/server/command"
 	"github.com/mattermost/mattermost-plugin-starter-template/server/store/kvstore"
 )
@@ -22,6 +23,9 @@ type Plugin struct {
 
 	// kvstore is the client used to read/write KV records for this plugin.
 	kvstore kvstore.KVStore
+
+	// statuses reads and changes channel statuses for the slash command and the HTTP API.
+	statuses *channelstatus.Service
 
 	// client is the Mattermost server API client.
 	client *pluginapi.Client
@@ -47,8 +51,9 @@ func (p *Plugin) OnActivate() error {
 	p.client = pluginapi.NewClient(p.API, p.Driver)
 
 	p.kvstore = kvstore.NewKVStore(p.client)
+	p.statuses = channelstatus.NewService(p.API, p.client, p.kvstore)
 
-	commandClient, err := command.NewCommandHandler(p.client, p.kvstore)
+	commandClient, err := command.NewCommandHandler(p.client, p.statuses)
 	if err != nil {
 		return err
 	}
@@ -83,7 +88,7 @@ func (p *Plugin) OnDeactivate() error {
 
 // This will execute the commands that were registered in the NewCommandHandler function.
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	response, err := p.commandClient.Handle(args)
+	response, err := p.commandClient.Handle(c, args)
 	if err != nil {
 		return nil, model.NewAppError("ExecuteCommand", "plugin.command.execute_command.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}

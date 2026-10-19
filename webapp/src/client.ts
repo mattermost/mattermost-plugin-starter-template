@@ -30,11 +30,17 @@ async function doFetch<T>(path: string, options: Options = {}): Promise<T> {
     return body as T;
 }
 
-export async function getGreetingCount(channelId: string): Promise<number> {
-    const {count} = await doFetch<{count: number}>(`/channels/${encodeURIComponent(channelId)}/greetings`);
-    return count;
+const statusPath = (channelId: string) => `/channels/${encodeURIComponent(channelId)}/status`;
+
+export async function fetchChannelStatus(channelId: string): Promise<string> {
+    const {status} = await doFetch<{status: string}>(statusPath(channelId));
+    return status;
 }
 
-export async function resetGreetingCount(channelId: string): Promise<void> {
-    await doFetch(`/channels/${encodeURIComponent(channelId)}/greetings`, {method: 'delete'});
+export async function setChannelStatus(channelId: string, status: string): Promise<void> {
+    await doFetch(statusPath(channelId), {method: 'put', body: JSON.stringify({status})});
+}
+
+export async function clearChannelStatus(channelId: string): Promise<void> {
+    await doFetch(statusPath(channelId), {method: 'delete'});
 }
