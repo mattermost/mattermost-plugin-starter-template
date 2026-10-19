@@ -174,13 +174,15 @@ function ChannelStatusPanel({channel}: {channel: Channel}) {
                             </Button>
                         )}
                     </div>
-                    {saveError && (
-                        <SectionNotice
-                            type='danger'
-                            title={intl.formatMessage({id: 'channel_status.save_error', defaultMessage: 'Couldn’t update the status'})}
-                            description={saveError}
-                        />
-                    )}
+                    <div role='alert'>
+                        {saveError && (
+                            <SectionNotice
+                                type='danger'
+                                title={intl.formatMessage({id: 'channel_status.save_error', defaultMessage: 'Couldn’t update the status'})}
+                                description={saveError}
+                            />
+                        )}
+                    </div>
                 </div>
             ) : (
                 <p className='ChannelStatusSidebar__text'>

@@ -31,7 +31,7 @@ make mock                                      # regenerate mocks after changing
 - The server only authenticates plugin requests. Every route and command that touches data checks the user's permission on that object, on the server; hiding UI is not a check.
 - Anything that changes state uses POST, PUT, PATCH or DELETE. The server's CSRF check doesn't cover GET.
 - Never send internal errors to clients or write secrets, tokens or message content to logs.
-- Don't add dependencies the host, Compass or the standard library already provide. Fix CodeQL alerts instead of excluding them in `.github/codeql/codeql-config.yml`.
+- Don't add dependencies the host, Compass or the standard library already provide. Fix CodeQL alerts instead of adding exclusions to `.github/codeql/codeql-config.yml`; the existing ones match the Mattermost server's config.
 - In GitHub workflows, pin third-party actions to a commit SHA with the version in a comment, and start from `permissions: {}`.
 
 ## Pull requests and commits

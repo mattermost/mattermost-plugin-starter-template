@@ -45,19 +45,19 @@ export default class Plugin {
         // Events sent while disconnected are lost, so drop what's cached and let components refetch.
         registry.registerReconnectHandler(() => store.dispatch(statusesReset()));
 
-        const {showRHSPlugin, toggleRHSPlugin} = registry.registerRightHandSidebarComponent(
-            ChannelStatusSidebar,
+        const title = (
             <FormattedMessage
                 id='channel_status.title'
                 defaultMessage='Channel status'
-            />,
+            />
         );
+        const {showRHSPlugin, toggleRHSPlugin} = registry.registerRightHandSidebarComponent(ChannelStatusSidebar, title);
 
         registry.registerChannelHeaderButtonAction(
             <FlagOutlineIcon size={18}/>,
             () => store.dispatch(toggleRHSPlugin),
-            'Channel status',
-            'Channel status',
+            title,
+            title,
         );
 
         registry.registerChannelHeaderIcon(({channel}: {channel: Channel}) => (

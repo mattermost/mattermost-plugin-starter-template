@@ -3,6 +3,7 @@
 
 import {act, screen, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import {statusReceived} from 'channel_status/state';
 import {renderWithStore, switchChannel} from 'channel_status/test_utils';
 import {clearChannelStatus, fetchChannelStatus, setChannelStatus} from 'client';
 
@@ -63,6 +64,31 @@ test('shows load errors and retries', async () => {
     await userEvent.click(screen.getByRole('button', {name: 'Try again'}));
 
     expect(await (await currentStatus()).findByText('On track')).toBeVisible();
+});
+
+test('drops the load error when a status update arrives', async () => {
+    mockFetchChannelStatus.mockRejectedValueOnce(new Error('Failed to load the channel status'));
+    const store = renderWithStore(<ChannelStatusSidebar/>);
+    expect(await screen.findByText('Failed to load the channel status')).toBeVisible();
+
+    act(() => {
+        store.dispatch(statusReceived('channel-id', 'off-track'));
+    });
+
+    expect(await (await currentStatus()).findByText('Off track')).toBeVisible();
+    expect(screen.queryByText('Failed to load the channel status')).not.toBeInTheDocument();
+});
+
+test('announces save errors', async () => {
+    mockFetchChannelStatus.mockResolvedValueOnce('');
+    mockSetChannelStatus.mockRejectedValueOnce(new Error('Failed to update the channel status'));
+    renderWithStore(<ChannelStatusSidebar/>);
+
+    await userEvent.click(await screen.findByRole('combobox', {name: 'New status'}));
+    await userEvent.click(screen.getByRole('option', {name: 'On track'}));
+    await userEvent.click(screen.getByRole('button', {name: 'Save'}));
+
+    expect(await within(screen.getByRole('alert')).findByText('Failed to update the channel status')).toBeVisible();
 });
 
 test('ignores a save that fails after switching channels', async () => {

@@ -1,10 +1,10 @@
 # AGENTS.md (server)
 
-`server/api.go` and `server/channelstatus` have a working example of each rule below; copy their patterns.
+`server/api.go` and `server/channelstatus` show the authentication, permission, validation, audit, WebSocket and error-handling rules below; copy their patterns.
 
 ## Security
 
-The server authenticates `/plugins/{id}/...` requests, strips spoofed `Mattermost-User-ID` and `Mattermost-Plugin-ID` headers, and checks CSRF tokens on cookie-authenticated non-GET requests. The rest is the plugin's job.
+On `/plugins/{id}/...` requests the server strips spoofed `Mattermost-User-ID` and `Mattermost-Plugin-ID` headers, sets `Mattermost-User-ID` only for a valid session, and checks CSRF tokens on cookie-authenticated non-GET requests. Requests without a session still reach the plugin: `apiRouter` (`/api/v1`) rejects them, and every other route must verify its caller. The rest is the plugin's job.
 
 - Take the acting user only from the `Mattermost-User-ID` header, never from the body, query or path.
 - Before reading or changing anything named in a request, check `p.client.User.HasPermissionTo` (system), `HasPermissionToTeam` or `HasPermissionToChannel`. For a post, file or thread, check its channel. Check the permission for the resource being changed: channel actions use a channel permission (`checkCanEdit` in `channelstatus` reuses the channel header permissions), team actions a team permission, and only system-wide actions `model.PermissionManageSystem`.

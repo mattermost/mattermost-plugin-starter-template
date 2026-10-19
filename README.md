@@ -94,7 +94,7 @@ api.go implements the ServeHTTP hook which allows the plugin to implement the ht
 
 #### Channelstatus package
 
-`server/channelstatus` holds the rules for reading and changing a status: the allowed values, the permission check, the audit record, and the WebSocket event that updates every open client. The slash command and the API both call it, so they can't drift apart. When a feature has more than one entry point, put its rules in one place like this.
+`server/channelstatus` holds the rules for reading and changing a status: the allowed values, the permission check, the audit record, and the WebSocket event that updates the channel's members. The slash command and the API both call it, so they can't drift apart. When a feature has more than one entry point, put its rules in one place like this.
 
 #### Command package
 
@@ -200,7 +200,7 @@ Other surfaces (post menu actions, custom post types, root components, admin con
 
 ### Security checklist
 
-The Mattermost server authenticates requests to `/plugins/{id}`, sets `Mattermost-User-Id` (after stripping any spoofed value), and enforces CSRF on cookie-authenticated, non-GET requests. Everything else is up to your plugin.
+For requests to `/plugins/{id}`, the Mattermost server strips any spoofed `Mattermost-User-Id`, sets it when the request has a valid session, and enforces CSRF on cookie-authenticated, non-GET requests. It still passes requests without a session to your plugin: `apiRouter` rejects them, and any route outside it must verify its caller. Everything else is up to your plugin.
 
 **Authentication and authorization**
 

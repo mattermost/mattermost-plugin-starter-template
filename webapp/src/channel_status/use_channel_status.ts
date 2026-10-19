@@ -48,7 +48,7 @@ export function useChannelStatus(channelId: string) {
 
     return {
         status,
-        error: error?.channelId === channelId ? error.message : undefined,
+        error: !loaded && error?.channelId === channelId ? error.message : undefined,
         retry: () => setAttempt((count) => count + 1),
     };
 }
