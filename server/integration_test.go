@@ -36,17 +36,25 @@ func TestHelloEndpoint(t *testing.T) {
 	assert.Equal(t, "nosniff", resp.Header.Get("X-Content-Type-Options"))
 }
 
-// Sets a status with the slash command, then checks the API against the server's real
-// permissions: members read it, non-members can't, and the role permission for editing
-// a channel header decides who can change it.
+// Drives the slash command and the API against the server's real permissions: members
+// read the status, non-members can't, and the role permission for editing a channel
+// header decides who can change it.
 func TestChannelStatusEndpoint(t *testing.T) {
 	th := testhelper.Setup(t)
 	ctx := context.Background()
 
 	_, _, err := th.AdminClient.AddChannelMember(ctx, th.Channel.Id, th.User.Id)
 	require.NoError(t, err)
-	_, _, err = th.Client.ExecuteCommand(ctx, th.Channel.Id, "/channelstatus at-risk")
-	require.NoError(t, err)
+
+	command := func(text string) string {
+		resp, _, cmdErr := th.Client.ExecuteCommand(ctx, th.Channel.Id, text)
+		require.NoError(t, cmdErr)
+		return resp.Text
+	}
+	assert.Equal(t, "This channel has no status. Set one with `/channelstatus on-track`, `at-risk` or `off-track`.", command("/channelstatus"))
+	assert.Equal(t, "Unknown status. Use `on-track`, `at-risk`, `off-track` or `clear`.", command("/channelstatus shipped"))
+	assert.Equal(t, "Channel status set to **At risk**.", command("/channelstatus at-risk"))
+	assert.Equal(t, "This channel is **At risk**.", command("/channelstatus"))
 
 	channelStatus := func(client *model.Client4, method, channelID, body string) (int, string) {
 		url := th.ServerURL + "/plugins/" + testhelper.PluginID() + "/api/v1/channels/" + channelID + "/status"
@@ -72,6 +80,10 @@ func TestChannelStatusEndpoint(t *testing.T) {
 	status, _ = channelStatus(th.Client, http.MethodPut, privateChannel.Id, `{"status": "on-track"}`)
 	assert.Equal(t, http.StatusForbidden, status)
 
+	assert.Equal(t, "Channel status cleared.", command("/channelstatus clear"))
+	_, body = channelStatus(th.Client, http.MethodGet, th.Channel.Id, "")
+	assert.JSONEq(t, `{"status": ""}`, body)
+
 	status, _ = channelStatus(th.Client, http.MethodPut, th.Channel.Id, `{"status": "on-track"}`)
 	assert.Equal(t, http.StatusOK, status)
 
@@ -90,6 +102,7 @@ func TestChannelStatusEndpoint(t *testing.T) {
 	_, _, err = th.AdminClient.PatchRole(ctx, role.Id, &model.RolePatch{Permissions: &restricted})
 	require.NoError(t, err)
 
+	assert.Equal(t, "You don't have permission to change this channel's status.", command("/channelstatus clear"))
 	status, _ = channelStatus(th.Client, http.MethodDelete, th.Channel.Id, "")
 	assert.Equal(t, http.StatusForbidden, status)
 	_, body = channelStatus(th.Client, http.MethodGet, th.Channel.Id, "")

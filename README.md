@@ -85,12 +85,7 @@ The server code comes with some boilerplate for creating an api, using slash com
 
 #### Api
 
-api.go implements the ServeHTTP hook which allows the plugin to implement the http.Handler interface. Requests destined for the `/plugins/{id}` path will be routed to the plugin. It contains these example routes:
-
-- `GET /api/v1/hello`: the minimal authenticated endpoint.
-- `GET /api/v1/channels/{channel_id}/status`: validates its input and checks the user can read the channel before returning data.
-- `PUT` and `DELETE /api/v1/channels/{channel_id}/status`: state-changing routes. They use non-GET methods so the server's CSRF check applies, accept only known status values, check the channel permission, and write an audit record whether they succeed or are denied.
-- `POST /webhook`: an unauthenticated route for external services, protected by a shared secret.
+api.go implements the ServeHTTP hook which allows the plugin to implement the http.Handler interface. Requests destined for the `/plugins/{id}` path will be routed to the plugin. Routes are registered in `initRouter`; [Adding an HTTP endpoint](#adding-an-http-endpoint) and [Receiving webhooks](#receiving-webhooks) walk through the authenticated and unauthenticated patterns.
 
 #### Channelstatus package
 
@@ -138,7 +133,7 @@ The webapp shows the current channel's status as a tag in the channel header and
 2. Add a `case versionCommandTrigger:` to the `switch` in `Handle` that calls your `executeVersionCommand(c, args, params)`.
 3. Return `ephemeral(...)` so only the caller sees the reply. Use `model.CommandResponseTypeInChannel` only when everyone should see it.
 4. The server only checks that the user can post in the channel. If a command changes anything, check the permission for what it changes, as `checkCanEdit` in `server/channelstatus` does. Use `HasPermissionTo(args.UserId, model.PermissionManageSystem)` only for system-wide actions.
-5. Add a test next to `TestStatusCommand` in `command_test.go`, and an integration test if the command touches server data.
+5. Test it in `integration_test.go`, which runs commands against a real server as `TestChannelStatusEndpoint` does. Use mocks only for failures a real server can't produce, like `TestNewCommandHandler`.
 
 Commands are registered when the plugin activates, so redeploy to pick up a new one.
 
