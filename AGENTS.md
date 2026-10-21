@@ -38,3 +38,9 @@ Integration test caveats specific to this repo:
   go test ./server -run TestHelloEndpoint
   ```
   This skips the webapp build but requires an existing `webapp/dist`; use `make dist` with the same variables the first time.
+
+## Cursor Cloud specific instructions
+
+- Login shells select the Node version in `.nvmrc` through nvm. The agent tool shell can put `/exec-daemon/node` earlier on `PATH`, so prefix `PATH` with `$HOME/.nvm/versions/node/$(tr -d '[:space:]' < .nvmrc)/bin` before `npm` or webapp `make` targets.
+- Boot starts the Docker daemon when `docker info` fails. `sudo service docker start` exits 1 if Docker is already running, so check `docker info` before starting it again.
+- `golangci-lint` v2.9.0 and `gotestsum` v1.13.0 are installed on `PATH` under `~/.local/bin`. `make check-style` and `make test` still install their own copies into `./bin`.
