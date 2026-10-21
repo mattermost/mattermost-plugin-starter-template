@@ -1,6 +1,7 @@
-package main
+package api
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
 	"github.com/mattermost/mattermost/server/public/plugin/plugintest/mock"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
+	"github.com/mattermost/mattermost/server/public/pluginapi/testhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -53,33 +55,29 @@ func (l *logRecorder) LogError(msg string, keyValuePairs ...any) {
 	l.record("error", msg, keyValuePairs)
 }
 
-func newTestPlugin(t *testing.T) (*Plugin, *logRecorder, *mocks.MockKVStore) {
+func newTestHandler(t *testing.T) (*Handler, *logRecorder, *mocks.MockKVStore) {
 	api := &logRecorder{API: &plugintest.API{}}
 	t.Cleanup(func() { api.AssertExpectations(t) })
 	store := mocks.NewMockKVStore(gomock.NewController(t))
 
-	plugin := &Plugin{kvstore: store}
-	plugin.SetAPI(api)
-	plugin.client = pluginapi.NewClient(api, &plugintest.Driver{})
-	plugin.statuses = channelstatus.NewService(api, plugin.client, store)
-	plugin.router = plugin.initRouter()
-	return plugin, api, store
+	statuses := channelstatus.NewService(api, pluginapi.NewClient(api, &plugintest.Driver{}), store)
+	return NewHandler(api, statuses, func() string { return "" }), api, store
 }
 
-func serve(plugin *Plugin, r *http.Request) *httptest.ResponseRecorder {
+func serve(h *Handler, r *http.Request) *httptest.ResponseRecorder {
 	w := httptest.NewRecorder()
-	plugin.ServeHTTP(nil, w, r)
+	h.ServeHTTP(nil, w, r)
 	return w
 }
 
 func TestServeHTTP(t *testing.T) {
 	assert := assert.New(t)
-	plugin, _, _ := newTestPlugin(t)
+	h, _, _ := newTestHandler(t)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/api/v1/hello", nil)
 	r.Header.Set("Mattermost-User-ID", "test-user-id")
 
-	plugin.ServeHTTP(nil, w, r)
+	h.ServeHTTP(nil, w, r)
 
 	result := w.Result()
 	assert.NotNil(result)
@@ -93,15 +91,15 @@ func TestServeHTTP(t *testing.T) {
 
 func TestServeHTTPRecoversFromPanic(t *testing.T) {
 	t.Run("before the response is written", func(t *testing.T) {
-		plugin, api, _ := newTestPlugin(t)
-		plugin.router.HandleFunc("/api/v1/panic", func(http.ResponseWriter, *http.Request) {
+		h, api, _ := newTestHandler(t)
+		h.router.HandleFunc("/api/v1/panic", func(http.ResponseWriter, *http.Request) {
 			panic("boom")
 		})
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/api/v1/panic", nil)
 		r.Header.Set("Mattermost-User-ID", "test-user-id")
 
-		plugin.ServeHTTP(nil, w, r)
+		h.ServeHTTP(nil, w, r)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		require.Len(t, api.entries, 2)
@@ -116,8 +114,8 @@ func TestServeHTTPRecoversFromPanic(t *testing.T) {
 	})
 
 	t.Run("after the response is written", func(t *testing.T) {
-		plugin, api, _ := newTestPlugin(t)
-		plugin.router.HandleFunc("/api/v1/panic", func(w http.ResponseWriter, _ *http.Request) {
+		h, api, _ := newTestHandler(t)
+		h.router.HandleFunc("/api/v1/panic", func(w http.ResponseWriter, _ *http.Request) {
 			_, _ = w.Write([]byte("partial"))
 			panic("boom")
 		})
@@ -125,7 +123,7 @@ func TestServeHTTPRecoversFromPanic(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/api/v1/panic", nil)
 		r.Header.Set("Mattermost-User-ID", "test-user-id")
 
-		plugin.ServeHTTP(nil, w, r)
+		h.ServeHTTP(nil, w, r)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Equal(t, "partial", w.Body.String())
@@ -135,27 +133,27 @@ func TestServeHTTPRecoversFromPanic(t *testing.T) {
 }
 
 func TestServeHTTPLimitsRequestBody(t *testing.T) {
-	plugin, _, _ := newTestPlugin(t)
+	h, _, _ := newTestHandler(t)
 	var readErr error
-	plugin.router.HandleFunc("/api/v1/echo", func(_ http.ResponseWriter, r *http.Request) {
+	h.router.HandleFunc("/api/v1/echo", func(_ http.ResponseWriter, r *http.Request) {
 		_, readErr = io.ReadAll(r.Body)
 	})
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/api/v1/echo", strings.NewReader(strings.Repeat("a", maxRequestBodyBytes+1)))
 	r.Header.Set("Mattermost-User-ID", "test-user-id")
 
-	plugin.ServeHTTP(nil, w, r)
+	h.ServeHTTP(nil, w, r)
 
 	var maxBytesErr *http.MaxBytesError
 	assert.ErrorAs(t, readErr, &maxBytesErr)
 }
 
 func TestServeHTTPLogsRequests(t *testing.T) {
-	plugin, api, _ := newTestPlugin(t)
+	h, api, _ := newTestHandler(t)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/api/v1/hello?token=secret", nil)
 
-	plugin.ServeHTTP(nil, w, r)
+	h.ServeHTTP(nil, w, r)
 
 	require.Len(t, api.entries, 1)
 	entry := api.entries[0]
@@ -185,11 +183,11 @@ func TestChannelStatusAPI(t *testing.T) {
 	}
 
 	t.Run("GET returns the channel's status", func(t *testing.T) {
-		plugin, api, store := newTestPlugin(t)
+		h, api, store := newTestHandler(t)
 		api.On("HasPermissionToChannel", "test-user-id", channelID, model.PermissionReadChannel).Return(true)
 		store.EXPECT().GetChannelStatus(channelID).Return(channelstatus.AtRisk, nil)
 
-		w := serve(plugin, request(http.MethodGet, channelID, ""))
+		w := serve(h, request(http.MethodGet, channelID, ""))
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
@@ -197,30 +195,30 @@ func TestChannelStatusAPI(t *testing.T) {
 	})
 
 	t.Run("GET rejects users who can't read the channel", func(t *testing.T) {
-		plugin, api, _ := newTestPlugin(t)
+		h, api, _ := newTestHandler(t)
 		api.On("HasPermissionToChannel", "test-user-id", channelID, model.PermissionReadChannel).Return(false)
 
-		w := serve(plugin, request(http.MethodGet, channelID, ""))
+		w := serve(h, request(http.MethodGet, channelID, ""))
 
 		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
 
 	t.Run("rejects malformed channel IDs", func(t *testing.T) {
-		plugin, _, _ := newTestPlugin(t)
+		h, _, _ := newTestHandler(t)
 
-		w := serve(plugin, request(http.MethodPut, "not-a-channel-id", `{"status": "at-risk"}`))
+		w := serve(h, request(http.MethodPut, "not-a-channel-id", `{"status": "at-risk"}`))
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		assert.JSONEq(t, `{"error": "Invalid channel ID"}`, w.Body.String())
 	})
 
 	t.Run("PUT sets the status", func(t *testing.T) {
-		plugin, api, store := newTestPlugin(t)
+		h, api, store := newTestHandler(t)
 		allowEdit(api)
 		store.EXPECT().SetChannelStatus(channelID, channelstatus.OnTrack).Return(nil)
 		api.On("PublishWebSocketEvent", mock.Anything, mock.Anything, mock.Anything).Once()
 
-		w := serve(plugin, request(http.MethodPut, channelID, `{"status": "on-track"}`))
+		w := serve(h, request(http.MethodPut, channelID, `{"status": "on-track"}`))
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.JSONEq(t, `{"status": "on-track"}`, w.Body.String())
@@ -231,9 +229,9 @@ func TestChannelStatusAPI(t *testing.T) {
 		"missing status": `{}`,
 	} {
 		t.Run("PUT rejects "+name, func(t *testing.T) {
-			plugin, _, _ := newTestPlugin(t)
+			h, _, _ := newTestHandler(t)
 
-			w := serve(plugin, request(http.MethodPut, channelID, body))
+			w := serve(h, request(http.MethodPut, channelID, body))
 
 			assert.Equal(t, http.StatusBadRequest, w.Code)
 			assert.JSONEq(t, `{"error": "Request body must include a status"}`, w.Body.String())
@@ -241,32 +239,32 @@ func TestChannelStatusAPI(t *testing.T) {
 	}
 
 	t.Run("PUT rejects unknown statuses", func(t *testing.T) {
-		plugin, api, _ := newTestPlugin(t)
+		h, api, _ := newTestHandler(t)
 		api.On("LogAuditRec", mock.Anything).Once()
 
-		w := serve(plugin, request(http.MethodPut, channelID, `{"status": "shipped"}`))
+		w := serve(h, request(http.MethodPut, channelID, `{"status": "shipped"}`))
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		assert.JSONEq(t, `{"error": "Unknown status"}`, w.Body.String())
 	})
 
 	t.Run("DELETE clears the status", func(t *testing.T) {
-		plugin, api, store := newTestPlugin(t)
+		h, api, store := newTestHandler(t)
 		allowEdit(api)
 		store.EXPECT().DeleteChannelStatus(channelID).Return(nil)
 		api.On("PublishWebSocketEvent", mock.Anything, mock.Anything, mock.Anything).Once()
 
-		w := serve(plugin, request(http.MethodDelete, channelID, ""))
+		w := serve(h, request(http.MethodDelete, channelID, ""))
 
 		assert.Equal(t, http.StatusNoContent, w.Code)
 	})
 
 	t.Run("logs store errors without returning them", func(t *testing.T) {
-		plugin, api, store := newTestPlugin(t)
+		h, api, store := newTestHandler(t)
 		allowEdit(api)
 		store.EXPECT().SetChannelStatus(channelID, channelstatus.OnTrack).Return(errors.New("pq: connection refused"))
 
-		w := serve(plugin, request(http.MethodPut, channelID, `{"status": "on-track"}`))
+		w := serve(h, request(http.MethodPut, channelID, `{"status": "on-track"}`))
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		assert.JSONEq(t, `{"error": "Failed to update the channel status"}`, w.Body.String())
@@ -288,16 +286,112 @@ func TestWebhook(t *testing.T) {
 		"rejects everything until it's configured": {configured: "", provided: "", status: http.StatusUnauthorized},
 	} {
 		t.Run(name, func(t *testing.T) {
-			plugin, _, _ := newTestPlugin(t)
-			plugin.setConfiguration(&configuration{WebhookSecret: tc.configured})
+			h, _, _ := newTestHandler(t)
+			h.webhookSecret = func() string { return tc.configured }
 			r := httptest.NewRequest(http.MethodPost, "/webhook", strings.NewReader(`{}`))
 			if tc.provided != "" {
 				r.Header.Set(webhookAuthHeader, tc.provided)
 			}
 
-			w := serve(plugin, r)
+			w := serve(h, r)
 
 			assert.Equal(t, tc.status, w.Code)
 		})
 	}
+}
+
+// Exercises the real request path — server auth, then plugin ServeHTTP — unlike the
+// httptest-based TestServeHTTP above.
+func TestHelloEndpoint(t *testing.T) {
+	th := testhelper.Setup(t)
+
+	pluginURL := th.ServerURL + "/plugins/" + testhelper.PluginID() + "/api/v1/hello"
+
+	req, err := http.NewRequest(http.MethodGet, pluginURL, nil)
+	require.NoError(t, err)
+	req.Header.Set("Authorization", "Bearer "+th.Client.AuthToken)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, "Hello, world!", string(body))
+	assert.Equal(t, "nosniff", resp.Header.Get("X-Content-Type-Options"))
+}
+
+// Drives the slash command and the API against the server's real permissions: members
+// read the status, non-members can't, and the role permission for editing a channel
+// header decides who can change it.
+func TestChannelStatusEndpoint(t *testing.T) {
+	th := testhelper.Setup(t)
+	ctx := context.Background()
+
+	_, _, err := th.AdminClient.AddChannelMember(ctx, th.Channel.Id, th.User.Id)
+	require.NoError(t, err)
+
+	command := func(text string) string {
+		resp, _, cmdErr := th.Client.ExecuteCommand(ctx, th.Channel.Id, text)
+		require.NoError(t, cmdErr)
+		return resp.Text
+	}
+	assert.Equal(t, "This channel has no status. Set one with `/channelstatus on-track`, `at-risk` or `off-track`.", command("/channelstatus"))
+	assert.Equal(t, "Unknown status. Use `on-track`, `at-risk`, `off-track` or `clear`.", command("/channelstatus shipped"))
+	assert.Equal(t, "Channel status set to **At risk**.", command("/channelstatus at-risk"))
+	assert.Equal(t, "This channel is **At risk**.", command("/channelstatus"))
+
+	channelStatus := func(client *model.Client4, method, channelID, body string) (int, string) {
+		url := th.ServerURL + "/plugins/" + testhelper.PluginID() + "/api/v1/channels/" + channelID + "/status"
+		req, reqErr := http.NewRequest(method, url, strings.NewReader(body))
+		require.NoError(t, reqErr)
+		req.Header.Set("Authorization", "Bearer "+client.AuthToken)
+
+		resp, doErr := http.DefaultClient.Do(req)
+		require.NoError(t, doErr)
+		defer func() { _ = resp.Body.Close() }()
+		respBody, readErr := io.ReadAll(resp.Body)
+		require.NoError(t, readErr)
+		return resp.StatusCode, string(respBody)
+	}
+
+	status, body := channelStatus(th.Client, http.MethodGet, th.Channel.Id, "")
+	assert.Equal(t, http.StatusOK, status)
+	assert.JSONEq(t, `{"status": "at-risk"}`, body)
+
+	privateChannel := th.CreateChannel(model.ChannelTypePrivate)
+	status, _ = channelStatus(th.Client, http.MethodGet, privateChannel.Id, "")
+	assert.Equal(t, http.StatusForbidden, status)
+	status, _ = channelStatus(th.Client, http.MethodPut, privateChannel.Id, `{"status": "on-track"}`)
+	assert.Equal(t, http.StatusForbidden, status)
+
+	assert.Equal(t, "Channel status cleared.", command("/channelstatus clear"))
+	_, body = channelStatus(th.Client, http.MethodGet, th.Channel.Id, "")
+	assert.JSONEq(t, `{"status": ""}`, body)
+
+	status, _ = channelStatus(th.Client, http.MethodPut, th.Channel.Id, `{"status": "on-track"}`)
+	assert.Equal(t, http.StatusOK, status)
+
+	role, _, err := th.AdminClient.GetRoleByName(ctx, model.ChannelUserRoleId)
+	require.NoError(t, err)
+	original := role.Permissions
+	t.Cleanup(func() {
+		_, _, _ = th.AdminClient.PatchRole(context.Background(), role.Id, &model.RolePatch{Permissions: &original})
+	})
+	restricted := []string{}
+	for _, permission := range original {
+		if permission != model.PermissionManagePublicChannelProperties.Id {
+			restricted = append(restricted, permission)
+		}
+	}
+	_, _, err = th.AdminClient.PatchRole(ctx, role.Id, &model.RolePatch{Permissions: &restricted})
+	require.NoError(t, err)
+
+	assert.Equal(t, "You don't have permission to change this channel's status.", command("/channelstatus clear"))
+	status, _ = channelStatus(th.Client, http.MethodDelete, th.Channel.Id, "")
+	assert.Equal(t, http.StatusForbidden, status)
+	_, body = channelStatus(th.Client, http.MethodGet, th.Channel.Id, "")
+	assert.JSONEq(t, `{"status": "on-track"}`, body)
 }

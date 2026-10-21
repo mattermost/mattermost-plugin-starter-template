@@ -83,13 +83,24 @@ To avoid having to manually install your plugin, build and deploy your plugin us
 
 The server code comes with some boilerplate for creating an api, using slash commands, accessing the kvstore and using the cluster package for jobs.
 
-#### Api
+#### API package
 
-api.go implements the ServeHTTP hook which allows the plugin to implement the http.Handler interface. Requests destined for the `/plugins/{id}` path will be routed to the plugin. Routes are registered in `initRouter`; [Adding an HTTP endpoint](#adding-an-http-endpoint) and [Receiving webhooks](#receiving-webhooks) walk through the authenticated and unauthenticated patterns.
+`server/api` serves the plugin's HTTP routes. The `ServeHTTP` hook in plugin.go passes every request for `/plugins/{id}` to `api.Handler`, which registers its routes in `initRouter`. `NewHandler` takes what the handlers need (the plugin API, the channelstatus service, a getter for the webhook secret), so add new dependencies there. [Adding an HTTP endpoint](#adding-an-http-endpoint) and [Receiving webhooks](#receiving-webhooks) walk through the authenticated and unauthenticated patterns.
 
 #### Channelstatus package
 
 `server/channelstatus` holds the rules for reading and changing a status: the allowed values, the permission check, the audit record, and the WebSocket event that updates the channel's members. The slash command and the API both call it, so they can't drift apart. When a feature has more than one entry point, put its rules in one place like this.
+
+#### Audit logging
+
+`channelstatus.Service.Set` writes an audit record for every attempt to change a status, including invalid and denied ones. Copy its shape for any state change:
+
+1. `plugin.MakeAuditRecordWithContext` starts a record with the event name, the acting user, the session from `plugin.Context` and the request path, marked as failed.
+2. `defer p.API.LogAuditRec(rec)` writes it however the function returns.
+3. `model.AddEventParameterToAuditRec` adds validated IDs and values. Never add message content, credentials or config.
+4. `rec.Success()` runs only after the change is made.
+
+Records go to the server's audit log, which is off by default. To see them locally, start the server with `MM_EXPERIMENTALAUDITSETTINGS_FILEENABLED=true` and `MM_EXPERIMENTALAUDITSETTINGS_FILENAME=audit.log`; each record is a JSON line in that file. Enterprise servers also show these settings under **System Console > Compliance > Audit Logging**. Changes need a server restart.
 
 #### Command package
 
@@ -110,6 +121,7 @@ The webapp shows the current channel's status as a tag in the channel header and
   - Import from subpaths (e.g. `@mattermost/compass-ui/components/button`), never the package root.
   - Import `@mattermost/compass-ui/styles` once in `index.tsx`, and never import `@mattermost/compass-ui/styles/standalone` in a plugin.
   - Wrap icons passed to Compass in `Icon` without a size: `leadingIcon={<Icon glyph={<RefreshIcon/>}/>}`.
+  - Plain CSS is injected globally next to the host's and other plugins' styles, so prefix every class with your plugin's name (`.StarterTemplate-ChannelStatusSidebar`).
   - Take colors from the host theme variables (`--center-channel-color`, `--button-bg`, …), spacing, radius and type from Compass tokens (`--spacing-m`, `--radius-s`, `--font-size-100`, …).
 - **API calls.** Use the helpers in `src/client.ts`. They go through `Client4.getOptions`, which adds the CSRF token the server requires on cookie-authenticated, non-GET requests.
 - **Strings.** Add user-facing strings to `i18n/en.json` and render them with `react-intl`.
@@ -133,24 +145,24 @@ The webapp shows the current channel's status as a tag in the channel header and
 2. Add a `case versionCommandTrigger:` to the `switch` in `Handle` that calls your `executeVersionCommand(c, args, params)`.
 3. Return `ephemeral(...)` so only the caller sees the reply. Use `model.CommandResponseTypeInChannel` only when everyone should see it.
 4. The server only checks that the user can post in the channel. If a command changes anything, check the permission for what it changes, as `checkCanEdit` in `server/channelstatus` does. Use `HasPermissionTo(args.UserId, model.PermissionManageSystem)` only for system-wide actions.
-5. Test it in `integration_test.go`, which runs commands against a real server as `TestChannelStatusEndpoint` does. Use mocks only for failures a real server can't produce, like `TestNewCommandHandler`.
+5. Test it against a real server, as `TestChannelStatusEndpoint` in `server/api/api_test.go` does. Use mocks only for failures a real server can't produce, like `TestNewCommandHandler`.
 
 Commands are registered when the plugin activates, so redeploy to pick up a new one.
 
 ### Adding an HTTP endpoint
 
-1. Add a route to `apiRouter` in `initRouter` (`server/api.go`). Routes there require a logged-in user. Use GET only for reads; anything that changes state uses POST, PUT, PATCH or DELETE.
-2. In the handler, read the user from `r.Header.Get("Mattermost-User-ID")`, validate every ID with `model.IsValidId`, and check permissions (`p.client.User.HasPermissionToChannel`, `HasPermissionToTeam`, `HasPermissionTo`) before touching data.
+1. Add a route to `apiRouter` in `initRouter` (`server/api/api.go`). Routes there require a logged-in user. Use GET only for reads; anything that changes state uses POST, PUT, PATCH or DELETE.
+2. In the handler, read the user from `r.Header.Get("Mattermost-User-ID")`, validate every ID with `model.IsValidId`, and check permissions (`HasPermissionToChannel`, `HasPermissionToTeam`, `HasPermissionTo`) before touching data. If a slash command or webhook does the same thing, put the check in a shared service as `channelstatus` does.
 3. Respond with `writeJSON`, and report failures with `writeError` so internal errors are logged rather than sent to the user.
 4. For state-changing routes, write an audit record as `Set` in `server/channelstatus` does.
 5. Call it from the webapp through a function in `webapp/src/client.ts`, which adds the CSRF token.
-6. Test the allowed and the denied case in `plugin_test.go`, and the real permission check in `integration_test.go`.
+6. In `server/api/api_test.go`, test the allowed and the denied case with `httptest`, and the real permission check against a server with `testhelper`.
 
 The endpoint is served at `<SiteURL>/plugins/<plugin-id>/api/v1/...`.
 
 ### Receiving webhooks
 
-`POST /webhook` (`handleWebhook` in `server/api.go`) is the starting point for calls from external services. They have no Mattermost session, so the route sits outside `apiRouter` and checks a shared secret instead. This is the pattern the GitHub and GitLab plugins use.
+`POST /webhook` (`handleWebhook` in `server/api/api.go`) is the starting point for calls from external services. They have no Mattermost session, so the route sits outside `apiRouter` and checks a shared secret instead. This is the pattern the GitHub and GitLab plugins use.
 
 Nothing has to be registered with Mattermost: the route exists as soon as the plugin is enabled. If all you need is for an external service to post messages, Mattermost's built-in incoming webhooks (Integrations > Incoming Webhooks) do that without a plugin. Use a plugin route when you need to process the payload yourself.
 
@@ -237,7 +249,7 @@ For requests to `/plugins/{id}`, the Mattermost server strips any spoofed `Matte
 **Dependencies**
 
 - **Stay patched.** Dependabot (`.github/dependabot.yml`) opens monthly update PRs. Run `govulncheck ./...` and `npm audit --omit=dev` in `webapp/` before releasing.
-- **Watch the scans.** CodeQL checks the Go and TypeScript code on every PR, and OpenSSF Scorecard checks the repository's supply-chain settings weekly. Results appear under the repository's Security > Code scanning tab.
+- **Watch the scans.** CodeQL checks the Go and TypeScript code on every PR, and OpenSSF Scorecard checks the repository's supply-chain settings weekly. Results appear under the repository's Security > Code scanning tab. Outside the `mattermost` organization both workflows are skipped, because code scanning on a private repository needs GitHub Code Security. To turn them on, add a repository variable `ENABLE_CODE_SCANNING` set to `true` (Settings > Secrets and variables > Actions > Variables).
 
 ### Deploying with Local Mode
 

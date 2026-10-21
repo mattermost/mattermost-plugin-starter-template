@@ -1,4 +1,5 @@
-package main
+// Package api serves the plugin's HTTP routes under /plugins/{plugin_id}.
+package api
 
 import (
 	"context"
@@ -18,44 +19,58 @@ import (
 	"github.com/mattermost/mattermost-plugin-starter-template/server/channelstatus"
 )
 
-// initRouter initializes the HTTP router for the plugin.
-func (p *Plugin) initRouter() *mux.Router {
+// Handler routes the requests the server forwards to the plugin's ServeHTTP hook.
+type Handler struct {
+	pluginAPI     plugin.API
+	statuses      *channelstatus.Service
+	webhookSecret func() string
+	router        *mux.Router
+}
+
+// NewHandler reads webhookSecret on every request, so a changed setting applies without reactivating the plugin.
+func NewHandler(pluginAPI plugin.API, statuses *channelstatus.Service, webhookSecret func() string) *Handler {
+	h := &Handler{pluginAPI: pluginAPI, statuses: statuses, webhookSecret: webhookSecret}
+	h.router = h.initRouter()
+	return h
+}
+
+func (h *Handler) initRouter() *mux.Router {
 	router := mux.NewRouter()
 
 	// The Mattermost server forwards plugin requests without the panic recovery,
 	// body size limit, or security headers it applies to its own REST API.
 	// logRequests comes first so it records the 500 written by recoverPanic.
-	router.Use(p.logRequests, p.recoverPanic, limitRequestBody, setSecurityHeaders)
+	router.Use(h.logRequests, h.recoverPanic, limitRequestBody, setSecurityHeaders)
 
 	// External services have no Mattermost session, so webhooks sit outside the
 	// authenticated subrouter and prove themselves with a shared secret instead.
-	router.HandleFunc("/webhook", p.handleWebhook).Methods(http.MethodPost)
+	router.HandleFunc("/webhook", h.handleWebhook).Methods(http.MethodPost)
 
 	apiRouter := router.PathPrefix("/api/v1").Subrouter()
-	apiRouter.Use(p.MattermostAuthorizationRequired)
+	apiRouter.Use(h.MattermostAuthorizationRequired)
 
 	// The server only checks CSRF tokens on non-GET requests, so anything that changes
 	// state must use POST, PUT, PATCH or DELETE.
-	apiRouter.HandleFunc("/hello", p.HelloWorld).Methods(http.MethodGet)
-	apiRouter.HandleFunc("/channels/{channel_id}/status", p.handleGetStatus).Methods(http.MethodGet)
-	apiRouter.HandleFunc("/channels/{channel_id}/status", p.handleSetStatus).Methods(http.MethodPut)
-	apiRouter.HandleFunc("/channels/{channel_id}/status", p.handleClearStatus).Methods(http.MethodDelete)
+	apiRouter.HandleFunc("/hello", h.HelloWorld).Methods(http.MethodGet)
+	apiRouter.HandleFunc("/channels/{channel_id}/status", h.handleGetStatus).Methods(http.MethodGet)
+	apiRouter.HandleFunc("/channels/{channel_id}/status", h.handleSetStatus).Methods(http.MethodPut)
+	apiRouter.HandleFunc("/channels/{channel_id}/status", h.handleClearStatus).Methods(http.MethodDelete)
 
 	return router
 }
 
 type pluginContextKey struct{}
 
-// ServeHTTP routes requests sent to the plugin.
+// ServeHTTP has the plugin hook's signature; the plugin's ServeHTTP passes its arguments straight through.
 // The root URL is currently <siteUrl>/plugins/com.mattermost.plugin-starter-template/api/v1/. Replace com.mattermost.plugin-starter-template with the plugin ID.
-func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
-	p.router.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), pluginContextKey{}, c)))
+func (h *Handler) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
+	h.router.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), pluginContextKey{}, c)))
 }
 
 // MattermostAuthorizationRequired can trust Mattermost-User-ID because the server sets it only after authenticating the request.
 // Requests from other plugins arrive without a user ID and are rejected here; routes meant for
 // them should check Mattermost-Plugin-ID against an allowlist instead.
-func (p *Plugin) MattermostAuthorizationRequired(next http.Handler) http.Handler {
+func (h *Handler) MattermostAuthorizationRequired(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userID := r.Header.Get("Mattermost-User-ID")
 		if userID == "" {
@@ -80,10 +95,10 @@ func requestLogger(r *http.Request) logger.Logger {
 
 // logRequests attaches a request-scoped logger and logs every request at debug level,
 // since the server doesn't log plugin requests.
-func (p *Plugin) logRequests(next http.Handler) http.Handler {
+func (h *Handler) logRequests(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		log := logger.New(p.API).With(logger.LogContext{
+		log := logger.New(h.pluginAPI).With(logger.LogContext{
 			"user_id": r.Header.Get("Mattermost-User-ID"),
 		})
 		r = r.WithContext(context.WithValue(r.Context(), loggerContextKey{}, log))
@@ -128,7 +143,7 @@ func (r *statusRecorder) Unwrap() http.ResponseWriter {
 
 // recoverPanic stops a panicking handler from crashing the plugin process.
 // The server deactivates a plugin that crashes repeatedly.
-func (p *Plugin) recoverPanic(next http.Handler) http.Handler {
+func (h *Handler) recoverPanic(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
 		defer func() {
@@ -163,7 +178,7 @@ func setSecurityHeaders(next http.Handler) http.Handler {
 	})
 }
 
-func (p *Plugin) HelloWorld(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) HelloWorld(w http.ResponseWriter, r *http.Request) {
 	if _, err := w.Write([]byte("Hello, world!")); err != nil {
 		requestLogger(r).WithError(err).Warnf("Failed to write response")
 	}
@@ -183,13 +198,13 @@ func channelIDFromPath(w http.ResponseWriter, r *http.Request) (string, bool) {
 	return channelID, true
 }
 
-func (p *Plugin) handleGetStatus(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) handleGetStatus(w http.ResponseWriter, r *http.Request) {
 	channelID, ok := channelIDFromPath(w, r)
 	if !ok {
 		return
 	}
 
-	status, err := p.statuses.Get(r.Header.Get("Mattermost-User-ID"), channelID)
+	status, err := h.statuses.Get(r.Header.Get("Mattermost-User-ID"), channelID)
 	if err != nil {
 		writeStatusError(w, r, err, "Failed to load the channel status")
 		return
@@ -198,7 +213,7 @@ func (p *Plugin) handleGetStatus(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, r, http.StatusOK, statusBody{Status: status})
 }
 
-func (p *Plugin) handleSetStatus(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) handleSetStatus(w http.ResponseWriter, r *http.Request) {
 	channelID, ok := channelIDFromPath(w, r)
 	if !ok {
 		return
@@ -210,7 +225,7 @@ func (p *Plugin) handleSetStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := p.statuses.Set(pluginContext(r), r.URL.Path, r.Header.Get("Mattermost-User-ID"), channelID, body.Status); err != nil {
+	if err := h.statuses.Set(pluginContext(r), r.URL.Path, r.Header.Get("Mattermost-User-ID"), channelID, body.Status); err != nil {
 		writeStatusError(w, r, err, "Failed to update the channel status")
 		return
 	}
@@ -218,13 +233,13 @@ func (p *Plugin) handleSetStatus(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, r, http.StatusOK, body)
 }
 
-func (p *Plugin) handleClearStatus(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) handleClearStatus(w http.ResponseWriter, r *http.Request) {
 	channelID, ok := channelIDFromPath(w, r)
 	if !ok {
 		return
 	}
 
-	if err := p.statuses.Set(pluginContext(r), r.URL.Path, r.Header.Get("Mattermost-User-ID"), channelID, ""); err != nil {
+	if err := h.statuses.Set(pluginContext(r), r.URL.Path, r.Header.Get("Mattermost-User-ID"), channelID, ""); err != nil {
 		writeStatusError(w, r, err, "Failed to clear the channel status")
 		return
 	}
@@ -255,8 +270,8 @@ func pluginContext(r *http.Request) *plugin.Context {
 // over a query parameter: URLs end up in proxy and browser logs.
 const webhookAuthHeader = "X-Webhook-Secret"
 
-func (p *Plugin) handleWebhook(w http.ResponseWriter, r *http.Request) {
-	secret := p.getConfiguration().WebhookSecret
+func (h *Handler) handleWebhook(w http.ResponseWriter, r *http.Request) {
+	secret := h.webhookSecret()
 	provided := r.Header.Get(webhookAuthHeader)
 
 	// ConstantTimeCompare keeps response timing from revealing how much of the secret matched.

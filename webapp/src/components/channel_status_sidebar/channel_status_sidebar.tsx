@@ -48,7 +48,7 @@ function ChannelStatusPanel({channel}: {channel: Channel}) {
 
     if (error) {
         return (
-            <div className='ChannelStatusSidebar'>
+            <div className='StarterTemplate-ChannelStatusSidebar'>
                 <SectionNotice
                     type='danger'
                     title={intl.formatMessage({id: 'channel_status.load_error', defaultMessage: 'Couldn’t load the channel status'})}
@@ -62,8 +62,8 @@ function ChannelStatusPanel({channel}: {channel: Channel}) {
 
     if (status === undefined) {
         return (
-            <div className='ChannelStatusSidebar'>
-                <p className='ChannelStatusSidebar__text'>
+            <div className='StarterTemplate-ChannelStatusSidebar'>
+                <p className='StarterTemplate-ChannelStatusSidebar__text'>
                     <FormattedMessage
                         id='channel_status.loading'
                         defaultMessage='Loading…'
@@ -91,8 +91,8 @@ function ChannelStatusPanel({channel}: {channel: Channel}) {
     };
 
     return (
-        <div className='ChannelStatusSidebar'>
-            <p className='ChannelStatusSidebar__text'>
+        <div className='StarterTemplate-ChannelStatusSidebar'>
+            <p className='StarterTemplate-ChannelStatusSidebar__text'>
                 <FormattedMessage
                     id='channel_status.intro'
                     defaultMessage='Show everyone in {channel} how things are going. You can also use {command}.'
@@ -104,13 +104,13 @@ function ChannelStatusPanel({channel}: {channel: Channel}) {
             </p>
 
             <section
-                className='ChannelStatusSidebar__current'
+                className='StarterTemplate-ChannelStatusSidebar__current'
                 aria-labelledby={headingId}
                 aria-live='polite'
             >
                 <h3
                     id={headingId}
-                    className='ChannelStatusSidebar__heading'
+                    className='StarterTemplate-ChannelStatusSidebar__heading'
                 >
                     <FormattedMessage
                         id='channel_status.current'
@@ -124,7 +124,7 @@ function ChannelStatusPanel({channel}: {channel: Channel}) {
                         size='small'
                     />
                 ) : (
-                    <span className='ChannelStatusSidebar__text'>
+                    <span className='StarterTemplate-ChannelStatusSidebar__text'>
                         <FormattedMessage
                             id='channel_status.none'
                             defaultMessage='No status set'
@@ -134,20 +134,20 @@ function ChannelStatusPanel({channel}: {channel: Channel}) {
             </section>
 
             {canEdit ? (
-                <div className='ChannelStatusSidebar__form'>
+                <div className='StarterTemplate-ChannelStatusSidebar__form'>
                     <Select
                         label={intl.formatMessage({id: 'channel_status.select_label', defaultMessage: 'New status'})}
                         placeholder={intl.formatMessage({id: 'channel_status.select_placeholder', defaultMessage: 'Choose a status'})}
                         options={STATUS_OPTIONS.map((option) => ({
                             value: option.value,
                             label: intl.formatMessage(option.message),
-                            leadingVisual: <span className={`ChannelStatusSidebar__dot ChannelStatusSidebar__dot--${option.value}`}/>,
+                            leadingVisual: <span className={`StarterTemplate-ChannelStatusSidebar__dot StarterTemplate-ChannelStatusSidebar__dot--${option.value}`}/>,
                         }))}
                         value={selected ?? status}
                         onChange={setSelected}
                         disabled={saving}
                     />
-                    <div className='ChannelStatusSidebar__actions'>
+                    <div className='StarterTemplate-ChannelStatusSidebar__actions'>
                         <Button
                             emphasis='primary'
                             size='small'
@@ -185,7 +185,7 @@ function ChannelStatusPanel({channel}: {channel: Channel}) {
                     </div>
                 </div>
             ) : (
-                <p className='ChannelStatusSidebar__text'>
+                <p className='StarterTemplate-ChannelStatusSidebar__text'>
                     <FormattedMessage
                         id='channel_status.read_only'
                         defaultMessage='You don’t have permission to change this channel’s status.'

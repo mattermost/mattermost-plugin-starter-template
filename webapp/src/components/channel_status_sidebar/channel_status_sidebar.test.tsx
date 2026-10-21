@@ -79,6 +79,21 @@ test('drops the load error when a status update arrives', async () => {
     expect(screen.queryByText('Failed to load the channel status')).not.toBeInTheDocument();
 });
 
+test('keeps a status update that arrives before the load finishes', async () => {
+    let resolveFetch: (status: string) => void = () => {};
+    mockFetchChannelStatus.mockReturnValueOnce(new Promise((resolve) => {
+        resolveFetch = resolve;
+    }));
+    const store = renderWithStore(<ChannelStatusSidebar/>);
+
+    act(() => {
+        store.dispatch(statusReceived('channel-id', 'off-track'));
+    });
+    await act(async () => resolveFetch('at-risk'));
+
+    expect((await currentStatus()).getByText('Off track')).toBeVisible();
+});
+
 test('announces save errors', async () => {
     mockFetchChannelStatus.mockResolvedValueOnce('');
     mockSetChannelStatus.mockRejectedValueOnce(new Error('Failed to update the channel status'));

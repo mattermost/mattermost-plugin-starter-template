@@ -3,7 +3,7 @@
 
 import {fetchChannelStatus} from 'client';
 import {useEffect, useState} from 'react';
-import {useDispatch, useSelector} from 'react-redux';
+import {useDispatch, useSelector, useStore} from 'react-redux';
 
 import type {GlobalState} from '@mattermost/types/store';
 
@@ -25,6 +25,7 @@ function fetchOnce(channelId: string) {
 // in index.tsx keeps it current after that.
 export function useChannelStatus(channelId: string) {
     const dispatch = useDispatch();
+    const store = useStore<GlobalState>();
     const status = useSelector((state: GlobalState) => getChannelStatus(state, channelId));
     const loaded = status !== undefined;
     const [error, setError] = useState<{channelId: string; message: string}>();
@@ -38,13 +39,18 @@ export function useChannelStatus(channelId: string) {
         let stale = false;
         setError(undefined);
         fetchOnce(channelId).then(
-            (value) => dispatch(statusReceived(channelId, value)),
+            (value) => {
+                // A WebSocket event that arrived while this request was in flight is newer.
+                if (getChannelStatus(store.getState(), channelId) === undefined) {
+                    dispatch(statusReceived(channelId, value));
+                }
+            },
             (err: Error) => !stale && setError({channelId, message: err.message}),
         );
         return () => {
             stale = true;
         };
-    }, [channelId, loaded, attempt, dispatch]);
+    }, [channelId, loaded, attempt, dispatch, store]);
 
     return {
         status,

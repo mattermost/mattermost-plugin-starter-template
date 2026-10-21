@@ -1,6 +1,6 @@
 # AGENTS.md (server)
 
-`server/api.go` and `server/channelstatus` show the authentication, permission, validation, audit, WebSocket and error-handling rules below; copy their patterns.
+`server/api` and `server/channelstatus` show the authentication, permission, validation, audit, WebSocket and error-handling rules below; copy their patterns.
 
 ## Security
 
@@ -28,8 +28,8 @@ On `/plugins/{id}/...` requests the server strips spoofed `Mattermost-User-ID` a
 
 ## Tests
 
-- **Integration tests** (`server/integration_test.go`) are the default for anything that goes through the Mattermost server: plugin API calls, hooks, KV persistence, permissions, HTTP routing, activation. `testhelper.Setup(t)` runs Postgres and Mattermost via testcontainers and deploys the bundle from `dist/` (see `go doc github.com/mattermost/mattermost/server/public/pluginapi/testhelper`). Each `Setup` resets the server (~10s), so group related assertions into one test.
-- **Plain unit tests** (`server/plugin_test.go`) for logic that doesn't need a real server, e.g. drive `ServeHTTP` with `httptest` after `initRouter()`.
+- **Integration tests** (`TestHelloEndpoint` and `TestChannelStatusEndpoint` in `server/api/api_test.go`) are the default for anything that goes through the Mattermost server: plugin API calls, hooks, KV persistence, permissions, HTTP routing, activation. `testhelper.Setup(t)` runs Postgres and Mattermost via testcontainers and deploys the bundle from `dist/` (see `go doc github.com/mattermost/mattermost/server/public/pluginapi/testhelper`). Each `Setup` resets the server (~10s), so group related assertions into one test.
+- **Plain unit tests** (the rest of `server/api/api_test.go`) for logic that doesn't need a real server, e.g. drive `Handler.ServeHTTP` with `httptest` from a `NewHandler` built on `plugintest.API`.
 - **Mocked-API unit tests** (`server/command/command_test.go`) only for error paths a real server can't easily produce: `plugintest.API` wrapped in `pluginapi.NewClient`, or the mockgen mocks in `server/command/mocks` and `server/store/kvstore/mocks`. They encode assumptions about the server, so avoid them otherwise.
 - Every new route gets a test for the denied case (401/403), not just the happy path.
 - testify `require`/`assert`, table-driven when there's more than one case of the same shape, no new test or mocking libraries. Don't assert implementation details like validation order.

@@ -1,5 +1,5 @@
 /* Colors come from the host theme; spacing, radius and type come from Compass tokens. */
-.ChannelStatusSidebar {
+.StarterTemplate-ChannelStatusSidebar {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-l);
@@ -7,21 +7,21 @@
     color: var(--center-channel-color);
 }
 
-.ChannelStatusSidebar__text {
+.StarterTemplate-ChannelStatusSidebar__text {
     margin: 0;
     color: rgba(var(--center-channel-color-rgb), 0.72);
     font-size: var(--font-size-100);
     line-height: var(--line-height-100);
 }
 
-.ChannelStatusSidebar__current {
+.StarterTemplate-ChannelStatusSidebar__current {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: var(--spacing-xs);
 }
 
-.ChannelStatusSidebar__heading {
+.StarterTemplate-ChannelStatusSidebar__heading {
     margin: 0;
     font-family: var(--font-family-heading);
     font-size: var(--font-size-200);
@@ -29,32 +29,32 @@
     line-height: var(--line-height-200);
 }
 
-.ChannelStatusSidebar__form {
+.StarterTemplate-ChannelStatusSidebar__form {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-m);
 }
 
-.ChannelStatusSidebar__actions {
+.StarterTemplate-ChannelStatusSidebar__actions {
     display: flex;
     gap: var(--spacing-xs);
 }
 
-.ChannelStatusSidebar__dot {
+.StarterTemplate-ChannelStatusSidebar__dot {
     display: inline-block;
     width: 8px;
     height: 8px;
     border-radius: var(--radius-full);
 }
 
-.ChannelStatusSidebar__dot--on-track {
+.StarterTemplate-ChannelStatusSidebar__dot--on-track {
     background: var(--online-indicator);
 }
 
-.ChannelStatusSidebar__dot--at-risk {
+.StarterTemplate-ChannelStatusSidebar__dot--at-risk {
     background: var(--away-indicator);
 }
 
-.ChannelStatusSidebar__dot--off-track {
+.StarterTemplate-ChannelStatusSidebar__dot--off-track {
     background: var(--dnd-indicator);
 }

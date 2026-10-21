@@ -28,7 +28,7 @@ export default function ChannelStatusTag({channel, onOpen}: Props) {
     return (
         <button
             type='button'
-            className='ChannelStatusTag'
+            className='StarterTemplate-ChannelStatusTag'
             aria-label={intl.formatMessage({id: 'channel_status.tag_label', defaultMessage: 'Channel status: {status}'}, {status: label})}
             onClick={onOpen}
         >

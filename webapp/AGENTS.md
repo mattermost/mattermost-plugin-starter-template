@@ -22,7 +22,7 @@ Adapted from the Mattermost webapp's `webapp/AGENTS.md` and `STYLE_GUIDE.md` so 
 
 ## Styling
 
-- Co-locate `my_component.css` with `my_component.tsx`. Root class in PascalCase matching the component (`.ChannelStatusSidebar`), BEM children (`.ChannelStatusSidebar__heading`), modifiers as a separate class. No `!important`, inline `style`, or element selectors.
+- Co-locate `my_component.css` with `my_component.tsx`. Root class is the plugin name plus the component in PascalCase (`.StarterTemplate-ChannelStatusSidebar`; plain CSS is global, so the prefix keeps it from clashing with the host or other plugins), BEM children (`.StarterTemplate-ChannelStatusSidebar__heading`), modifiers as a separate class. No `!important`, inline `style`, or element selectors.
 - Colors from host theme variables (`--center-channel-color`, `--button-bg`, `--error-text`; `rgba(var(--center-channel-color-rgb), 0.72)` for transparency). Spacing, radius, elevation, type and motion from Compass tokens (`--spacing-m`, `--font-size-100`, `--line-height-100`, `--font-weight-semibold`). Never hard-code those. Pills use `var(--radius-pill)`: the webapp's `--radius-full` is `50%`.
 
 ## Accessibility and i18n

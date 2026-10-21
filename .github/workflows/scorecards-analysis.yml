@@ -12,6 +12,8 @@ permissions: {}
 jobs:
   analysis:
     name: Scorecard analysis
+    # Code scanning on private repositories needs GitHub Code Security. Elsewhere, opt in with the ENABLE_CODE_SCANNING repository variable.
+    if: github.repository_owner == 'mattermost' || vars.ENABLE_CODE_SCANNING == 'true'
     runs-on: ubuntu-24.04
     permissions:
       contents: read
