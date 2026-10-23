@@ -1,0 +1,66 @@
+name: "CodeQL"
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [master]
+  schedule:
+    - cron: "30 5 * * 1"
+
+permissions: {}
+
+jobs:
+  analyze:
+    # Code scanning on private repositories needs GitHub Code Security. Elsewhere, opt in with the ENABLE_CODE_SCANNING repository variable.
+    if: github.repository_owner == 'mattermost' || vars.ENABLE_CODE_SCANNING == 'true'
+    permissions:
+      contents: read
+      security-events: write # for github/codeql-action to upload results
+    name: Analyze
+    runs-on: ubuntu-24.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: go
+            build-mode: manual
+          - language: javascript-typescript
+            build-mode: none
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      # Go must be installed before CodeQL starts so CodeQL can trace the build. The build
+      # cache stays off: a cached build compiles nothing, leaving CodeQL with no code to analyze.
+      - name: Setup go
+        if: matrix.language == 'go'
+        uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@0d579ffd059c29b07949a3cce3983f0780820c98 # v4.32.6
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          config-file: ./.github/codeql/codeql-config.yml
+
+      # The server doesn't compile until make apply generates server/manifest.go.
+      - name: Build server
+        if: matrix.language == 'go'
+        run: |
+          mkdir -p build/bin
+          make apply
+          go build ./...
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@0d579ffd059c29b07949a3cce3983f0780820c98 # v4.32.6
+        with:
+          category: "/language:${{ matrix.language }}"

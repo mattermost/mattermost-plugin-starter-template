@@ -13,6 +13,7 @@ import (
 	reflect "reflect"
 
 	model "github.com/mattermost/mattermost/server/public/model"
+	plugin "github.com/mattermost/mattermost/server/public/plugin"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -41,30 +42,16 @@ func (m *MockCommand) EXPECT() *MockCommandMockRecorder {
 }
 
 // Handle mocks base method.
-func (m *MockCommand) Handle(args *model.CommandArgs) (*model.CommandResponse, error) {
+func (m *MockCommand) Handle(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Handle", args)
+	ret := m.ctrl.Call(m, "Handle", c, args)
 	ret0, _ := ret[0].(*model.CommandResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Handle indicates an expected call of Handle.
-func (mr *MockCommandMockRecorder) Handle(args any) *gomock.Call {
+func (mr *MockCommandMockRecorder) Handle(c, args any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Handle", reflect.TypeOf((*MockCommand)(nil).Handle), args)
-}
-
-// executeHelloCommand mocks base method.
-func (m *MockCommand) executeHelloCommand(args *model.CommandArgs) *model.CommandResponse {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "executeHelloCommand", args)
-	ret0, _ := ret[0].(*model.CommandResponse)
-	return ret0
-}
-
-// executeHelloCommand indicates an expected call of executeHelloCommand.
-func (mr *MockCommandMockRecorder) executeHelloCommand(args any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "executeHelloCommand", reflect.TypeOf((*MockCommand)(nil).executeHelloCommand), args)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Handle", reflect.TypeOf((*MockCommand)(nil).Handle), c, args)
 }

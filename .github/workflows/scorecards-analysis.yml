@@ -1,0 +1,51 @@
+name: Scorecards supply-chain security
+on:
+  # Only the default branch is supported.
+  branch_protection_rule:
+  schedule:
+    - cron: "44 6 * * 2"
+  push:
+    branches: [master]
+
+permissions: {}
+
+jobs:
+  analysis:
+    name: Scorecard analysis
+    # Code scanning on private repositories needs GitHub Code Security. Elsewhere, opt in with the ENABLE_CODE_SCANNING repository variable.
+    if: github.repository_owner == 'mattermost' || vars.ENABLE_CODE_SCANNING == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      # Needed to upload the results to code-scanning dashboard.
+      security-events: write
+      # Needed to publish results and get a badge (see publish_results below).
+      id-token: write
+
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: "Run analysis"
+        uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a # v2.4.3
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          # Publishes results to the OpenSSF REST API so the repository can show a Scorecard badge.
+          # Private repositories never publish, regardless of this value.
+          publish_results: true
+
+      - name: "Upload artifact"
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: SARIF file
+          path: results.sarif
+          retention-days: 5
+
+      # Upload the results to GitHub's code scanning dashboard.
+      - name: "Upload to code-scanning"
+        uses: github/codeql-action/upload-sarif@0d579ffd059c29b07949a3cce3983f0780820c98 # v4.32.6
+        with:
+          sarif_file: results.sarif

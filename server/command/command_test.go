@@ -1,47 +1,32 @@
 package command
 
 import (
+	"errors"
 	"testing"
 
-	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
+	"github.com/mattermost/mattermost/server/public/plugin/plugintest/mock"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
+
+	"github.com/mattermost/mattermost-plugin-starter-template/server/channelstatus"
+	"github.com/mattermost/mattermost-plugin-starter-template/server/store/kvstore/mocks"
 )
 
-type env struct {
-	client *pluginapi.Client
-	api    *plugintest.API
-}
+// The command's behavior is covered against a real server in TestChannelStatusEndpoint.
+// Mocks are only for failures a real server can't produce.
+func TestNewCommandHandler(t *testing.T) {
+	t.Run("returns an error when registration fails", func(t *testing.T) {
+		api := &plugintest.API{}
+		t.Cleanup(func() { api.AssertExpectations(t) })
+		client := pluginapi.NewClient(api, &plugintest.Driver{})
+		statuses := channelstatus.NewService(api, client, mocks.NewMockKVStore(gomock.NewController(t)))
+		api.On("RegisterCommand", mock.Anything).Return(errors.New("boom"))
 
-func setupTest() *env {
-	api := &plugintest.API{}
-	driver := &plugintest.Driver{}
-	client := pluginapi.NewClient(api, driver)
+		handler, err := NewCommandHandler(client, statuses)
 
-	return &env{
-		client: client,
-		api:    api,
-	}
-}
-
-func TestHelloCommand(t *testing.T) {
-	assert := assert.New(t)
-	env := setupTest()
-
-	env.api.On("RegisterCommand", &model.Command{
-		Trigger:          helloCommandTrigger,
-		AutoComplete:     true,
-		AutoCompleteDesc: "Say hello to someone",
-		AutoCompleteHint: "[@username]",
-		AutocompleteData: model.NewAutocompleteData("hello", "[@username]", "Username to say hello to"),
-	}).Return(nil)
-	cmdHandler := NewCommandHandler(env.client)
-
-	args := &model.CommandArgs{
-		Command: "/hello world",
-	}
-	response, err := cmdHandler.Handle(args)
-	assert.Nil(err)
-	assert.Equal("Hello, world", response.Text)
+		assert.Nil(t, handler)
+		assert.ErrorContains(t, err, "failed to register /channelstatus command")
+	})
 }
