@@ -35,7 +35,7 @@ On `/plugins/{id}/...` requests the server strips spoofed `Mattermost-User-ID` a
 - testify `require`/`assert`, table-driven when there's more than one case of the same shape, no new test or mocking libraries. Don't assert implementation details like validation order.
 
 Integration test caveats:
-- There's no build tag, so `go test ./...` includes them and fails without Docker. `SKIP_DOCKER_TESTS=1` skips them. `MM_TEST_IMAGE` overrides the default `mattermost-enterprise-edition:latest` image.
+- There's no build tag, so `go test ./...` includes them and fails without Docker. `SKIP_DOCKER_TESTS=1` skips them. `MM_TEST_IMAGE` overrides the default `mattermost-enterprise-edition:latest` image; CI also runs them against the `min_server_version` image.
 - They test whatever bundle is in `dist/`, which must be linux/amd64. After a server change, rebuild before running one by hand:
   ```bash
   make apply server bundle MM_SERVICESETTINGS_ENABLEDEVELOPER=true DEFAULT_GOOS=linux DEFAULT_GOARCH=amd64

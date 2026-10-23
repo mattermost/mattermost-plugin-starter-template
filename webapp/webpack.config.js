@@ -39,6 +39,10 @@ const config = {
             'node_modules',
         ],
         extensions: ['.js', '.jsx', '.ts', '.tsx'],
+        alias: {
+            'react/jsx-runtime$': path.resolve(__dirname, 'src/jsx_runtime.ts'),
+            'react/jsx-dev-runtime$': path.resolve(__dirname, 'src/jsx_runtime.ts'),
+        },
     },
     module: {
         rules: [
@@ -72,8 +76,6 @@ const config = {
     externals: [
         {
             react: 'React',
-            'react/jsx-runtime': 'ReactJSXRuntime',
-            'react/jsx-dev-runtime': 'ReactJSXDevRuntime',
             'react-dom': 'ReactDOM',
             'react-intl': 'ReactIntl',
             redux: 'Redux',

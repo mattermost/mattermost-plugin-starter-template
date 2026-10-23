@@ -7,7 +7,7 @@ This plugin serves as a starting point for writing a Mattermost plugin. Feel fre
 
 To learn more about plugins, see [our plugin documentation](https://developers.mattermost.com/extend/plugins/).
 
-This template targets Mattermost Server 12.0 or later (`min_server_version` in `plugin.json`). It requires the Go version in `go.mod` and the Node version in `.nvmrc`. You can download and install nvm to manage your node versions by following the instructions [here](https://github.com/nvm-sh/nvm). Once you've setup the project simply run `nvm i` within the root folder to use the suggested version of node.
+This template targets Mattermost Server 11.7 or later (`min_server_version` in `plugin.json`), the oldest supported ESR. The webapp builds against the React 18 that 11.7 ships and runs unchanged on React 19 in 12.0. It requires the Go version in `go.mod` and the Node version in `.nvmrc`. You can download and install nvm to manage your node versions by following the instructions [here](https://github.com/nvm-sh/nvm). Once you've setup the project simply run `nvm i` within the root folder to use the suggested version of node.
 
 ## Getting Started
 Use GitHub's template feature to make a copy of this repository by clicking the "Use this template" button.

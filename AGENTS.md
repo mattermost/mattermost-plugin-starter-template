@@ -24,7 +24,7 @@ make mock                                      # regenerate mocks after changing
 
 - `plugin.json` is the source of truth for ID, version, and settings. `make apply` generates `server/manifest.go` and `webapp/src/manifest.ts` from it; both are gitignored, so never edit them. A fresh checkout doesn't compile until `make apply` runs. Never edit `dist/`, `server/dist/` or `webapp/dist/`.
 - Project-specific make targets go in `build/custom.mk`.
-- `min_server_version` is 12.0.0. Don't use plugin API methods or host webapp exports newer than that without bumping it.
+- `min_server_version` is 11.7.0, the oldest supported ESR. Don't use plugin API methods, host webapp exports or React 19 APIs newer than that without bumping it. CI runs the integration tests against that server version.
 
 ## Rules that apply everywhere
 

@@ -4,8 +4,9 @@ Adapted from the Mattermost webapp's `webapp/AGENTS.md` and `STYLE_GUIDE.md` so 
 
 ## Host-provided packages
 
-- React, ReactDOM, react-intl, Redux, react-redux, react-router-dom and prop-types are webpack `externals` from the host. Their versions in `package.json` are dev-only and must match the host for `min_server_version`. Never bundle a second copy or move them to `dependencies`.
-- `@mattermost/shared/*` loads from the host via `window.loadSharedDependency` (see `webpack.config.js`). On 12.0 the host serves `components/button`, `components/emoji`, `components/shortcut_key`, `components/tooltip`, `utils/i18n`, `utils/user_agent`. Add `@mattermost/shared` as a devDependency for types on first use.
+- React, ReactDOM, react-intl, Redux, react-redux, react-router-dom and prop-types are webpack `externals` from the host. Their versions in `package.json` are dev-only and must match the host for `min_server_version`, so React is 18 even though 12.0 runs 19. Never bundle a second copy or move them to `dependencies`.
+- JSX compiles through `src/jsx_runtime.ts` because 11.7 doesn't expose `window.ReactJSXRuntime`. Don't import `react/jsx-runtime` directly or remove the alias in `webpack.config.js`.
+- `@mattermost/shared/*` loads from the host via `window.loadSharedDependency` (see `webpack.config.js`). 11.7 only serves `components/emoji`; `components/button`, `components/shortcut_key`, `components/tooltip`, `utils/i18n` and `utils/user_agent` need 12.0. Add `@mattermost/shared` as a devDependency for types on first use.
 - Host APIs for plugins live on `window.WebappUtils` (e.g. `modals.openModalById` for published host modals) and `window.PostUtils`. Don't use `window.Components` or `window.ProductApi`; they change without notice.
 - Don't add react-bootstrap, MUI, Emotion or Sass.
 
@@ -16,7 +17,7 @@ Adapted from the Mattermost webapp's `webapp/AGENTS.md` and `STYLE_GUIDE.md` so 
 - `src/index.tsx` imports `@mattermost/compass-ui/styles` once. Never import `@mattermost/compass-ui/styles/standalone`: it overrides the user's theme.
 - Never use `@mattermost/compass-proto` (unpublished prototypes).
 - Icons come from `@mattermost/compass-icons/components`. In a Compass slot (`leadingIcon`, `trailingIcon`, `icon`), wrap them in Compass `Icon` with no `size`: `leadingIcon={<Icon glyph={<RefreshIcon/>}/>}`.
-- Tooltips: `WithTooltip` from `@mattermost/shared/components/tooltip`. Emoji: `Emoji` from `@mattermost/shared/components/emoji`. Use these instead of the compass-ui versions until the host adopts those.
+- Emoji: `Emoji` from `@mattermost/shared/components/emoji`, instead of the compass-ui version until the host adopts it. Tooltips: `@mattermost/compass-ui/components/tooltip` while `min_server_version` is 11.7; switch to `WithTooltip` from `@mattermost/shared/components/tooltip` once it's 12.0.
 - Compass modals and menus aren't adopted in the host yet. Use `window.WebappUtils.modals` for published host modals and agree on anything else with design first.
 - When migrating existing UI, switch to Compass only in code you're already changing.
 

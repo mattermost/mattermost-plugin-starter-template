@@ -16,3 +16,34 @@ jobs:
   plugin-ci:
     uses: mattermost/actions-workflows/.github/workflows/plugin-ci.yml@main
     secrets: inherit
+
+  # plugin-ci tests against the latest server; this covers the oldest one the plugin supports.
+  min-server-version:
+    name: Integration tests on min_server_version
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup go
+        uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
+        with:
+          go-version-file: go.mod
+
+      - name: Setup node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: webapp/package-lock.json
+
+      - name: Build plugin
+        run: make dist
+
+      - name: Run server tests
+        run: |
+          export MM_TEST_IMAGE="mattermost/mattermost-enterprise-edition:$(jq -r .min_server_version plugin.json)"
+          docker pull "$MM_TEST_IMAGE"
+          go test ./server/...
