@@ -8,12 +8,13 @@ on:
       - "v*"
   pull_request:
 
-permissions:
-  contents: read
-  id-token: write
+permissions: {}
 
 jobs:
   plugin-ci:
+    permissions:
+      contents: read
+      id-token: write
     uses: mattermost/actions-workflows/.github/workflows/plugin-ci.yml@main
     secrets: inherit
 
@@ -21,6 +22,8 @@ jobs:
   min-server-version:
     name: Integration tests on min_server_version
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
