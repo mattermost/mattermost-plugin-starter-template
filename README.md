@@ -249,7 +249,7 @@ For requests to `/plugins/{id}`, the Mattermost server strips any spoofed `Matte
 **Dependencies**
 
 - **Stay patched.** Dependabot (`.github/dependabot.yml`) opens monthly update PRs. Run `govulncheck ./...` and `npm audit --omit=dev` in `webapp/` before releasing.
-- **Watch the scans.** CodeQL checks the Go and TypeScript code on every PR, and OpenSSF Scorecard checks the repository's supply-chain settings weekly. Results appear under the repository's Security > Code scanning tab. Outside the `mattermost` organization both workflows are skipped, because code scanning on a private repository needs GitHub Code Security. To turn them on, add a repository variable `ENABLE_CODE_SCANNING` set to `true` (Settings > Secrets and variables > Actions > Variables).
+- **Watch the scans.** CodeQL checks the Go and TypeScript code and the GitHub workflows on every PR, and OpenSSF Scorecard checks the repository's supply-chain settings weekly. Results appear under the repository's Security > Code scanning tab. Outside the `mattermost` organization both workflows are skipped, because code scanning on a private repository needs GitHub Code Security. To turn them on, add a repository variable `ENABLE_CODE_SCANNING` set to `true` (Settings > Secrets and variables > Actions > Variables).
 
 ### Deploying with Local Mode
 
