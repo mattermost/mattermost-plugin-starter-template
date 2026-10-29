@@ -5,13 +5,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/mattermost/mattermost/server/public/pluginapi/cluster"
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost-plugin-starter-template/server/api"
+	"github.com/mattermost/mattermost-plugin-starter-template/server/channelstatus"
 	"github.com/mattermost/mattermost-plugin-starter-template/server/command"
 	"github.com/mattermost/mattermost-plugin-starter-template/server/store/kvstore"
 )
@@ -23,14 +24,17 @@ type Plugin struct {
 	// kvstore is the client used to read/write KV records for this plugin.
 	kvstore kvstore.KVStore
 
+	// statuses reads and changes channel statuses for the slash command and the HTTP API.
+	statuses *channelstatus.Service
+
 	// client is the Mattermost server API client.
 	client *pluginapi.Client
 
 	// commandClient is the client used to register and execute slash commands.
 	commandClient command.Command
 
-	// router is the HTTP router for handling API requests.
-	router *mux.Router
+	// httpHandler serves the routes in server/api.
+	httpHandler *api.Handler
 
 	backgroundJob *cluster.Job
 
@@ -47,10 +51,15 @@ func (p *Plugin) OnActivate() error {
 	p.client = pluginapi.NewClient(p.API, p.Driver)
 
 	p.kvstore = kvstore.NewKVStore(p.client)
+	p.statuses = channelstatus.NewService(p.API, p.client, p.kvstore)
 
-	p.commandClient = command.NewCommandHandler(p.client)
+	commandClient, err := command.NewCommandHandler(p.client, p.statuses)
+	if err != nil {
+		return err
+	}
+	p.commandClient = commandClient
 
-	p.router = p.initRouter()
+	p.httpHandler = api.NewHandler(p.API, p.statuses, func() string { return p.getConfiguration().WebhookSecret })
 
 	job, err := cluster.Schedule(
 		p.API,
@@ -77,9 +86,14 @@ func (p *Plugin) OnDeactivate() error {
 	return nil
 }
 
+// ServeHTTP is invoked for requests to /plugins/{plugin_id}.
+func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
+	p.httpHandler.ServeHTTP(c, w, r)
+}
+
 // This will execute the commands that were registered in the NewCommandHandler function.
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	response, err := p.commandClient.Handle(args)
+	response, err := p.commandClient.Handle(c, args)
 	if err != nil {
 		return nil, model.NewAppError("ExecuteCommand", "plugin.command.execute_command.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}

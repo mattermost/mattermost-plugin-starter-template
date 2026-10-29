@@ -304,13 +304,27 @@ export interface PluginRegistry {
         ...args: [
             icon: ReactResolvable,
             action: () => void,
-            dropdownText: string,
-            tooltipText: string
+            dropdownText: ReactResolvable,
+            tooltipText: ReactResolvable
         ] | [{
             icon: ReactResolvable;
             action: () => void;
-            dropdownText: string;
-            tooltipText: string;
+            dropdownText: ReactResolvable;
+            tooltipText: ReactResolvable;
+        }]
+    ): UniqueIdentifier;
+
+    /**
+        * Register a component in the channel header, after the pinned messages and files buttons.
+        * The component receives `channel` and `channelMember` props.
+        * Accepts a React component. Returns a unique identifier.
+        * Minimum required version: 11.5
+    */
+    registerChannelHeaderIcon(
+        ...args: [
+            component: ReactResolvable
+        ] | [{
+            component: ReactResolvable;
         }]
     ): UniqueIdentifier;
 

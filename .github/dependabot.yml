@@ -1,0 +1,31 @@
+version: 2
+updates:
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    groups:
+      go-minor-patch:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "npm"
+    directory: "/webapp"
+    schedule:
+      interval: "monthly"
+    ignore:
+      # Provided by the Mattermost webapp at runtime; keep in step with min_server_version instead.
+      - dependency-name: "react"
+      - dependency-name: "react-dom"
+      - dependency-name: "react-intl"
+      - dependency-name: "react-redux"
+      - dependency-name: "redux"
+      - dependency-name: "@types/react"
+      - dependency-name: "@types/react-dom"
+    groups:
+      npm-minor-patch:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"

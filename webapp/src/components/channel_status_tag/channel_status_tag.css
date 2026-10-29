@@ -1,0 +1,15 @@
+.StarterTemplate-ChannelStatusTag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+    margin-left: var(--spacing-xs);
+    border: none;
+    border-radius: var(--radius-s);
+    background: none;
+    cursor: pointer;
+}
+
+.StarterTemplate-ChannelStatusTag:focus-visible {
+    outline: 2px solid var(--button-bg);
+    outline-offset: 2px;
+}

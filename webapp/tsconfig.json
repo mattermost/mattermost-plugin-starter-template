@@ -12,15 +12,18 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
-    "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true,
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "experimentalDecorators": true,
-    "jsx": "react"
+    "jsx": "react-jsx",
+    "types": [
+      "jest",
+      "node",
+      "@testing-library/jest-dom"
+    ]
   },
   "include": [
     "src",
@@ -28,7 +31,6 @@
   ],
   "exclude": [
     "dist",
-    "node_modules",
-    "!node_modules/@types"
+    "node_modules"
   ]
 }
