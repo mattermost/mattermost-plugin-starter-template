@@ -56,7 +56,7 @@ define check_protected_branch
 endef
 # Check if there are pending pulls
 define check_pending_pulls
-	@git fetch; \
+	@git fetch origin --tags || { echo "Error: Failed to fetch branches and tags from origin"; exit 1; }; \
 	current_branch=$$(git rev-parse --abbrev-ref HEAD); \
 	if [ "$$(git rev-parse HEAD)" != "$$(git rev-parse origin/$$current_branch)" ]; then \
 		echo "Error: Your branch is not up to date with upstream. Please pull the latest changes before performing a release"; \
@@ -81,7 +81,7 @@ define bump_version
 	fi; \
 	echo "Bumping $(APP_NAME) to $(2) version $${version#v}"; \
 	git tag -s -a "$$version" -m "Bumping $(APP_NAME) to $(2) version $${version#v}"; \
-	git push origin "$$version"; \
+	git push origin "$$version" || { git tag -d "$$version"; exit 1; }; \
 	echo "Bumped $(APP_NAME) to $(2) version $${version#v}"
 endef
 # ====================================================================================
