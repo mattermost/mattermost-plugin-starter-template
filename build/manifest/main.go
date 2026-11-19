@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -24,9 +25,7 @@ import (
 
 var manifest *model.Manifest
 
-const manifestStr = ` + "`" + `
-%s
-` + "`" + `
+const manifestStr = %s
 
 func init() {
 	_ = json.NewDecoder(strings.NewReader(manifestStr)).Decode(&manifest)
@@ -160,6 +159,17 @@ func dumpPluginVersion(manifest *model.Manifest) {
 	fmt.Printf("%s", manifest.Version)
 }
 
+func generateGoManifest(manifestJSON string) []byte {
+	return fmt.Appendf(nil, pluginIDGoFileTemplate, strconv.Quote(manifestJSON))
+}
+
+func generateJSManifest(manifestJSON string) []byte {
+	manifestJSON = strings.ReplaceAll(manifestJSON, `\`, `\\`)
+	manifestJSON = strings.ReplaceAll(manifestJSON, "`", "\\`")
+	manifestJSON = strings.ReplaceAll(manifestJSON, "${", `\${`)
+	return fmt.Appendf(nil, pluginIDJSFileTemplate, manifestJSON)
+}
+
 // applyManifest propagates the plugin_id into the server and webapp folders, as necessary
 func applyManifest(manifest *model.Manifest) error {
 	if manifest.HasServer() {
@@ -168,12 +178,10 @@ func applyManifest(manifest *model.Manifest) error {
 		if err != nil {
 			return err
 		}
-		manifestStr := string(manifestBytes)
-
 		// write generated code to file by using Go file template.
 		if err := os.WriteFile(
 			"server/manifest.go",
-			fmt.Appendf(nil, pluginIDGoFileTemplate, manifestStr),
+			generateGoManifest(string(manifestBytes)),
 			0o600,
 		); err != nil {
 			return errors.Wrap(err, "failed to write server/manifest.go")
@@ -190,13 +198,10 @@ func applyManifest(manifest *model.Manifest) error {
 		}
 		manifestStr := string(manifestBytes)
 
-		// Escape newlines
-		manifestStr = strings.ReplaceAll(manifestStr, `\n`, `\\n`)
-
 		// write generated code to file by using JS file template.
 		if err := os.WriteFile(
 			"webapp/src/manifest.ts",
-			fmt.Appendf(nil, pluginIDJSFileTemplate, manifestStr),
+			generateJSManifest(manifestStr),
 			0o600,
 		); err != nil {
 			return errors.Wrap(err, "failed to open webapp/src/manifest.ts")
